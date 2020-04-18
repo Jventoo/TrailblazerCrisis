@@ -47,6 +47,16 @@ APlayerCharacter::APlayerCharacter()
 	bIsFiring = false;
 	bIsAiming = false;
 	bIsFirearmEquipped = false;
+
+	PrimaryActorTick.bCanEverTick = false;
+}
+
+
+void APlayerCharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+
 }
 
 //////////////////////////////////////////////////////////////////////////
