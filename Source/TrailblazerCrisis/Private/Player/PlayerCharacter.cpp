@@ -8,6 +8,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Actors/Components/ObjectiveComponent.h"
 
 // Sets default values
 APlayerCharacter::APlayerCharacter()
@@ -41,6 +42,9 @@ APlayerCharacter::APlayerCharacter()
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arms
+
+	// Create objective component to communicate with quest manager
+	ObjectiveComp = CreateDefaultSubobject<UObjectiveComponent>(TEXT("Objective"));
 
 	bIsCrouching = false;
 	bIsJumping = false;
