@@ -6,7 +6,6 @@
 
 #include "Player/PlayerCharacter.h"
 #include "GameFramework/PawnMovementComponent.h"
-#include "Engine.h"
 
 UHumanoidAnimInstance::UHumanoidAnimInstance()
 {
@@ -30,6 +29,8 @@ void UHumanoidAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 {
 	Super::NativeUpdateAnimation(DeltaSeconds);
 
+	Timer += DeltaSeconds;
+
 	if (!Owner)
 		return;
 
@@ -38,9 +39,7 @@ void UHumanoidAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		APlayerCharacter* Character = Cast<APlayerCharacter>(Owner);
 		if (Character)
 		{
-			IsArmed = Character->GetIsArmed();
 			IsInAir = Character->GetMovementComponent()->IsFalling();
-			IsSprinting = Character->GetIsSprinting();
 
 			// Set speed to the sum of our abs inputs (max 1.0f) or our sprint speed
 			auto Sum = FMath::Min(Character->GetForwardAxisValue(true) 
@@ -52,12 +51,26 @@ void UHumanoidAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 				if (!bReceivedInitDir)
 				{
 					Direction = Character->GetDirection();
+					
+					TimeStarted = Timer;
 
-					if (!GetWorld()->GetTimerManager().IsTimerActive(UpdateReceivedHandle))
+					if (!Executing)
+					{
+						bReceivedInitDir = true;
+						Executing = true;
+					}
+
+					if (Timer - TimeStarted >= 0.1f)
+					{
+						Timer = 0.f;
+						Executing = false;
+					}
+
+					/*if (!GetWorld()->GetTimerManager().IsTimerActive(UpdateReceivedHandle))
 					{
 						GetWorld()->GetTimerManager().SetTimer(UpdateReceivedHandle, this,
 							&UHumanoidAnimInstance::SetReceivedDirTrue, 0.1f, false);
-					}
+					}*/
 				}
 			}
 			else
@@ -72,7 +85,7 @@ void UHumanoidAnimInstance::NativeUninitializeAnimation()
 {
 	Super::NativeUninitializeAnimation();
 
-	GetWorld()->GetTimerManager().ClearAllTimersForObject(this);
+	//GetWorld()->GetTimerManager().ClearTimer(UpdateReceivedHandle);
 }
 
 void UHumanoidAnimInstance::SetReceivedDirTrue()

@@ -51,4 +51,8 @@ private:
 
 	UFUNCTION()
 		void SetReceivedDirTrue();
+
+	float Timer;
+	float TimeStarted;
+	bool Executing;
 };

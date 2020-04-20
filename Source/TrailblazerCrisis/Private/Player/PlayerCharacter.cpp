@@ -2,14 +2,18 @@
 
 
 #include "Player/PlayerCharacter.h"
+
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
-#include "Actors/Components/ObjectiveComponent.h"
 #include "Kismet/KismetMathLibrary.h"
+
+#include "Actors/Components/ObjectiveComponent.h"
+#include "Animation/HumanoidAnimInstance.h"
 
 // Sets default values
 APlayerCharacter::APlayerCharacter()
@@ -81,10 +85,13 @@ void APlayerCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerIn
 {
 	// Set up gameplay key bindings
 	check(PlayerInputComponent);
-	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
-	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
+	PlayerInputComponent->BindAction("Vault", IE_Pressed, this, &ACharacter::Jump);
+	PlayerInputComponent->BindAction("Vault", IE_Released, this, &ACharacter::StopJumping);
 
-	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &APlayerCharacter::ToggleCrouch);
+	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &APlayerCharacter::ToggleCrouch);
+
+	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &APlayerCharacter::StartSprinting);
+	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &APlayerCharacter::StopSprinting);
 
 	PlayerInputComponent->BindAxis("MoveForward", this, &APlayerCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &APlayerCharacter::MoveRight);
@@ -136,6 +143,24 @@ void APlayerCharacter::MoveRight(float Value)
 		// add movement in that direction
 		AddMovementInput(Dir, Value);
 	}
+}
+
+void APlayerCharacter::StartSprinting()
+{
+	bIsSprinting = true;
+
+	UHumanoidAnimInstance* AnimInst = Cast<UHumanoidAnimInstance>(GetMesh()->GetAnimInstance());
+	if (AnimInst)
+		AnimInst->IsSprinting = true;
+}
+
+void APlayerCharacter::StopSprinting()
+{
+	bIsSprinting = false;
+
+	UHumanoidAnimInstance* AnimInst = Cast<UHumanoidAnimInstance>(GetMesh()->GetAnimInstance());
+	if (AnimInst)
+		AnimInst->IsSprinting = false;
 }
 
 void APlayerCharacter::ToggleCrouch()
@@ -215,10 +240,18 @@ void APlayerCharacter::ToggleEquip()
 	if (!bIsArmed)
 	{
 		bIsArmed = true;
+
+		UHumanoidAnimInstance* AnimInst = Cast<UHumanoidAnimInstance>(GetMesh()->GetAnimInstance());
+		if (AnimInst)
+			AnimInst->IsArmed = true;
 	}
 	else
 	{
 		bIsArmed = false;
+
+		UHumanoidAnimInstance* AnimInst = Cast<UHumanoidAnimInstance>(GetMesh()->GetAnimInstance());
+		if (AnimInst)
+			AnimInst->IsArmed = false;
 	}
 }
 
