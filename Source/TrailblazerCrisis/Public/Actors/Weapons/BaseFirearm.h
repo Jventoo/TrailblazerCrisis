@@ -15,6 +15,10 @@ public:
 	// Sets default values for this actor's properties
 	ABaseFirearm();
 
+	/** Map containing skeleton attach sockets in the format <Skeleton, Socket> */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Firearm)
+		TMap<FName, FName> AttachSockets;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

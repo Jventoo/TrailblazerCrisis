@@ -9,6 +9,7 @@
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Actors/Components/ObjectiveComponent.h"
+#include "Kismet/KismetMathLibrary.h"
 
 // Sets default values
 APlayerCharacter::APlayerCharacter()
@@ -47,12 +48,19 @@ APlayerCharacter::APlayerCharacter()
 	ObjectiveComp = CreateDefaultSubobject<UObjectiveComponent>(TEXT("Objective"));
 
 	bIsCrouching = false;
+	bIsSprinting = false;
 	bIsJumping = false;
 	bIsFiring = false;
 	bIsAiming = false;
-	bIsFirearmEquipped = false;
+	bIsArmed = false;
 
-	PrimaryActorTick.bCanEverTick = false;
+	ForwardAxisValue = 0;
+	RightAxisValue = 0;
+	Direction = 0;
+	
+	CurrentWeapon = nullptr;
+
+	PrimaryActorTick.bCanEverTick = true;
 }
 
 
@@ -60,7 +68,10 @@ void APlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-
+	// Update root motion variables
+	Direction = CalculateDirection(ForwardAxisValue, RightAxisValue);
+	ForwardAxisValue = InputComponent->GetAxisValue("MoveForward");
+	RightAxisValue = InputComponent->GetAxisValue("MoveRight");
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -73,7 +84,7 @@ void APlayerCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerIn
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 
-	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &APlayerCharacter::toggleCrouch);
+	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &APlayerCharacter::ToggleCrouch);
 
 	PlayerInputComponent->BindAxis("MoveForward", this, &APlayerCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &APlayerCharacter::MoveRight);
@@ -83,7 +94,7 @@ void APlayerCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerIn
 	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
 	PlayerInputComponent->BindAxis("LookUpRate", this, &APlayerCharacter::LookUpAtRate);
 
-	PlayerInputComponent->BindAction("Holster", IE_Pressed, this, &APlayerCharacter::toggleEquip);
+	PlayerInputComponent->BindAction("Holster", IE_Pressed, this, &APlayerCharacter::ToggleEquip);
 }
 
 void APlayerCharacter::TurnAtRate(float Rate)
@@ -107,8 +118,8 @@ void APlayerCharacter::MoveForward(float Value)
 		const FRotator YawRotation(0, Rotation.Yaw, 0);
 
 		// get forward vector
-		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-		AddMovementInput(Direction, Value);
+		const FVector Dir = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+		AddMovementInput(Dir, Value);
 	}
 }
 
@@ -121,13 +132,13 @@ void APlayerCharacter::MoveRight(float Value)
 		const FRotator YawRotation(0, Rotation.Yaw, 0);
 
 		// get right vector 
-		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+		const FVector Dir = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 		// add movement in that direction
-		AddMovementInput(Direction, Value);
+		AddMovementInput(Dir, Value);
 	}
 }
 
-void APlayerCharacter::toggleCrouch()
+void APlayerCharacter::ToggleCrouch()
 {
 	if (!bIsCrouched)
 	{
@@ -141,17 +152,77 @@ void APlayerCharacter::toggleCrouch()
 	}
 }
 
+float APlayerCharacter::GetDirection() const
+{
+	return Direction;
+}
+
+float APlayerCharacter::GetRightAxisVal(bool AbsoluteVal) const
+{
+	if (AbsoluteVal)
+		return UKismetMathLibrary::Abs(RightAxisValue);
+	else
+		return RightAxisValue;
+}
+
+float APlayerCharacter::GetForwardAxisValue(bool AbsoluteVal) const
+{
+	if (AbsoluteVal)
+		return UKismetMathLibrary::Abs(ForwardAxisValue);
+	else
+		return ForwardAxisValue;
+}
+
+bool APlayerCharacter::GetIsSprinting() const
+{
+	return bIsSprinting;
+}
+
+float APlayerCharacter::CalculateDirection(float ForwardValue, float RightValue)
+{
+	FVector InputVector(ForwardValue, (RightValue * -1), 0);
+	FRotator InputRot = InputVector.ToOrientationRotator();
+
+	FRotator CameraRot = FollowCamera->GetComponentTransform().GetRotation().Rotator();
+	FRotator CapsuleRot = GetCapsuleComponent()->GetComponentTransform().GetRotation().Rotator();
+
+	FRotator DeltaRot = UKismetMathLibrary::NormalizedDeltaRotator(CameraRot, CapsuleRot);
+	FRotator FinalRot = UKismetMathLibrary::NormalizedDeltaRotator(DeltaRot, InputRot);
+
+	return FinalRot.Yaw;
+}
+
+void APlayerCharacter::SetDirection(float NewDir)
+{
+	Direction = NewDir;
+}
+
+void APlayerCharacter::SetRightAxisVal(float NewVal)
+{
+	RightAxisValue = NewVal;
+}
+
+void APlayerCharacter::SetForwardAxisValue(float NewVal)
+{
+	ForwardAxisValue = NewVal;
+}
+
 //////////////////////////////////////////////////////////////////////////
 // Combat
 
-void APlayerCharacter::toggleEquip()
+void APlayerCharacter::ToggleEquip()
 {
-	if (!bIsFirearmEquipped)
+	if (!bIsArmed)
 	{
-		bIsFirearmEquipped = true;
+		bIsArmed = true;
 	}
 	else
 	{
-		bIsFirearmEquipped = false;
+		bIsArmed = false;
 	}
+}
+
+bool APlayerCharacter::GetIsArmed() const
+{
+	return bIsArmed;
 }

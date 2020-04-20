@@ -27,6 +27,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
 		bool bIsCrouching;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
+		bool bIsSprinting;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Movement)
 		bool bIsJumping;
 
@@ -37,7 +40,10 @@ protected:
 		bool bIsAiming;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat)
-		bool bIsFirearmEquipped;
+		bool bIsArmed;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Util)
+		FName SkeletonName;
 
 private:
 
@@ -49,8 +55,24 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 		class UCameraComponent* FollowCamera;
 
+	/** Communication w quest manager and updates objective progress */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Interactions, meta = (AllowPrivateAccess = "true"))
 		class UObjectiveComponent* ObjectiveComp;
+
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Transient, Category = Inventory, meta = (AllowPrivateAccess = "true"))
+		class ABaseFirearm* CurrentWeapon;
+
+	/** Measured in degrees */
+	UPROPERTY(Transient)
+		float Direction;
+
+	/** Left-right movement clamped between [-1, 1] */
+	UPROPERTY(Transient)
+		float RightAxisValue;
+
+	/** Fwd-bwd movemenet clamped between [-1, 1] */
+	UPROPERTY(Transient)
+		float ForwardAxisValue;
 
 public:
 
@@ -58,22 +80,49 @@ public:
 
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
+
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 
+	/** Set private members and update movement component **/
 	UFUNCTION(BlueprintCallable, Category = Movement)
-		void toggleCrouch();
+		void ToggleCrouch();
 
+	/** Update members and change camera **/
 	UFUNCTION(BlueprintCallable, Category = Combat)
-		void toggleEquip();
+		void ToggleEquip();
+
+	/** Return direction player is looking/moving **/
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Movement)
+		float GetDirection() const;
+
+	/** Return axis value corresponding to right-left movement between [-1, 1] **/
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Movement)
+		float GetRightAxisVal(bool AbsoluteVal = false) const;
+
+	/** Return axis value corresponding to fwd-back movement between [-1, 1] **/
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Movement)
+		float GetForwardAxisValue(bool AbsoluteVal = false) const;
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Combat)
+		bool GetIsArmed() const;
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Movement)
+		bool GetIsSprinting() const;
 
 protected:
 
-	/** Called for forwards/backward input */
+	/**
+	 * Provide fwd-bwd input for non-root motion movement; update input vars for BP root motion.
+	 * @param Value  Ranged between [-1, 1] where 1 is a maximum request forward
+	 */
 	UFUNCTION(BlueprintCallable, Category = Movement)
 		void MoveForward(float Value);
 
-	/** Called for side to side input */
+	/**
+	 * Provide left-right input for non-root motion movement; update input vars for BP root motion.
+	 * @param Value  Ranged between [-1, 1] where 1 is a maximum request right
+	 */
 	UFUNCTION(BlueprintCallable, Category = Movement)
 		void MoveRight(float Value);
 
@@ -90,6 +139,28 @@ protected:
 	 */
 	UFUNCTION(BlueprintCallable, Category = Movement)
 		void LookUpAtRate(float Rate);
+
+	/** 
+	* Calculate movement/look direction from Fwd and Right axis values; called every tick.
+	* @return  Float between [-180, 180] degrees
+	*/
+	UFUNCTION(BlueprintCallable, Category = Movement)
+		float CalculateDirection(float ForwardValue, float RightValue);
+
+	/**
+	* Set Direction to NewDir
+	* @param NewDir  Float between [-180, 180] degrees
+	*/
+	UFUNCTION(BlueprintCallable, Category = Movement)
+		void SetDirection(float NewDir);
+
+	/** See ForwardAxisValue member declaration for use */
+	UFUNCTION(BlueprintCallable, Category = Movement)
+		void SetRightAxisVal(float NewVal);
+
+	/** See ForwardAxisValue member declaration for use */
+	UFUNCTION(BlueprintCallable, Category = Movement)
+		void SetForwardAxisValue(float NewVal);
 
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
