@@ -29,8 +29,6 @@ void UHumanoidAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 {
 	Super::NativeUpdateAnimation(DeltaSeconds);
 
-	Timer += DeltaSeconds;
-
 	if (!Owner)
 		return;
 
@@ -51,26 +49,12 @@ void UHumanoidAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 				if (!bReceivedInitDir)
 				{
 					Direction = Character->GetDirection();
-					
-					TimeStarted = Timer;
 
-					if (!Executing)
-					{
-						bReceivedInitDir = true;
-						Executing = true;
-					}
-
-					if (Timer - TimeStarted >= 0.1f)
-					{
-						Timer = 0.f;
-						Executing = false;
-					}
-
-					/*if (!GetWorld()->GetTimerManager().IsTimerActive(UpdateReceivedHandle))
+					if (!GetWorld()->GetTimerManager().IsTimerActive(UpdateReceivedHandle))
 					{
 						GetWorld()->GetTimerManager().SetTimer(UpdateReceivedHandle, this,
 							&UHumanoidAnimInstance::SetReceivedDirTrue, 0.1f, false);
-					}*/
+					}
 				}
 			}
 			else
@@ -85,7 +69,7 @@ void UHumanoidAnimInstance::NativeUninitializeAnimation()
 {
 	Super::NativeUninitializeAnimation();
 
-	//GetWorld()->GetTimerManager().ClearTimer(UpdateReceivedHandle);
+	GetWorld()->GetTimerManager().ClearTimer(UpdateReceivedHandle);
 }
 
 void UHumanoidAnimInstance::SetReceivedDirTrue()
