@@ -84,6 +84,9 @@ public:
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 
+	/** Returns ObjectiveComp subobject **/
+	FORCEINLINE class UObjectiveComponent* GetObjectiveComp() const { return ObjectiveComp; }
+
 	/** Set private members and update movement component **/
 	UFUNCTION(BlueprintCallable, Category = Movement)
 		void ToggleCrouch();
