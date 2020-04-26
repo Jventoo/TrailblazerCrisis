@@ -8,7 +8,6 @@
 // Sets default values
 AQuestManager::AQuestManager()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
 
 }
@@ -17,62 +16,76 @@ AQuestManager::AQuestManager()
 void AQuestManager::BeginPlay()
 {
 	Super::BeginPlay();
-	
 }
 
 // Called every frame
 void AQuestManager::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 
 bool AQuestManager::BeginQuest(int32 QuestID, bool MakeActive)
 {
-	TSubclassOf<AMasterQuest>* Elem = AllQuests.Find(QuestID);
-
-	if (Elem)
+	// If valid ID and not previously undertaken, spawn this quest
+	if (QuestID > 0 && !CompletedQuests.Contains(QuestID) && 
+		!FailedQuests.Contains(QuestID) && !ActiveQuests.Contains(QuestID))
 	{
-		auto Spawn = GetWorld()->SpawnActor<AMasterQuest>(*Elem);
-		ActiveQuests.Add(QuestID, Spawn);
+		TSubclassOf<AMasterQuest>* Elem = AllQuests.Find(QuestID);
 
-		AMasterQuest* Quest = Cast<AMasterQuest>(Spawn);
-
-		if (Quest)
-			Quest->OnBeginDelegate.Broadcast();
-
-		if (MakeActive)
+		if (Elem)
 		{
-			APlayerControllerBase* PC = Cast<APlayerControllerBase>(
-				UGameplayStatics::GetPlayerController(GetWorld(), 0));
+			auto Spawn = GetWorld()->SpawnActor<AMasterQuest>(*Elem);
+			ActiveQuests.Add(QuestID, Spawn);
 
-			if (PC)
-				PC->SetCurrentQuest_DEBUG(QuestID);
+			AMasterQuest* Quest = Cast<AMasterQuest>(Spawn);
+
+			if (Quest)
+				Quest->OnBeginDelegate.Broadcast();
+
+			// Make it our current quest if requested to
+			if (MakeActive)
+			{
+				APlayerControllerBase* PC = Cast<APlayerControllerBase>(
+					UGameplayStatics::GetPlayerController(GetWorld(), 0));
+
+				if (PC)
+					PC->SetCurrentQuest(QuestID);
+			}
+
+			return true;
 		}
-
-		return true;
 	}
-	else
-		return false;
+	
+	return false;
 }
 
 bool AQuestManager::AdvanceQuest(int32 QuestID, bool CurrObjCompleted)
 {
+	// Advance quest if completed. Otherwise, fail it
 	if (CurrObjCompleted)
 	{
+		// Check if we have the supplied quest
 		auto Quest = ActiveQuests.Find(QuestID);
 
 		if (Quest)
 		{
+			// Get how many objectives this quest has and what objective we're curr on
 			auto Amt = (*Quest)->Objectives.Num();
 			auto Curr = (*Quest)->QuestInfo.CurrentObjective;
 
-			if (--Amt == Curr)
+			// Finish optional objective in case we haven't already
+			FinishOptionalObjective(QuestID, false);
+
+			// If at last objective, complete quest. Else, move to next obj and notify
+			if ((Amt - 1) == Curr)
 				return CompleteQuest(QuestID);
 			else
 			{
+				(*Quest)->Objectives[Curr].Completed = true;
+				(*Quest)->Objectives[Curr].IsFinished = true;
 				(*Quest)->QuestInfo.IncrementCurrentObjective();
 				(*Quest)->OnObjectiveAdvanceDelegate.Broadcast(--Curr, Curr);
+
 				return true;
 			}
 		}
@@ -83,29 +96,44 @@ bool AQuestManager::AdvanceQuest(int32 QuestID, bool CurrObjCompleted)
 		return FailQuest(QuestID);
 }
 
-bool AQuestManager::FinishObjective(int32 QuestID, bool ObjCompleted)
+bool AQuestManager::FinishOptionalObjective(int32 QuestID, bool ObjCompleted)
 {
 	auto Quest = ActiveQuests.Find(QuestID);
 
 	if (Quest)
 	{
-		const auto& Objectives = (*Quest)->Objectives;
-		int32 OptionalObjIndex = Objectives[
+		// Get current optional objective index
+		int32 OptionalObjIndex = (*Quest)->Objectives[
 			(*Quest)->QuestInfo.CurrentObjective].OptionalObjIndex;
 
+		// If current optional obj isn't null, check if we completed it
 		if (OptionalObjIndex != UTCStatics::DEFAULT_OBJECTIVE_ID)
 		{
-			const auto& OptionalObj = (*Quest)->OptionalObjectives[OptionalObjIndex];
+			auto& OptionalObj = (*Quest)->OptionalObjectives[OptionalObjIndex];
 
-			if (OptionalObj.Completed &&
-				OptionalObj.NewQuestOnComplete != UTCStatics::DEFAULT_OBJECTIVE_ID)
-				BeginQuest(QuestID, false);
+			// Check if we previously completed this objective
+			if (!OptionalObj.IsFinished)
+			{
+				if (ObjCompleted)
+				{
+					// Complete the objective and initiate new quest if there's one to give
+					if (OptionalObj.NewQuestOnComplete != UTCStatics::DEFAULT_OBJECTIVE_ID)
+						BeginQuest(QuestID, false);
+
+					OptionalObj.Completed = true;
+				}
+				else
+				{
+					OptionalObj.Completed = false;
+				}
+
+				OptionalObj.IsFinished = true;
+			}
+
+			return true;
 		}
-
-		return AdvanceQuest(QuestID, ObjCompleted);
 	}
-	else
-		return false;
+	return false;
 }
 
 bool AQuestManager::CompleteQuest(int32 QuestID)
@@ -117,7 +145,9 @@ bool AQuestManager::CompleteQuest(int32 QuestID)
 		(*Quest)->OnCompletedDelegate.Broadcast();
 
 		int32 NewQuest = (*Quest)->QuestInfo.FollowUpQuest;
-		if (ActiveQuests.Remove(NewQuest) > 0)
+
+		// Remove old quest, move it to completed. Begin new one (if it exists)
+		if (ActiveQuests.Remove(QuestID) > 0)
 		{
 			CompletedQuests.Add(QuestID);
 			if (NewQuest != UTCStatics::DEFAULT_QUEST_ID)
@@ -141,7 +171,9 @@ bool AQuestManager::FailQuest(int32 QuestID)
 		(*Quest)->OnFailDelegate.Broadcast();
 
 		int32 NewQuest = (*Quest)->QuestInfo.FailFollowUpQuest;
-		if (ActiveQuests.Remove(NewQuest) > 0)
+
+		// Remove old quest, move it to failed. Begin new one (if it exists)
+		if (ActiveQuests.Remove(QuestID) > 0)
 		{
 			FailedQuests.Add(QuestID);
 			if (NewQuest != UTCStatics::DEFAULT_QUEST_ID)

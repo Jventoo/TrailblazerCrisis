@@ -30,44 +30,45 @@ struct FObjectiveData
 
 		Type = EObjectiveTypes::Interact;
 
-		CurrentProgress = 0;
+		//CurrentProgress = 0;
 
 		ProgressGoal = 0;
 
 		OptionalObjIndex = UTCStatics::DEFAULT_OBJECTIVE_ID;
 
-		IsOptional = false;
+		IsFinished = false;
 
 		Completed = false;
 
 		NewQuestOnComplete = UTCStatics::DEFAULT_QUEST_ID;
 	}
 
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Quest Structs")
 		FText Title;
 
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Quest Structs")
 		FText Description;
 
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Quest Structs")
 		EObjectiveTypes Type;
 
-	UPROPERTY(BlueprintReadWrite)
-		int32 CurrentProgress;
+	// Changed to be handled locally in player component
+	/*UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Quest Structs")
+		int32 CurrentProgress;*/
 
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Quest Structs")
 		int32 ProgressGoal;
 
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Quest Structs")
 		int32 OptionalObjIndex;
 
-	UPROPERTY(BlueprintReadWrite)
-		bool IsOptional;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Quest Structs")
+		bool IsFinished;
 
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Quest Structs")
 		bool Completed;
 
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Quest Structs")
 		int32 NewQuestOnComplete;
 
 };
@@ -90,30 +91,30 @@ struct FQuestStruct
 
 		FailFollowUpQuest = UTCStatics::DEFAULT_QUEST_ID;
 
-		CurrentObjective = UTCStatics::DEFAULT_OBJECTIVE_ID;
+		CurrentObjective = 0;
 	}
 
 	void IncrementCurrentObjective()
 	{
-		CurrentObjective += 1;
+		++CurrentObjective;
 	}
 
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Quest Structs")
 		FText QuestName;
 
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Quest Structs")
 		FText QuestDesc;
 
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Quest Structs")
 		int32 QuestID;
 
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Quest Structs")
 		int32 FollowUpQuest;
 
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Quest Structs")
 		int32 FailFollowUpQuest;
 
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Quest Structs")
 		int32 CurrentObjective;
 };
 
@@ -132,13 +133,13 @@ public:
 	// Sets default values for this actor's properties
 	AMasterQuest();
 
-	UPROPERTY(BlueprintReadWrite, Category = Quests)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Quests)
 		FQuestStruct QuestInfo;
 
-	UPROPERTY(BlueprintReadWrite, Category = Quests)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Quests)
 		TArray<FObjectiveData> Objectives;
 
-	UPROPERTY(BlueprintReadWrite, Category = Quests)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Quests)
 		TArray<FObjectiveData> OptionalObjectives;
 
 	UPROPERTY(BlueprintAssignable, Category = Quests)

@@ -25,11 +25,14 @@ public:
 		bool IsQuestMenuOpen() const;
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Quests)
+		AQuestManager* GetQuestManager() const;
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Quests)
 		int32 GetCurrentQuest() const;
 	
-	// Debug function for UI. Not to be used otherwise.
+	// Not to be used directly. Should use wrapper in ObjectiveComponent
 	UFUNCTION(BlueprintCallable, Category = Quests)
-		void SetCurrentQuest_DEBUG(int32 NewQuest);
+		bool SetCurrentQuest(int32 NewQuest);
 
 	UFUNCTION(BlueprintCallable, Category = UI)
 		bool TransitionToUI(TSubclassOf<UUserWidget> UIClass, 

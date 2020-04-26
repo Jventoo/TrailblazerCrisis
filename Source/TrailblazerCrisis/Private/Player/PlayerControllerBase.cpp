@@ -53,14 +53,26 @@ bool APlayerControllerBase::IsQuestMenuOpen() const
 	return bQuestOpen;
 }
 
+AQuestManager* APlayerControllerBase::GetQuestManager() const
+{
+	return QuestManagerRef;
+}
+
 int32 APlayerControllerBase::GetCurrentQuest() const
 {
 	return CurrentQuestID;
 }
 
-void APlayerControllerBase::SetCurrentQuest_DEBUG(int32 NewCurrentQuestID)
+bool APlayerControllerBase::SetCurrentQuest(int32 NewCurrentQuestID)
 {
-	CurrentQuestID = NewCurrentQuestID;
+	// Only update current quest if we actually have the quest
+	if (QuestManagerRef && QuestManagerRef->ActiveQuests.Contains(NewCurrentQuestID))
+	{
+		CurrentQuestID = NewCurrentQuestID;
+		return true;
+	}
+	else
+		return false;
 }
 
 bool APlayerControllerBase::TransitionToUI(

@@ -16,16 +16,16 @@ public:
 	// Sets default values for this actor's properties
 	AQuestManager();
 
-	UPROPERTY(BlueprintReadWrite, Category = Quests)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Quests)
 		TArray<int32> CompletedQuests;
 
-	UPROPERTY(BlueprintReadWrite, Category = Quests)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Quests)
 		TArray<int32> FailedQuests;
 
-	UPROPERTY(BlueprintReadWrite, Category = Quests)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Quests)
 		TMap<int32, AMasterQuest*> ActiveQuests;
 
-	UPROPERTY(BlueprintReadWrite, Category = Quests)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Quests)
 		TMap<int32, TSubclassOf<AMasterQuest>> AllQuests;
 
 protected:
@@ -43,7 +43,7 @@ public:
 		bool AdvanceQuest(int32 QuestID, bool CurrObjCompleted);
 
 	UFUNCTION(BlueprintCallable, Category = Quests)
-		bool FinishObjective(int32 QuestID, bool ObjCompleted);
+		bool FinishOptionalObjective(int32 QuestID, bool ObjCompleted);
 
 	UFUNCTION(BlueprintCallable, Category = Quests)
 		bool CompleteQuest(int32 QuestID);
