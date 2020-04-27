@@ -55,10 +55,6 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 		class UCameraComponent* FollowCamera;
 
-	/** Communication w quest manager and updates objective progress */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Interactions, meta = (AllowPrivateAccess = "true"))
-		class UObjectiveComponent* ObjectiveComp;
-
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Transient, Category = Inventory, meta = (AllowPrivateAccess = "true"))
 		class ABaseFirearm* CurrentWeapon;
 
@@ -83,9 +79,6 @@ public:
 
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
-
-	/** Returns ObjectiveComp subobject **/
-	FORCEINLINE class UObjectiveComponent* GetObjectiveComp() const { return ObjectiveComp; }
 
 	/** Set private members and update movement component **/
 	UFUNCTION(BlueprintCallable, Category = Movement)

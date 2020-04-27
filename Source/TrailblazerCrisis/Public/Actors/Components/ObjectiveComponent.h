@@ -19,9 +19,9 @@ struct FObjectiveProgress
 		ProgressGoal = 0;
 	}
 
-	void IncrementProgress()
+	void IncrementProgress(int32 amount)
 	{
-		++CurrentProgress;
+		CurrentProgress += amount;
 	}
 
 	int32 ObjectiveID;
@@ -47,29 +47,52 @@ private:
 
 	// Tracks progress on all current optional objectives. Completed objectives are removed from map
 	UPROPERTY()
-		TMap<int32, FObjectiveProgress> OptObjProgress;
+	TMap<int32, FObjectiveProgress> OptObjProgress;
 
 public:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
+	UFUNCTION(BlueprintCallable, Category = "Quests")
 	void ChangeCurrentQuest(int32 QuestID);
 
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Quests")
 	int32 GetCurrentQuest() const;
 
+	UFUNCTION(BlueprintCallable, Category = "Quests")
 	bool BeginQuest(int32 QuestID, bool MakeActive);
 
 	// Move to next objective and potentially finish the quest
+	UFUNCTION(BlueprintCallable, Category = "Quests")
 	bool ProgressQuest(int32 QuestID, bool CurrCompleted);
 
 	// Make progress on the current objective until it hits the progress goal
-	bool ProgressObjective(int32 QuestID);
+	UFUNCTION(BlueprintCallable, Category = "Quests | Objectives")
+	bool ProgressObjective(int32 QuestID, int32 ProgressIncrease);
 
-	bool ProgressOptionalObjective(int32 QuestID);
+	/**
+	 * Add progress to the specified optional objective
+	 * and potentially finish it if we hit our progress goal.
+	 *
+	 * @param 
+	 * @return 
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Quests | Objectives")
+	bool ProgressOptionalObjective(int32 QuestID, int32 ProgressIncrease);
 
+	UFUNCTION(BlueprintCallable, Category = "Quests")
 	bool FinishQuest(int32 QuestID, bool Completed);
 
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
+
+private:
+	bool UpdateObjectiveProgress(int32 QuestID);
+
+	bool UpdateOptionalObjectiveProgress(int32 QuestID);
+
+	int32 tempobj;
+
+	int32 tempopt;
 };

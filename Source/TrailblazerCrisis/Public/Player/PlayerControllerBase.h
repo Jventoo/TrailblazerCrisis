@@ -44,12 +44,13 @@ public:
 	UFUNCTION(BlueprintCallable, Category = UI)
 		void ToggleQuestMenu();
 
+	/** Returns ObjectiveComp subobject **/
+	FORCEINLINE class UObjectiveComponent* GetObjectiveComp() const { return ObjectiveComp; }
+
 protected:
 	virtual void BeginPlay() override;
 
 	virtual void SetupInputComponent() override;
-
-public:
 
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Quests)
@@ -78,4 +79,8 @@ protected:
 
 	bool bQuestOpen;
 
+private:
+	/** Communication w quest manager and updates objective progress */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Interactions, meta = (AllowPrivateAccess = "true"))
+		class UObjectiveComponent* ObjectiveComp;
 };

@@ -39,6 +39,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = Quests)
 		bool BeginQuest(int32 QuestID, bool MakeActive);
 
+	// Finish our current objective and move to the next
 	UFUNCTION(BlueprintCallable, Category = Quests)
 		bool AdvanceQuest(int32 QuestID, bool CurrObjCompleted);
 

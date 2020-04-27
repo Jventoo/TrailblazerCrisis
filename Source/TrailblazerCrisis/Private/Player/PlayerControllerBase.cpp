@@ -5,6 +5,8 @@
 #include "Blueprint/UserWidget.h"
 #include "Kismet/GameplayStatics.h"
 
+#include "Actors/Components/ObjectiveComponent.h"
+
 APlayerControllerBase::APlayerControllerBase()
 {
 	HUDRef = nullptr;
@@ -15,6 +17,9 @@ APlayerControllerBase::APlayerControllerBase()
 
 	bHUDOpen = false;
 	bQuestOpen = false;
+
+	// Create objective component to communicate with quest manager
+	ObjectiveComp = CreateDefaultSubobject<UObjectiveComponent>(TEXT("Objective"));
 }
 
 void APlayerControllerBase::BeginPlay()

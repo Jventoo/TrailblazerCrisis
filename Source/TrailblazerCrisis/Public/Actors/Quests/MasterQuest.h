@@ -30,8 +30,6 @@ struct FObjectiveData
 
 		Type = EObjectiveTypes::Interact;
 
-		//CurrentProgress = 0;
-
 		ProgressGoal = 0;
 
 		OptionalObjIndex = UTCStatics::DEFAULT_OBJECTIVE_ID;
@@ -51,10 +49,6 @@ struct FObjectiveData
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Quest Structs")
 		EObjectiveTypes Type;
-
-	// Changed to be handled locally in player component
-	/*UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Quest Structs")
-		int32 CurrentProgress;*/
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Quest Structs")
 		int32 ProgressGoal;

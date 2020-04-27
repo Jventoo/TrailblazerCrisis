@@ -6,11 +6,15 @@
 
 #include "Game/QuestManager.h"
 #include "Player/PlayerControllerBase.h"
+#include "TCStatics.h"
 
 // Sets default values for this component's properties
 UObjectiveComponent::UObjectiveComponent()
 {
-	PrimaryComponentTick.bCanEverTick = false;
+	PrimaryComponentTick.bCanEverTick = true;
+
+	tempobj = -1;
+	tempopt = -1;
 }
 
 
@@ -25,6 +29,9 @@ void UObjectiveComponent::BeginPlay()
 void UObjectiveComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	tempobj = ObjProgress.Num();
+	tempopt = OptObjProgress.Num();
 }
 
 void UObjectiveComponent::ChangeCurrentQuest(int32 QuestID)
@@ -34,17 +41,9 @@ void UObjectiveComponent::ChangeCurrentQuest(int32 QuestID)
 	if (PC)
 	{
 		// If we successfully update quest and aren't currently tracking it...
-		if (PC->SetCurrentQuest(QuestID) && !ObjProgress.Contains(QuestID))
+		if (PC && PC->SetCurrentQuest(QuestID))
 		{
-			const auto& Quest = PC->GetQuestManager()->ActiveQuests[QuestID];
-
-			// Get objective stats
-			FObjectiveProgress ObjProg;
-			ObjProg.ObjectiveID = Quest->QuestInfo.CurrentObjective;
-			ObjProg.ProgressGoal = Quest->Objectives[ObjProg.ObjectiveID].ProgressGoal;
-
-			// Track it in our map
-			ObjProgress.Emplace(QuestID, ObjProg);
+			UpdateObjectiveProgress(QuestID);
 		}
 	}
 }
@@ -65,46 +64,69 @@ bool UObjectiveComponent::BeginQuest(int32 QuestID, bool MakeActive)
 
 	if (PC)
 	{
-		return (PC->GetQuestManager()->BeginQuest(QuestID, MakeActive));
+		bool success = (PC->GetQuestManager()->BeginQuest(QuestID, MakeActive));
+
+		UpdateObjectiveProgress(QuestID);
+		UpdateOptionalObjectiveProgress(QuestID);
+
+		return success;
 	}
 	else
 		return false;
 }
 
-// WIP
 bool UObjectiveComponent::ProgressQuest(int32 QuestID, bool CurrCompleted)
 {
 	APlayerControllerBase* PC = Cast<APlayerControllerBase>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
 
-	if (PC)
+	if (PC && ObjProgress.Contains(QuestID))
 	{
-		return (PC->GetQuestManager()->AdvanceQuest(QuestID, CurrCompleted));
+		bool success = PC->GetQuestManager()->AdvanceQuest(QuestID, CurrCompleted);
+
+		return (UpdateObjectiveProgress(QuestID) 
+			&& UpdateOptionalObjectiveProgress(QuestID) && success);
 	}
 	else
 		return false;
 }
 
-// WIP
-bool UObjectiveComponent::ProgressObjective(int32 QuestID)
+bool UObjectiveComponent::ProgressObjective(int32 QuestID, int32 ProgressIncrease)
 {
 	APlayerControllerBase* PC = Cast<APlayerControllerBase>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
 
-	if (PC)
+	// If we are currently tracking this quest's progress...
+	if (PC && ObjProgress.Contains(QuestID))
 	{
-		return (PC->GetQuestManager()->AdvanceQuest(QuestID, true));
+		// Get the objective struct and inc our current progress
+		auto& Struct = ObjProgress[QuestID];
+		Struct.IncrementProgress(ProgressIncrease);
+
+		// If we are at or over our goal, progress the quest. Else, move on
+		if (Struct.CurrentProgress >= Struct.ProgressGoal)
+			return ProgressQuest(QuestID, true);
+		else
+			return true;
 	}
 	else
 		return false;
 }
 
-// WIP
-bool UObjectiveComponent::ProgressOptionalObjective(int32 QuestID)
+bool UObjectiveComponent::ProgressOptionalObjective(int32 QuestID, int32 ProgressIncrease)
 {
 	APlayerControllerBase* PC = Cast<APlayerControllerBase>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
 
-	if (PC)
+	// If we are currently tracking this quest's progress...
+	if (PC && OptObjProgress.Contains(QuestID))
 	{
-		return (PC->GetQuestManager()->FinishOptionalObjective(QuestID, true));
+		// Get the objective struct and inc our current progress
+		auto& Struct = OptObjProgress[QuestID];
+		Struct.IncrementProgress(ProgressIncrease);
+
+		// If we are at or over our goal, make the opt obj as completed. Else, move on
+		if (Struct.CurrentProgress >= Struct.ProgressGoal)
+			return PC->GetQuestManager()->FinishOptionalObjective(QuestID, true);
+		else
+			return true;
 	}
 	else
 		return false;
@@ -116,10 +138,78 @@ bool UObjectiveComponent::FinishQuest(int32 QuestID, bool Completed)
 
 	if (PC)
 	{
+		if (ObjProgress.Contains(QuestID))
+			ObjProgress.Remove(QuestID);
+
+		if (OptObjProgress.Contains(QuestID))
+			OptObjProgress.Remove(QuestID);
+
 		if (Completed)
 			return PC->GetQuestManager()->CompleteQuest(QuestID);
 		else
 			return PC->GetQuestManager()->FailQuest(QuestID);
+	}
+	else
+		return false;
+}
+
+bool UObjectiveComponent::UpdateObjectiveProgress(int32 QuestID)
+{
+	APlayerControllerBase* PC = Cast<APlayerControllerBase>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+
+	if (PC && PC->GetQuestManager()->ActiveQuests.Contains(QuestID)) // Start tracking or update tracking of active quest
+	{
+		const auto& Quest = PC->GetQuestManager()->ActiveQuests[QuestID];
+
+		// Get objective stats
+		FObjectiveProgress ObjProg;
+		ObjProg.ObjectiveID = Quest->QuestInfo.CurrentObjective;
+		ObjProg.ProgressGoal = Quest->Objectives[ObjProg.ObjectiveID].ProgressGoal;
+
+		// Track it in our map
+		ObjProgress.Emplace(QuestID, ObjProg);
+
+		return true;
+	}
+	else if (ObjProgress.Contains(QuestID)) // Stop tracking progress for completed/failed quests
+	{
+		ObjProgress.Remove(QuestID);
+
+		return true;
+	}
+	else
+		return false;
+}
+
+bool UObjectiveComponent::UpdateOptionalObjectiveProgress(int32 QuestID)
+{
+	APlayerControllerBase* PC = Cast<APlayerControllerBase>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+
+	if (PC && PC->GetQuestManager()->ActiveQuests.Contains(QuestID)) // Start tracking or update tracking of active quest
+	{
+		const auto& Quest = PC->GetQuestManager()->ActiveQuests[QuestID];
+
+		// Get objective stats
+		FObjectiveProgress ObjProg;
+		
+		auto CurrObj = Quest->QuestInfo.CurrentObjective;
+
+		ObjProg.ObjectiveID = Quest->Objectives[CurrObj].OptionalObjIndex;
+
+		if (ObjProg.ObjectiveID != UTCStatics::DEFAULT_OBJECTIVE_ID)
+		{
+			ObjProg.ProgressGoal = Quest->OptionalObjectives[ObjProg.ObjectiveID].ProgressGoal;
+
+			// Track it in our map
+			OptObjProgress.Emplace(QuestID, ObjProg);
+		}
+		return true;
+	}
+	else if (OptObjProgress.Contains(QuestID)) // Stop tracking progress for completed/failed quests
+	{
+		OptObjProgress.Remove(QuestID);
+
+		return true;
 	}
 	else
 		return false;
