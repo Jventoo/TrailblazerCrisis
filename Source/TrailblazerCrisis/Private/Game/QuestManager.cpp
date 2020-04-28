@@ -26,6 +26,9 @@ void AQuestManager::Tick(float DeltaTime)
 
 bool AQuestManager::BeginQuest(int32 QuestID, bool MakeActive)
 {
+	APlayerControllerBase* PC = Cast<APlayerControllerBase>(
+		UGameplayStatics::GetPlayerController(GetWorld(), 0));
+
 	// If valid ID and not previously undertaken, spawn this quest
 	if (QuestID > 0 && !CompletedQuests.Contains(QuestID) && 
 		!FailedQuests.Contains(QuestID) && !ActiveQuests.Contains(QuestID))
@@ -45,15 +48,16 @@ bool AQuestManager::BeginQuest(int32 QuestID, bool MakeActive)
 			// Make it our current quest if requested to
 			if (MakeActive)
 			{
-				APlayerControllerBase* PC = Cast<APlayerControllerBase>(
-					UGameplayStatics::GetPlayerController(GetWorld(), 0));
-
 				if (PC)
 					PC->SetCurrentQuest(QuestID);
 			}
 
 			return true;
 		}
+	}
+	else if (MakeActive && ActiveQuests.Contains(QuestID))
+	{
+		PC->SetCurrentQuest(QuestID);
 	}
 	
 	return false;
@@ -85,6 +89,8 @@ bool AQuestManager::AdvanceQuest(int32 QuestID, bool CurrObjCompleted)
 				(*Quest)->Objectives[Curr].IsFinished = true;
 				(*Quest)->QuestInfo.IncrementCurrentObjective();
 				(*Quest)->OnObjectiveAdvanceDelegate.Broadcast(--Curr, Curr);
+
+				Cast<APlayerControllerBase>(UGameplayStatics::GetPlayerController(GetWorld(), 0))->UpdateQuestHUD(QuestID);
 
 				return true;
 			}
@@ -151,9 +157,17 @@ bool AQuestManager::CompleteQuest(int32 QuestID)
 		{
 			CompletedQuests.Add(QuestID);
 			if (NewQuest != UTCStatics::DEFAULT_QUEST_ID)
-				return BeginQuest(NewQuest, true);
-			else
-				return true;
+			{
+				if (BeginQuest(NewQuest, true))
+					return true;
+			}
+				
+			APlayerControllerBase* PC = Cast<APlayerControllerBase>(
+					UGameplayStatics::GetPlayerController(GetWorld(), 0));
+
+			PC->SetCurrentQuest(UTCStatics::DEFAULT_QUEST_ID, true);
+
+			return true;
 		}
 		else
 			return false;
@@ -177,9 +191,17 @@ bool AQuestManager::FailQuest(int32 QuestID)
 		{
 			FailedQuests.Add(QuestID);
 			if (NewQuest != UTCStatics::DEFAULT_QUEST_ID)
-				return BeginQuest(NewQuest, true);
-			else
-				return true;
+			{
+				if (BeginQuest(NewQuest, true))
+					return true;
+			}
+
+			APlayerControllerBase* PC = Cast<APlayerControllerBase>(
+				UGameplayStatics::GetPlayerController(GetWorld(), 0));
+
+			PC->SetCurrentQuest(UTCStatics::DEFAULT_QUEST_ID, true);
+
+			return true;
 		}
 		else
 			return false;

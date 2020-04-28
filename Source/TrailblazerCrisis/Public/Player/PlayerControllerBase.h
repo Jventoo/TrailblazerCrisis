@@ -32,7 +32,7 @@ public:
 	
 	// Not to be used directly. Should use wrapper in ObjectiveComponent
 	UFUNCTION(BlueprintCallable, Category = Quests)
-		bool SetCurrentQuest(int32 NewQuest);
+		bool SetCurrentQuest(int32 NewQuest, bool Bypass = false);
 
 	UFUNCTION(BlueprintCallable, Category = UI)
 		bool TransitionToUI(TSubclassOf<UUserWidget> UIClass, 
@@ -44,8 +44,14 @@ public:
 	UFUNCTION(BlueprintCallable, Category = UI)
 		void ToggleQuestMenu();
 
+	UFUNCTION(BlueprintCallable, Category = UI)
+		void UpdateQuestHUD(int32 QuestID);
+
 	/** Returns ObjectiveComp subobject **/
 	FORCEINLINE class UObjectiveComponent* GetObjectiveComp() const { return ObjectiveComp; }
+
+	// Potentially change to HUDWidget class to avoid unnecessary casting
+	FORCEINLINE class UUserWidget* GetHUDRef() const { return HUDRef; }
 
 protected:
 	virtual void BeginPlay() override;

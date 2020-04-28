@@ -6,14 +6,16 @@
 #include "Kismet/GameplayStatics.h"
 
 #include "Actors/Components/ObjectiveComponent.h"
+#include "TCStatics.h"
+#include "UI/HUDWidget.h"
 
 APlayerControllerBase::APlayerControllerBase()
 {
 	HUDRef = nullptr;
 	QuestUIRef = nullptr;
 	
-	OldQuestID = 0;
-	CurrentQuestID = 0;
+	OldQuestID = UTCStatics::DEFAULT_QUEST_ID;
+	CurrentQuestID = UTCStatics::DEFAULT_QUEST_ID;
 
 	bHUDOpen = false;
 	bQuestOpen = false;
@@ -68,16 +70,18 @@ int32 APlayerControllerBase::GetCurrentQuest() const
 	return CurrentQuestID;
 }
 
-bool APlayerControllerBase::SetCurrentQuest(int32 NewCurrentQuestID)
+bool APlayerControllerBase::SetCurrentQuest(int32 NewCurrentQuestID, bool Bypass)
 {
 	// Only update current quest if we actually have the quest
-	if (QuestManagerRef && QuestManagerRef->ActiveQuests.Contains(NewCurrentQuestID))
+	if (Bypass || (QuestManagerRef && QuestManagerRef->ActiveQuests.Contains(NewCurrentQuestID)))
 	{
 		CurrentQuestID = NewCurrentQuestID;
+		UpdateQuestHUD(CurrentQuestID);
+
 		return true;
 	}
-	else
-		return false;
+	
+	return false;
 }
 
 bool APlayerControllerBase::TransitionToUI(
@@ -169,5 +173,22 @@ void APlayerControllerBase::ToggleQuestMenu()
 			bQuestOpen = true;
 			OldQuestID = CurrentQuestID;
 		}
+	}
+}
+
+void APlayerControllerBase::UpdateQuestHUD(int32 QuestID)
+{
+	UHUDWidget* HUD = Cast<UHUDWidget>(HUDRef);
+	if (HUD)
+	{
+		if (QuestID != UTCStatics::DEFAULT_QUEST_ID)
+		{
+			const auto& Quest = QuestManagerRef->ActiveQuests[CurrentQuestID];
+			const auto& Text = Quest->Objectives[Quest->QuestInfo.CurrentObjective].Description;
+
+			HUD->UpdateQuestText(Text);
+		}
+		else
+			HUD->UpdateQuestText(FText::FromString(""));
 	}
 }

@@ -43,32 +43,32 @@ public:
 private:
 	// Tracks progress on all current objectives. Completed objectives are removed from map
 	UPROPERTY()
-	TMap<int32, FObjectiveProgress> ObjProgress;
+		TMap<int32, FObjectiveProgress> ObjProgress;
 
 	// Tracks progress on all current optional objectives. Completed objectives are removed from map
 	UPROPERTY()
-	TMap<int32, FObjectiveProgress> OptObjProgress;
+		TMap<int32, FObjectiveProgress> OptObjProgress;
 
 public:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	UFUNCTION(BlueprintCallable, Category = "Quests")
-	void ChangeCurrentQuest(int32 QuestID);
+		void ChangeCurrentQuest(int32 QuestID);
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Quests")
-	int32 GetCurrentQuest() const;
+		int32 GetCurrentQuest() const;
 
 	UFUNCTION(BlueprintCallable, Category = "Quests")
-	bool BeginQuest(int32 QuestID, bool MakeActive);
+		bool BeginQuest(int32 QuestID, bool MakeActive);
 
 	// Move to next objective and potentially finish the quest
 	UFUNCTION(BlueprintCallable, Category = "Quests")
-	bool ProgressQuest(int32 QuestID, bool CurrCompleted);
+		bool ProgressQuest(int32 QuestID, bool CurrCompleted);
 
 	// Make progress on the current objective until it hits the progress goal
 	UFUNCTION(BlueprintCallable, Category = "Quests | Objectives")
-	bool ProgressObjective(int32 QuestID, int32 ProgressIncrease);
+		bool ProgressObjective(int32 QuestID, int32 ProgressIncrease);
 
 	/**
 	 * Add progress to the specified optional objective
@@ -78,10 +78,10 @@ public:
 	 * @return 
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Quests | Objectives")
-	bool ProgressOptionalObjective(int32 QuestID, int32 ProgressIncrease);
+		bool ProgressOptionalObjective(int32 QuestID, int32 ProgressIncrease);
 
 	UFUNCTION(BlueprintCallable, Category = "Quests")
-	bool FinishQuest(int32 QuestID, bool Completed);
+		bool FinishQuest(int32 QuestID, bool Completed);
 
 protected:
 	// Called when the game starts

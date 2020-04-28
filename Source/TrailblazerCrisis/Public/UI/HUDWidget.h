@@ -14,4 +14,10 @@ class TRAILBLAZERCRISIS_API UHUDWidget : public UUserWidget
 {
 	GENERATED_BODY()
 	
+public:
+	UFUNCTION(BlueprintCallable, Category = HUD)
+		void UpdateQuestText(const FText& Text);
+
+	UPROPERTY(BlueprintReadWrite, Category = HUD, meta = (BindWidget))
+		class UTextBlock* ObjTextBlock;
 };

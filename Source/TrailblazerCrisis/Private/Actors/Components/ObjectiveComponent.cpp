@@ -2,7 +2,6 @@
 
 
 #include "Actors/Components/ObjectiveComponent.h"
-#include "Kismet/GameplayStatics.h"
 
 #include "Game/QuestManager.h"
 #include "Player/PlayerControllerBase.h"
@@ -36,7 +35,7 @@ void UObjectiveComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 
 void UObjectiveComponent::ChangeCurrentQuest(int32 QuestID)
 {
-	APlayerControllerBase* PC = Cast<APlayerControllerBase>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+	APlayerControllerBase* PC = Cast<APlayerControllerBase>(GetOwner());
 
 	if (PC)
 	{
@@ -50,7 +49,7 @@ void UObjectiveComponent::ChangeCurrentQuest(int32 QuestID)
 
 int32 UObjectiveComponent::GetCurrentQuest() const
 {
-	APlayerControllerBase* PC = Cast<APlayerControllerBase>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+	APlayerControllerBase* PC = Cast<APlayerControllerBase>(GetOwner());
 
 	if (PC)
 		return PC->GetCurrentQuest();
@@ -60,7 +59,7 @@ int32 UObjectiveComponent::GetCurrentQuest() const
 
 bool UObjectiveComponent::BeginQuest(int32 QuestID, bool MakeActive)
 {
-	APlayerControllerBase* PC = Cast<APlayerControllerBase>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+	APlayerControllerBase* PC = Cast<APlayerControllerBase>(GetOwner());
 
 	if (PC)
 	{
@@ -77,7 +76,7 @@ bool UObjectiveComponent::BeginQuest(int32 QuestID, bool MakeActive)
 
 bool UObjectiveComponent::ProgressQuest(int32 QuestID, bool CurrCompleted)
 {
-	APlayerControllerBase* PC = Cast<APlayerControllerBase>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+	APlayerControllerBase* PC = Cast<APlayerControllerBase>(GetOwner());
 
 	if (PC && ObjProgress.Contains(QuestID))
 	{
@@ -92,7 +91,7 @@ bool UObjectiveComponent::ProgressQuest(int32 QuestID, bool CurrCompleted)
 
 bool UObjectiveComponent::ProgressObjective(int32 QuestID, int32 ProgressIncrease)
 {
-	APlayerControllerBase* PC = Cast<APlayerControllerBase>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+	APlayerControllerBase* PC = Cast<APlayerControllerBase>(GetOwner());
 
 	// If we are currently tracking this quest's progress...
 	if (PC && ObjProgress.Contains(QuestID))
@@ -113,7 +112,7 @@ bool UObjectiveComponent::ProgressObjective(int32 QuestID, int32 ProgressIncreas
 
 bool UObjectiveComponent::ProgressOptionalObjective(int32 QuestID, int32 ProgressIncrease)
 {
-	APlayerControllerBase* PC = Cast<APlayerControllerBase>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+	APlayerControllerBase* PC = Cast<APlayerControllerBase>(GetOwner());
 
 	// If we are currently tracking this quest's progress...
 	if (PC && OptObjProgress.Contains(QuestID))
@@ -134,7 +133,7 @@ bool UObjectiveComponent::ProgressOptionalObjective(int32 QuestID, int32 Progres
 
 bool UObjectiveComponent::FinishQuest(int32 QuestID, bool Completed)
 {
-	APlayerControllerBase* PC = Cast<APlayerControllerBase>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+	APlayerControllerBase* PC = Cast<APlayerControllerBase>(GetOwner());
 
 	if (PC)
 	{
@@ -155,7 +154,7 @@ bool UObjectiveComponent::FinishQuest(int32 QuestID, bool Completed)
 
 bool UObjectiveComponent::UpdateObjectiveProgress(int32 QuestID)
 {
-	APlayerControllerBase* PC = Cast<APlayerControllerBase>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+	APlayerControllerBase* PC = Cast<APlayerControllerBase>(GetOwner());
 
 	if (PC && PC->GetQuestManager()->ActiveQuests.Contains(QuestID)) // Start tracking or update tracking of active quest
 	{
@@ -183,7 +182,7 @@ bool UObjectiveComponent::UpdateObjectiveProgress(int32 QuestID)
 
 bool UObjectiveComponent::UpdateOptionalObjectiveProgress(int32 QuestID)
 {
-	APlayerControllerBase* PC = Cast<APlayerControllerBase>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+	APlayerControllerBase* PC = Cast<APlayerControllerBase>(GetOwner());
 
 	if (PC && PC->GetQuestManager()->ActiveQuests.Contains(QuestID)) // Start tracking or update tracking of active quest
 	{
