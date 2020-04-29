@@ -19,8 +19,9 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Quests)
 		TArray<int32> CompletedQuests;
 
+	// <Key: QuestID, Value: FailedObjID>
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Quests)
-		TArray<int32> FailedQuests;
+		TMap<int32, int32> FailedQuests;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Quests)
 		TMap<int32, AMasterQuest*> ActiveQuests;

@@ -8,17 +8,17 @@
 #include "Actors/Components/ObjectiveComponent.h"
 #include "TCStatics.h"
 #include "UI/HUDWidget.h"
+#include "UI/PauseMenuWidget.h"
 
 APlayerControllerBase::APlayerControllerBase()
 {
 	HUDRef = nullptr;
-	QuestUIRef = nullptr;
+	PauseUIRef = nullptr;
 	
-	OldQuestID = UTCStatics::DEFAULT_QUEST_ID;
 	CurrentQuestID = UTCStatics::DEFAULT_QUEST_ID;
 
 	bHUDOpen = false;
-	bQuestOpen = false;
+	bUsingPauseMenus = false;
 
 	// Create objective component to communicate with quest manager
 	ObjectiveComp = CreateDefaultSubobject<UObjectiveComponent>(TEXT("Objective"));
@@ -48,16 +48,15 @@ void APlayerControllerBase::SetupInputComponent()
 	auto& QuestAction = InputComponent->BindAction("QuestMenu", IE_Pressed, this, &APlayerControllerBase::ToggleQuestMenu);
 	QuestAction.bExecuteWhenPaused = true;
 	QuestAction.bConsumeInput = true;
+
+	auto& PauseAction = InputComponent->BindAction("PauseMenu", IE_Pressed, this, &APlayerControllerBase::TogglePauseMenu);
+	PauseAction.bExecuteWhenPaused = true;
+	PauseAction.bConsumeInput = true;
 }
 
 bool APlayerControllerBase::IsHudOpen() const
 {
 	return bHUDOpen;
-}
-
-bool APlayerControllerBase::IsQuestMenuOpen() const
-{
-	return bQuestOpen;
 }
 
 AQuestManager* APlayerControllerBase::GetQuestManager() const
@@ -73,7 +72,8 @@ int32 APlayerControllerBase::GetCurrentQuest() const
 bool APlayerControllerBase::SetCurrentQuest(int32 NewCurrentQuestID, bool Bypass)
 {
 	// Only update current quest if we actually have the quest
-	if (Bypass || (QuestManagerRef && QuestManagerRef->ActiveQuests.Contains(NewCurrentQuestID)))
+	if (NewCurrentQuestID != CurrentQuestID && (Bypass 
+		|| (QuestManagerRef && QuestManagerRef->ActiveQuests.Contains(NewCurrentQuestID))))
 	{
 		CurrentQuestID = NewCurrentQuestID;
 		UpdateQuestHUD(CurrentQuestID);
@@ -156,22 +156,40 @@ bool APlayerControllerBase::TransitionToGameplay(UUserWidget* &MenuToClose, bool
 
 void APlayerControllerBase::ToggleQuestMenu()
 {
-	if (bQuestOpen)
-	{
-		if (TransitionToGameplay(QuestUIRef))
-		{
-			bQuestOpen = false;
+	// Init pause menu if it wasn't already
+	if (!PauseUIRef)
+		TogglePauseMenu();
 
-			if (OldQuestID != CurrentQuestID)
-				bQuestOpen = false; // <- Placeholder for future event call to update UI
-		}
+	// Tell pause menu to open quest menu
+	UPauseMenuWidget* PauseMenu = Cast<UPauseMenuWidget>(PauseUIRef);
+	if (PauseMenu)
+	{
+		PauseMenu->ToggleQuestMenu();
+	}
+}
+
+void APlayerControllerBase::TogglePauseMenu()
+{
+	if (bUsingPauseMenus)
+	{
+		UPauseMenuWidget* PauseMenu = Cast<UPauseMenuWidget>(PauseUIRef);
+
+		if (PauseMenu)
+			PauseMenu->DestroyChildMenus();
+
+		if (TransitionToGameplay(PauseUIRef))
+			bUsingPauseMenus = false;
 	}
 	else
 	{
-		if (TransitionToUI(QuestUIClass, QuestUIRef))
+		if (TransitionToUI(PauseUIClass, PauseUIRef))
 		{
-			bQuestOpen = true;
-			OldQuestID = CurrentQuestID;
+			UPauseMenuWidget* PauseMenu = Cast<UPauseMenuWidget>(PauseUIRef);
+
+			bUsingPauseMenus = true;
+
+			if (PauseMenu)
+				PauseMenu->InitPauseMenu(EPauseMenuTypes::Pause);
 		}
 	}
 }
@@ -191,4 +209,9 @@ void APlayerControllerBase::UpdateQuestHUD(int32 QuestID)
 		else
 			HUD->UpdateQuestText(FText::FromString(""));
 	}
+}
+
+void APlayerControllerBase::TransitionToMainMenu()
+{
+	UGameplayStatics::OpenLevel(GetWorld(), MainMenuLevel);
 }

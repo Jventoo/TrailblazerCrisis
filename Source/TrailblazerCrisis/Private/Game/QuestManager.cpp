@@ -165,7 +165,8 @@ bool AQuestManager::CompleteQuest(int32 QuestID)
 			APlayerControllerBase* PC = Cast<APlayerControllerBase>(
 					UGameplayStatics::GetPlayerController(GetWorld(), 0));
 
-			PC->SetCurrentQuest(UTCStatics::DEFAULT_QUEST_ID, true);
+			if (PC->GetCurrentQuest() == QuestID)
+				PC->SetCurrentQuest(UTCStatics::DEFAULT_QUEST_ID, true);
 
 			return true;
 		}
@@ -184,12 +185,13 @@ bool AQuestManager::FailQuest(int32 QuestID)
 	{
 		(*Quest)->OnFailDelegate.Broadcast();
 
-		int32 NewQuest = (*Quest)->QuestInfo.FailFollowUpQuest;
+		auto QuestInfo = (*Quest)->QuestInfo;
+		int32 NewQuest = QuestInfo.FailFollowUpQuest;
 
 		// Remove old quest, move it to failed. Begin new one (if it exists)
 		if (ActiveQuests.Remove(QuestID) > 0)
 		{
-			FailedQuests.Add(QuestID);
+			FailedQuests.Add(QuestID, QuestInfo.CurrentObjective);
 			if (NewQuest != UTCStatics::DEFAULT_QUEST_ID)
 			{
 				if (BeginQuest(NewQuest, true))
@@ -199,7 +201,8 @@ bool AQuestManager::FailQuest(int32 QuestID)
 			APlayerControllerBase* PC = Cast<APlayerControllerBase>(
 				UGameplayStatics::GetPlayerController(GetWorld(), 0));
 
-			PC->SetCurrentQuest(UTCStatics::DEFAULT_QUEST_ID, true);
+			if (PC->GetCurrentQuest() == QuestID)
+				PC->SetCurrentQuest(UTCStatics::DEFAULT_QUEST_ID, true);
 
 			return true;
 		}
