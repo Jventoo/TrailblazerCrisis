@@ -45,6 +45,8 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Util)
 		FName SkeletonName;
 
+	bool bWantsToFire;
+
 private:
 
 	/** Camera boom positioning the camera behind the character */
@@ -55,7 +57,7 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 		class UCameraComponent* FollowCamera;
 
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Transient, Category = Inventory, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, Category = Inventory, meta = (AllowPrivateAccess = "true"))
 		class ABaseFirearm* CurrentWeapon;
 
 	/** Measured in degrees */
@@ -79,6 +81,8 @@ public:
 
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+
+	FORCEINLINE FName GetSkeletonName() const { return SkeletonName; }
 
 	/** Set private members and update movement component **/
 	UFUNCTION(BlueprintCallable, Category = Movement)
@@ -105,6 +109,15 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Movement)
 		bool GetIsSprinting() const;
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Movement)
+		bool IsFiring() const;
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Combat)
+		bool CanReload() const;
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Combat)
+		bool CanFire() const;
 
 protected:
 
@@ -169,4 +182,15 @@ protected:
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	// End of APawn interface
+
+	void OnReload();
+
+	void OnStartFire();
+
+	void OnStopFire();
+
+	void StartWeaponFire();
+
+	void StopWeaponFire();
+
 };

@@ -13,6 +13,7 @@
 #include "Kismet/KismetMathLibrary.h"
 
 #include "Animation/HumanoidAnimInstance.h"
+#include "Actors/Weapons/BaseFirearm.h"
 
 // Sets default values
 APlayerCharacter::APlayerCharacter()
@@ -89,6 +90,11 @@ void APlayerCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerIn
 	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &APlayerCharacter::StartSprinting);
 	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &APlayerCharacter::StopSprinting);
 
+	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &APlayerCharacter::OnStartFire);
+	PlayerInputComponent->BindAction("Fire", IE_Released, this, &APlayerCharacter::OnStopFire);
+
+	PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &APlayerCharacter::OnReload);
+
 	PlayerInputComponent->BindAxis("MoveForward", this, &APlayerCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &APlayerCharacter::MoveRight);
 
@@ -143,6 +149,8 @@ void APlayerCharacter::MoveRight(float Value)
 
 void APlayerCharacter::StartSprinting()
 {
+	StopWeaponFire();
+
 	bIsSprinting = true;
 
 	UHumanoidAnimInstance* AnimInst = Cast<UHumanoidAnimInstance>(GetMesh()->GetAnimInstance());
@@ -194,10 +202,18 @@ float APlayerCharacter::GetForwardAxisValue(bool AbsoluteVal) const
 		return ForwardAxisValue;
 }
 
+
 bool APlayerCharacter::GetIsSprinting() const
 {
 	return bIsSprinting;
 }
+
+
+bool APlayerCharacter::IsFiring() const
+{
+	return CurrentWeapon && CurrentWeapon->GetCurrentState() == EWeaponState::Firing;
+}
+
 
 float APlayerCharacter::CalculateDirection(float ForwardValue, float RightValue)
 {
@@ -237,6 +253,9 @@ void APlayerCharacter::ToggleEquip()
 	{
 		bIsArmed = true;
 
+		if (CurrentWeapon)
+			CurrentWeapon->OnEnterInventory(this);
+
 		UHumanoidAnimInstance* AnimInst = Cast<UHumanoidAnimInstance>(GetMesh()->GetAnimInstance());
 		if (AnimInst)
 			AnimInst->IsArmed = true;
@@ -244,6 +263,9 @@ void APlayerCharacter::ToggleEquip()
 	else
 	{
 		bIsArmed = false;
+
+		if (CurrentWeapon)
+			CurrentWeapon->OnLeaveInventory();
 
 		UHumanoidAnimInstance* AnimInst = Cast<UHumanoidAnimInstance>(GetMesh()->GetAnimInstance());
 		if (AnimInst)
@@ -254,4 +276,65 @@ void APlayerCharacter::ToggleEquip()
 bool APlayerCharacter::GetIsArmed() const
 {
 	return bIsArmed;
+}
+
+bool APlayerCharacter::CanReload() const
+{
+	return bIsArmed && !bIsSprinting && !bIsJumping;
+}
+
+bool APlayerCharacter::CanFire() const
+{
+	return bIsArmed && !bIsSprinting && !bIsJumping;
+}
+
+void APlayerCharacter::OnReload()
+{
+	if (CurrentWeapon)
+	{
+		CurrentWeapon->StartReload();
+	}
+}
+
+
+void APlayerCharacter::OnStartFire()
+{
+	if (GetIsSprinting())
+	{
+		StopSprinting();
+	}
+
+	StartWeaponFire();
+}
+
+
+void APlayerCharacter::OnStopFire()
+{
+	StopWeaponFire();
+}
+
+
+void APlayerCharacter::StartWeaponFire()
+{
+	if (!bWantsToFire)
+	{
+		bWantsToFire = true;
+		if (CurrentWeapon)
+		{
+			CurrentWeapon->StartFire();
+		}
+	}
+}
+
+
+void APlayerCharacter::StopWeaponFire()
+{
+	if (bWantsToFire)
+	{
+		bWantsToFire = false;
+		if (CurrentWeapon)
+		{
+			CurrentWeapon->StopFire();
+		}
+	}
 }
