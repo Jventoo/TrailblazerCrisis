@@ -8,12 +8,12 @@
 #include "Actors/Components/ObjectiveComponent.h"
 #include "TCStatics.h"
 #include "UI/HUDWidget.h"
-#include "UI/PauseMenuWidget.h"
+#include "UI/PauseStackWidget.h"
 
 APlayerControllerBase::APlayerControllerBase()
 {
 	HUDRef = nullptr;
-	PauseUIRef = nullptr;
+	PauseStackRef = nullptr;
 	
 	CurrentQuestID = UTCStatics::DEFAULT_QUEST_ID;
 
@@ -59,6 +59,11 @@ bool APlayerControllerBase::IsHudOpen() const
 	return bHUDOpen;
 }
 
+bool APlayerControllerBase::IsPauseStackOpen() const
+{
+	return bUsingPauseMenus;
+}
+
 AQuestManager* APlayerControllerBase::GetQuestManager() const
 {
 	return QuestManagerRef;
@@ -84,11 +89,8 @@ bool APlayerControllerBase::SetCurrentQuest(int32 NewCurrentQuestID, bool Bypass
 	return false;
 }
 
-bool APlayerControllerBase::TransitionToUI(
-	TSubclassOf<UUserWidget> UIClass, UUserWidget* &MenuToOpen, bool CloseHUD)
+void APlayerControllerBase::TransitionToUI(bool CloseHUD)
 {
-	bool success = false;
-
 	// Collapse HUD
 	if (CloseHUD && HUDRef)
 	{
@@ -96,47 +98,13 @@ bool APlayerControllerBase::TransitionToUI(
 		bHUDOpen = false;
 	}
 
-	// Delete reference to old menu in case we still have one
-	if (MenuToOpen)
-	{
-		MenuToOpen->RemoveFromViewport();
-		MenuToOpen = nullptr;
-	}
-	
-	// Create menu and add to viewport
-	if (UIClass)
-	{
-		MenuToOpen = CreateWidget<UUserWidget>(GetWorld(), UIClass);
-
-		if (MenuToOpen)
-		{
-			MenuToOpen->AddToViewport();
-			success = true;
-		}
-	}
-
-	if (success)
-	{
-		SetInputMode(FInputModeGameAndUI());
-		bShowMouseCursor = true;
-		UGameplayStatics::SetGamePaused(GetWorld(), true);
-	}
-
-	return success;
+	SetInputMode(FInputModeGameAndUI());
+	bShowMouseCursor = true;
+	UGameplayStatics::SetGamePaused(GetWorld(), true);
 }
 
-bool APlayerControllerBase::TransitionToGameplay(UUserWidget* &MenuToClose, bool OpenHUD)
+void APlayerControllerBase::TransitionToGameplay(bool OpenHUD)
 {
-	bool success = false;
-
-	// Delete menu
-	if (MenuToClose)
-	{
-		MenuToClose->RemoveFromViewport();
-		MenuToClose = nullptr;
-		success = true;
-	}
-
 	// Open HUD
 	if (OpenHUD && HUDRef)
 	{
@@ -144,52 +112,123 @@ bool APlayerControllerBase::TransitionToGameplay(UUserWidget* &MenuToClose, bool
 		bHUDOpen = true;
 	}
 
-	if (success)
+	if (PauseStackRef)
 	{
-		SetInputMode(FInputModeGameOnly());
-		bShowMouseCursor = false;
-		UGameplayStatics::SetGamePaused(GetWorld(), false);
+		bUsingPauseMenus = false;
+
+		PauseStackRef->RemoveFromParent();
+		PauseStackRef = nullptr;
 	}
 
-	return success;
+	MenuHistoryStack.Empty();
+
+	SetInputMode(FInputModeGameOnly());
+	bShowMouseCursor = false;
+	UGameplayStatics::SetGamePaused(GetWorld(), false);
 }
 
 void APlayerControllerBase::ToggleQuestMenu()
 {
-	// Init pause menu if it wasn't already
-	if (!PauseUIRef)
-		TogglePauseMenu();
+	// 3 Cases: Call from gameplay, call from other pause menu stack child, call from pause menu
 
-	// Tell pause menu to open quest menu
-	UPauseMenuWidget* PauseMenu = Cast<UPauseMenuWidget>(PauseUIRef);
-	if (PauseMenu)
+	if (bUsingPauseMenus)
 	{
-		PauseMenu->ToggleQuestMenu();
+		UPauseStackWidget* PauseStack = Cast<UPauseStackWidget>(PauseStackRef);
+		if (PauseStack)
+		{
+			if (PauseStack->IsQuestMenuOpen())
+			{
+				// Case 3: Call from quest menu
+				PauseStack->ResumeGameplay();
+
+				bUsingPauseMenus = false;
+			}
+			else
+			{
+				// Case 2: Call from other pause stack menu, open quest menu
+				PauseStack->CloseMenu(PauseStack->GetOpenMenu());
+				PauseStack->OpenMenu(EPauseMenuTypes::Quest, false);
+
+				bUsingPauseMenus = true;
+			}
+		}
+	}
+	else
+	{
+		// Case 1: From Gameplay
+		if (PauseStackClass)
+		{
+			// Create the master widget and add it to the viewport
+			PauseStackRef = CreateWidget<UUserWidget>(GetWorld(), PauseStackClass);
+
+			if (PauseStackRef)
+			{
+				PauseStackRef->AddToViewport();
+
+				// Tell the quest menu to open
+				UPauseStackWidget* PauseStack = Cast<UPauseStackWidget>(PauseStackRef);
+				if (PauseStack)
+				{
+					TransitionToUI();
+
+					PauseStack->OpenMenu(EPauseMenuTypes::Quest, false);
+
+					bUsingPauseMenus = true;
+				}
+			}
+		}
 	}
 }
 
 void APlayerControllerBase::TogglePauseMenu()
 {
+	// 3 Cases: Call from gameplay, call from other pause menu stack child, call from pause menu
+
 	if (bUsingPauseMenus)
 	{
-		UPauseMenuWidget* PauseMenu = Cast<UPauseMenuWidget>(PauseUIRef);
+		UPauseStackWidget* PauseStack = Cast<UPauseStackWidget>(PauseStackRef);
+		if (PauseStack)
+		{
+			if (PauseStack->IsPauseMenuOpen())
+			{
+				// Case 3: Call from pause menu
+				PauseStack->ResumeGameplay();
 
-		if (PauseMenu)
-			PauseMenu->DestroyChildMenus();
+				bUsingPauseMenus = false;
+			}
+			else
+			{
+				// Case 2: Call from other pause stack menu, return to pause menu
+				PauseStack->CloseMenu(PauseStack->GetOpenMenu());
+				PauseStack->OpenMenu(EPauseMenuTypes::Pause, false);
 
-		if (TransitionToGameplay(PauseUIRef))
-			bUsingPauseMenus = false;
+				bUsingPauseMenus = true;
+			}
+		}
 	}
 	else
 	{
-		if (TransitionToUI(PauseUIClass, PauseUIRef))
+		// Case 1: From Gameplay
+		if (PauseStackClass)
 		{
-			UPauseMenuWidget* PauseMenu = Cast<UPauseMenuWidget>(PauseUIRef);
+			// Create the master widget and add it to the viewport
+			PauseStackRef = CreateWidget<UUserWidget>(GetWorld(), PauseStackClass);
 
-			bUsingPauseMenus = true;
+			if (PauseStackRef)
+			{
+				PauseStackRef->AddToViewport();
 
-			if (PauseMenu)
-				PauseMenu->InitPauseMenu(EPauseMenuTypes::Pause);
+				// Tell the pause menu to open
+				UPauseStackWidget* PauseStack = Cast<UPauseStackWidget>(PauseStackRef);
+				if (PauseStack)
+				{
+					TransitionToUI();
+
+					PauseStack->OpenMenu(EPauseMenuTypes::Pause, false);
+					
+					bUsingPauseMenus = true;
+				}
+			}
 		}
 	}
 }

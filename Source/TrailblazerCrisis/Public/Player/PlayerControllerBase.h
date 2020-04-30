@@ -38,12 +38,14 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = UI)
 		bool IsHudOpen() const;
 
-	UFUNCTION(BlueprintCallable, Category = UI)
-		bool TransitionToUI(TSubclassOf<UUserWidget> UIClass, 
-			UUserWidget* &MenuToOpen, bool CloseHUD = true);
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = UI)
+		bool IsPauseStackOpen() const;
 
 	UFUNCTION(BlueprintCallable, Category = UI)
-		bool TransitionToGameplay(UUserWidget* &MenuToClose, bool OpenHUD = true);
+		void TransitionToUI(bool CloseHUD = true);
+
+	UFUNCTION(BlueprintCallable, Category = UI)
+		void TransitionToGameplay(bool OpenHUD = true);
 
 	UFUNCTION(BlueprintCallable, Category = UI)
 		void ToggleQuestMenu();
@@ -64,7 +66,7 @@ public:
 	FORCEINLINE class UUserWidget* GetHUDRef() { return HUDRef; }
 
 	// Potentially change to PauseMenuWidget class to avoid unnecessary casting
-	FORCEINLINE class UUserWidget* GetPauseRef() { return PauseUIRef; }
+	FORCEINLINE class UUserWidget* GetPauseStackRef() { return PauseStackRef; }
 
 	///////////////////////////////////////////////////
 	/// Utility
@@ -76,6 +78,10 @@ protected:
 	virtual void BeginPlay() override;
 
 	virtual void SetupInputComponent() override;
+
+public:
+	UPROPERTY(BlueprintReadOnly, Category = UI)
+		TArray<UUserWidget*> MenuHistoryStack;
 
 protected:
 	
@@ -97,13 +103,13 @@ protected:
 		TSubclassOf<UUserWidget> HUDUIClass;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = UI)
-		TSubclassOf<UUserWidget> PauseUIClass;
+		TSubclassOf<UUserWidget> PauseStackClass;
 
 	UPROPERTY(BlueprintReadOnly, Category = UI)
 		UUserWidget* HUDRef;
 
 	UPROPERTY(BlueprintReadOnly, Category = UI)
-		UUserWidget* PauseUIRef;
+		UUserWidget* PauseStackRef;
 
 	bool bHUDOpen;
 

@@ -4,11 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "PauseMenuWidget.generated.h"
+#include "PauseStackWidget.generated.h"
 
-UENUM()
+UENUM(BlueprintType)
 enum class EPauseMenuTypes : uint8
 {
+	NONE,
 	Pause,
 	Quest,
 	Journal,
@@ -19,27 +20,30 @@ enum class EPauseMenuTypes : uint8
  * 
  */
 UCLASS()
-class TRAILBLAZERCRISIS_API UPauseMenuWidget : public UUserWidget
+class TRAILBLAZERCRISIS_API UPauseStackWidget : public UUserWidget
 {
 	GENERATED_BODY()
 	
 public:
-	UPauseMenuWidget(const FObjectInitializer& ObjectInitializer);
+	UPauseStackWidget(const FObjectInitializer& ObjectInitializer);
 
 	UFUNCTION(BlueprintCallable, Category = UI)
-		void TogglePauseMenu();
+		void OpenMenu(EPauseMenuTypes Type, bool CloseOthers = false);
 
 	UFUNCTION(BlueprintCallable, Category = UI)
-		void ToggleQuestMenu();
+		void CloseMenu(EPauseMenuTypes Type);
 
 	UFUNCTION(BlueprintCallable, Category = UI)
-		void ToggleJournal();
+		void TogglePauseMenu(bool Open);
 
 	UFUNCTION(BlueprintCallable, Category = UI)
-		void ToggleOptionsMenu();
+		void ToggleQuestMenu(bool Open);
 
+	UFUNCTION(BlueprintCallable, Category = UI)
+		void ToggleJournal(bool Open);
 
-	void InitPauseMenu(EPauseMenuTypes Type);
+	UFUNCTION(BlueprintCallable, Category = UI)
+		void ToggleOptionsMenu(bool Open);
 
 	UFUNCTION(BlueprintCallable, Category = UI)
 		void DestroyChildMenus();
@@ -62,6 +66,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = UI)
 		bool IsOptionsMenuOpen() const;
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = UI)
+		EPauseMenuTypes GetOpenMenu() const;
 
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = UI, meta = (BindWidget))
