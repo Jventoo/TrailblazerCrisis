@@ -3,9 +3,14 @@
 
 #include "Actors/Weapons/BaseFirearm.h"
 #include "Player/PlayerControllerBase.h"
+
+#include "Camera/CameraComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "TimerManager.h"
 #include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetMathLibrary.h"
+
+class ABaseProjectile;
 
 ABaseFirearm::ABaseFirearm()
 {
@@ -362,8 +367,10 @@ void ABaseFirearm::HandleFiring()
 
 	if (Pawn)
 	{
-		/* Retrigger HandleFiring on a delay for automatic weapons */
-		bRefiring = (CurrentState == EWeaponState::Firing && TimeBetweenShots > 0.0f);
+		/* Retrigger HandleFiring on a delay for automatic and burst modes */
+		bRefiring = (CurrentState == EWeaponState::Firing && TimeBetweenShots > 0.0f)
+			&& (CurrentFireMode == EFireModes::Auto || (CurrentFireMode == EFireModes::Burst && BurstCounter < ShotsInBurst));
+
 		if (bRefiring)
 		{
 			GetWorldTimerManager().SetTimer(TimerHandle_HandleFiring, this, &ABaseFirearm::HandleFiring, TimeBetweenShots, false);
@@ -439,7 +446,42 @@ EWeaponState ABaseFirearm::GetCurrentState() const
 
 void ABaseFirearm::FireWeapon()
 {
+	// 3 Cases: Single, Burst, Auto
 
+	// Single: Fire off one projectile, end fire.
+
+	// Burst: Fire off 3 projectiles, end fire.
+
+	// Auto: Fire projectiles on a timer so long as input continues or run out of ammo
+
+		// For all 3 cases: If ammo-- == 0, then call for reload
+
+
+	// For all:
+		// Calculate initial direction then add in accuracy/spread modifiers to get final direction
+		// Calculate damage
+		// Spawn projectile in that direction with the calculated damage
+		// If spawn successful:
+			// Tell character to recoil (add to camera pitch/yaw)
+
+	FTransform& MainDir = CalculateMainProjectileDirection();
+	FTransform& FinalDir = MainDir;
+
+	if (CurrentFireMode != EFireModes::Single)
+	{
+		FinalDir = CalculateFinalProjectileDirection(MainDir);
+	}
+
+	CalculateDamage();
+
+	GetWorld()->SpawnActor<ABaseProjectile>(FinalDir);
+
+
+	// Handle recoil
+	float Pitch = -1.0 * UKismetMathLibrary::RandomFloatInRange(RecoilData.UpMin, RecoilData.UpMax);
+	float Yaw = UKismetMathLibrary::RandomFloatInRange(RecoilData.RightMin, RecoilData.RightMax);
+
+	Pawn->AddRecoil(Pitch, Yaw);
 }
 
 
@@ -485,6 +527,66 @@ void ABaseFirearm::OnBurstFinished()
 
 	GetWorldTimerManager().ClearTimer(TimerHandle_HandleFiring);
 	bRefiring = false;
+}
+
+
+FTransform& ABaseFirearm::CalculateMainProjectileDirection()
+{
+	auto SocketTransform = Mesh->GetSocketTransform(FName("Muzzle"));
+	auto MuzzlePos = SocketTransform.GetLocation()
+		+ (UKismetMathLibrary::GetForwardVector(SocketTransform.Rotator()) * 11.0);
+
+	auto CameraTransform = Pawn->GetFollowCamera()->GetComponentTransform();
+
+	auto StartPt = CameraTransform.GetLocation()
+		+ (UKismetMathLibrary::GetForwardVector(CameraTransform.Rotator())
+			* (CameraTransform.GetLocation() - MuzzlePos).Size());
+
+	auto EndPt = CameraTransform.GetLocation()
+		+ (UKismetMathLibrary::GetForwardVector(CameraTransform.Rotator()) * 10000.0);
+
+
+	FCollisionQueryParams TraceParams(TEXT("WeaponTrace"), true, GetInstigator());
+	TraceParams.bReturnPhysicalMaterial = true;
+	TraceParams.AddIgnoredActor(this);
+	TraceParams.AddIgnoredActor(Pawn);
+
+	FHitResult Hit(ForceInit);
+	
+	FVector HitPoint = EndPt;
+
+	if (GetWorld()->LineTraceSingleByChannel(Hit, StartPt, EndPt, ECollisionChannel::ECC_Visibility, TraceParams))
+	{
+		HitPoint = Hit.ImpactPoint;
+	}
+
+	auto ARot = UKismetMathLibrary::FindLookAtRotation(MuzzlePos, HitPoint);
+	auto BRot = FRotator(XMovepenalty, YMovepenalty, Zmovepenalty);
+
+	auto FinalRot = UKismetMathLibrary::ComposeRotators(ARot, BRot);
+
+	return FTransform(FinalRot, MuzzlePos, FVector(1.0, 1.0, 1.0));
+}
+
+
+FTransform& ABaseFirearm::CalculateFinalProjectileDirection(FTransform MainDir)
+{
+	float Roll = UKismetMathLibrary::RandomFloatInRange(SpreadModifier * -1.0, SpreadModifier);
+	float Pitch = UKismetMathLibrary::RandomFloatInRange(SpreadModifier * -1.0, SpreadModifier);
+	float Yaw = UKismetMathLibrary::RandomFloatInRange(SpreadModifier * -1.0, SpreadModifier);
+
+	return FTransform(UKismetMathLibrary::ComposeRotators(MainDir.Rotator, FRotator(Pitch, Yaw, Roll)),
+		MainDir.GetLocation(), MainDir.GetScale3D());
+}
+
+
+float ABaseFirearm::CalculateDamage()
+{
+	float InitDamage = UKismetMathLibrary::RandomFloatInRange(DamageData.MinDamage, DamageData.MaxDamage);
+	bool IsCrit = (DamageData.CritChance > UKismetMathLibrary::RandomFloatInRange(0.0, 1.0));
+
+	// If we landed a crit, multiple our initial damage by our multiplier. Else, return our randomized damage
+	return IsCrit ? (InitDamage * DamageData.CritDamageMultiplier) : InitDamage;
 }
 
 

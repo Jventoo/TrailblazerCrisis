@@ -33,6 +33,18 @@ public:
 
 protected:
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Camera)
+		float DefaultFOV;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Camera)
+		float AimFOVRatio;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon|Combat")
+		float AccuracyMultiplier;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon|Combat")
+		float HipFirePenalty;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
 		bool bIsCrouching;
 
@@ -106,6 +118,8 @@ public:
 	/** Update members and change camera **/
 	UFUNCTION(BlueprintCallable, Category = Combat)
 		void ToggleEquip();
+
+	void AddRecoil(float Pitch, float Yaw);
 
 	/** Return direction player is looking/moving **/
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Movement)
@@ -213,7 +227,11 @@ protected:
 	void OnStopAiming();
 
 	UFUNCTION(BlueprintNativeEvent, Category = "Weapon|Camera")
-		void UpdateCameraBoom(); 
+		void UpdateCombatCamera(); 
+	void UpdateCombatCamera_Implementation();
 
-	void UpdateCameraBoom_Implementation();
+
+	UFUNCTION(BlueprintNativeEvent, Category = "Weapon|Camera")
+		void UpdateAimingFOV();
+	void UpdateAimingFOV_Implementation();
 };

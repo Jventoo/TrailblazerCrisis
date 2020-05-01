@@ -301,7 +301,7 @@ void APlayerCharacter::ToggleEquip()
 
 		bUseControllerRotationYaw = true;
 
-		UpdateCameraBoom();
+		UpdateCombatCamera();
 	}
 	else
 	{
@@ -316,7 +316,7 @@ void APlayerCharacter::ToggleEquip()
 
 		bUseControllerRotationYaw = false;
 
-		UpdateCameraBoom();
+		UpdateCombatCamera();
 	}
 }
 
@@ -401,16 +401,35 @@ void APlayerCharacter::OnStartAiming()
 	}
 
 	bIsAiming = true;
+	UpdateAimingFOV();
 }
 
 
 void APlayerCharacter::OnStopAiming()
 {
 	bIsAiming = false;
+	UpdateAimingFOV();
 }
 
 
-void APlayerCharacter::UpdateCameraBoom_Implementation()
+void APlayerCharacter::AddRecoil(float Pitch, float Yaw)
+{
+	Pitch *= AccuracyMultiplier;
+	Yaw *= AccuracyMultiplier;
+
+	if (!bIsAiming)
+	{
+		Pitch *= HipFirePenalty;
+		Pitch *= HipFirePenalty;
+	}
+
+	AddControllerPitchInput(Pitch);
+	AddControllerYawInput(Yaw);
+}
+
+
+// Unsmoothed version. Use timeline in BP for smoothed version
+void APlayerCharacter::UpdateCombatCamera_Implementation()
 {
 	if (bIsArmed)
 	{
@@ -421,5 +440,19 @@ void APlayerCharacter::UpdateCameraBoom_Implementation()
 	{
 		FVector Offset(.0f, CombatArmOffset * -1, .0f);
 		CameraBoom->AddLocalOffset(Offset);
+	}
+}
+
+
+// Unsmoothed version. Use timeline in BP for smoothed version
+void APlayerCharacter::UpdateAimingFOV_Implementation()
+{
+	if (bIsAiming)
+	{
+		FollowCamera->SetFieldOfView(DefaultFOV * AimFOVRatio);
+	}
+	else
+	{
+		FollowCamera->SetFieldOfView(DefaultFOV);
 	}
 }

@@ -26,6 +26,52 @@ enum class EFireModes : uint8
 	Auto
 };
 
+USTRUCT(BlueprintType)
+struct FRecoilInfo
+{
+	GENERATED_USTRUCT_BODY()
+
+	FRecoilInfo()
+	{
+		UpMin = UpMax = RightMin = RightMax = 0;
+	}
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Recoil")
+		int32 UpMin;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Recoil")
+		int32 UpMax;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Recoil")
+		int32 RightMin;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Recoil")
+		int32 RightMax;
+};
+
+USTRUCT(BlueprintType)
+struct FFirearmDamageInfo
+{
+	GENERATED_USTRUCT_BODY()
+
+	FFirearmDamageInfo()
+	{
+		MinDamage = MaxDamage = CritChance = CritDamageMultiplier = 0;
+	}
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
+		float MinDamage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
+		float MaxDamage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
+		float CritChance;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
+		float CritDamageMultiplier;
+};
+
 /**
  *
  */
@@ -56,7 +102,7 @@ class TRAILBLAZERCRISIS_API ABaseFirearm : public AActor
 
 	FTimerHandle EquipFinishedTimerHandle;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon Stats")
 		float ShotsPerMinute;
 
 protected:
@@ -148,9 +194,17 @@ private:
 
 	void OnBurstFinished();
 
+	FTransform& CalculateMainProjectileDirection();
+
+	FTransform& CalculateFinalProjectileDirection(FTransform MainDir);
+
+	float CalculateDamage();
+
 	bool bWantsToFire;
 
 	EWeaponState CurrentState;
+
+	EFireModes CurrentFireMode;
 
 	bool bRefiring;
 
@@ -159,7 +213,17 @@ private:
 	/* Time between shots for repeating fire */
 	float TimeBetweenShots;
 
-	EFireModes CurrentFireMode;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon Stats")
+		int32 ShotsInBurst;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon Stats")
+		float SpreadModifier;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Stats")
+		FRecoilInfo RecoilData;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Stats")
+		FFirearmDamageInfo DamageData;
 
 	/************************************************************************/
 	/* Simulation & FX                                                      */
@@ -167,25 +231,25 @@ private:
 
 private:
 
-	UPROPERTY(EditDefaultsOnly, Category = "Sounds")
+	UPROPERTY(EditDefaultsOnly, Category = "Effects|Sounds")
 		USoundCue* FireSound;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Sounds")
+	UPROPERTY(EditDefaultsOnly, Category = "Effects|Sounds")
 		USoundCue* EquipSound;
 
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, Category = "Effects|Particles")
 		UParticleSystem* MuzzleFX;
 
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, Category = "Effects|Animation")
 		UAnimMontage* EquipAnim;
 
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, Category = "Effects|Animation")
 		UAnimMontage* FireAnim;
 
 	UPROPERTY(Transient)
 		UParticleSystemComponent* MuzzlePSC;
 
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 		FName MuzzleAttachPoint;
 
 	bool bPlayingFireAnim;
@@ -215,7 +279,7 @@ protected:
 
 private:
 
-	UPROPERTY(EditDefaultsOnly, Category = "Sounds")
+	UPROPERTY(EditDefaultsOnly, Category = "Effects|Sounds")
 		USoundCue* OutOfAmmoSound;
 
 	FTimerHandle TimerHandle_ReloadWeapon;
@@ -225,11 +289,11 @@ private:
 protected:
 
 	/* Time to assign on reload when no animation is found */
-	UPROPERTY(EditDefaultsOnly, Category = "Animation")
+	UPROPERTY(EditDefaultsOnly, Category = "Effects|Animation")
 		float NoAnimReloadDuration;
 
 	/* Time to assign on equip when no animation is found */
-	UPROPERTY(EditDefaultsOnly, Category = "Animation")
+	UPROPERTY(EditDefaultsOnly, Category = "Effects|Animation")
 		float NoEquipAnimDuration;
 
 	UPROPERTY(Transient)
@@ -244,19 +308,19 @@ protected:
 		int32 CurrentAmmoInClip;
 
 	/* Weapon ammo on spawn */
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon Stats")
 		int32 StartAmmo;
 
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon Stats")
 		int32 MaxAmmo;
 
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon Stats")
 		int32 MaxAmmoPerClip;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Sounds")
+	UPROPERTY(EditDefaultsOnly, Category = "Effects|Sounds")
 		USoundCue* ReloadSound;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Animation")
+	UPROPERTY(EditDefaultsOnly, Category = "Effects|Animation")
 		UAnimMontage* ReloadAnim;
 
 	virtual void ReloadWeapon();
