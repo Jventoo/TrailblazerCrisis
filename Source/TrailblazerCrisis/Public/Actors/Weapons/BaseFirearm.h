@@ -9,13 +9,21 @@
 #include "BaseFirearm.generated.h"
 
 
-UENUM()
-enum class EWeaponState
+UENUM(BlueprintType)
+enum class EWeaponState : uint8
 {
 	Idle,
 	Firing,
 	Equipping,
 	Reloading
+};
+
+UENUM(BlueprintType)
+enum class EFireModes : uint8
+{
+	Single,
+	Burst,
+	Auto
 };
 
 /**
@@ -74,10 +82,6 @@ protected:
 
 public:
 
-	/** Map containing skeleton attach sockets in the format <Skeleton, Socket> */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Firearm)
-		TMap<FName, FName> AttachSockets;
-
 	/** get weapon mesh (needs pawn owner to determine variant) */
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 		USkeletalMeshComponent* GetWeaponMesh() const;
@@ -93,9 +97,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 		class APlayerCharacter* GetPawnOwner() const;
 
-	virtual void OnEnterInventory(APlayerCharacter* NewOwner);
+	virtual void BeginEquip(APlayerCharacter* NewOwner);
 
-	virtual void OnLeaveInventory();
+	virtual void BeginUnequip();
 
 	/************************************************************************/
 	/* Fire & Damage Handling                                               */
@@ -109,7 +113,16 @@ public:
 
 	EWeaponState GetCurrentState() const;
 
-	void AttachMeshToPawn();
+	void AttachMeshToPawn(FName Socket);
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Weapon State")
+		EFireModes GetFireMode() const;
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon State")
+		void SwitchToNextFireMode();
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon State")
+		void SetFireMode(EFireModes NewMode);
 
 protected:
 
@@ -145,6 +158,8 @@ private:
 
 	/* Time between shots for repeating fire */
 	float TimeBetweenShots;
+
+	EFireModes CurrentFireMode;
 
 	/************************************************************************/
 	/* Simulation & FX                                                      */

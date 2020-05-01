@@ -78,22 +78,13 @@ void ABaseFirearm::SetOwningPawn(APlayerCharacter* NewOwner)
 }
 
 
-void ABaseFirearm::AttachMeshToPawn()
+void ABaseFirearm::AttachMeshToPawn(FName Socket)
 {
 	if (Pawn)
 	{
 		DetachMeshFromPawn();
 
-		USkeletalMeshComponent* PawnMesh = Pawn->GetMesh();
-		auto SkelName = Pawn->GetSkeletonName();
-
-		if (AttachSockets.Contains(SkelName))
-		{
-			Mesh->SetHiddenInGame(false);
-
-			FName AttachPoint = AttachSockets[SkelName];
-			Mesh->AttachToComponent(PawnMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, AttachPoint);
-		}
+		Mesh->AttachToComponent(Pawn->GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, Socket);
 	}
 }
 
@@ -102,6 +93,59 @@ void ABaseFirearm::DetachMeshFromPawn()
 {
 	Mesh->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
 	Mesh->SetHiddenInGame(true);
+}
+
+
+EFireModes ABaseFirearm::GetFireMode() const
+{
+	return CurrentFireMode;
+}
+
+
+void ABaseFirearm::SwitchToNextFireMode()
+{
+	switch (CurrentFireMode)
+	{
+
+	case EFireModes::Single:
+		SetFireMode(EFireModes::Burst);
+		break;
+
+	case EFireModes::Burst:
+		SetFireMode(EFireModes::Auto);
+		break;
+
+	case EFireModes::Auto:
+		SetFireMode(EFireModes::Single);
+		break;
+
+	}
+}
+
+
+void ABaseFirearm::SetFireMode(EFireModes NewMode)
+{
+	CurrentFireMode = NewMode;
+}
+
+
+void ABaseFirearm::BeginEquip(APlayerCharacter* NewOwner)
+{
+	SetOwningPawn(NewOwner);
+	OnEquip(true);
+}
+
+
+void ABaseFirearm::BeginUnequip()
+{
+	SetOwningPawn(nullptr);
+
+	if (IsAttachedToPawn())
+	{
+		OnUnEquip();
+	}
+
+	DetachMeshFromPawn();
 }
 
 
@@ -148,6 +192,7 @@ void ABaseFirearm::OnUnEquip()
 
 		GetWorldTimerManager().ClearTimer(EquipFinishedTimerHandle);
 	}
+
 	if (bPendingReload)
 	{
 		StopWeaponAnimation(ReloadAnim);
@@ -160,24 +205,24 @@ void ABaseFirearm::OnUnEquip()
 }
 
 
-void ABaseFirearm::OnEnterInventory(APlayerCharacter* NewOwner)
+void ABaseFirearm::OnEquipFinished()
 {
-	SetOwningPawn(NewOwner);
-	AttachMeshToPawn();
-	OnEquip(true);
-}
+	AttachMeshToPawn(Pawn->WeaponEquipSocket);
 
+	bIsEquipped = true;
+	bPendingEquip = false;
 
-void ABaseFirearm::OnLeaveInventory()
-{
-	SetOwningPawn(nullptr);
+	DetermineWeaponState();
 
-	if (IsAttachedToPawn())
+	if (Pawn)
 	{
-		OnUnEquip();
+		// Try to reload empty clip
+		if (CurrentAmmoInClip <= 0 &&
+			CanReload())
+		{
+			StartReload();
+		}
 	}
-
-	DetachMeshFromPawn();
 }
 
 
@@ -505,27 +550,6 @@ void ABaseFirearm::StopWeaponAnimation(UAnimMontage* Animation)
 		if (Animation)
 		{
 			Pawn->StopAnimMontage(Animation);
-		}
-	}
-}
-
-
-void ABaseFirearm::OnEquipFinished()
-{
-	AttachMeshToPawn();
-
-	bIsEquipped = true;
-	bPendingEquip = false;
-
-	DetermineWeaponState();
-
-	if (Pawn)
-	{
-		// Try to reload empty clip
-		if (CurrentAmmoInClip <= 0 &&
-			CanReload())
-		{
-			StartReload();
 		}
 	}
 }

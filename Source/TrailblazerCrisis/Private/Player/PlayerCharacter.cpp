@@ -13,7 +13,6 @@
 #include "Kismet/KismetMathLibrary.h"
 
 #include "Animation/HumanoidAnimInstance.h"
-#include "Actors/Weapons/BaseFirearm.h"
 
 // Sets default values
 APlayerCharacter::APlayerCharacter()
@@ -55,6 +54,8 @@ APlayerCharacter::APlayerCharacter()
 	bIsAiming = false;
 	bIsArmed = false;
 
+	bSpawnWeapon = true;
+
 	ForwardAxisValue = 0;
 	RightAxisValue = 0;
 	Direction = 0;
@@ -62,6 +63,27 @@ APlayerCharacter::APlayerCharacter()
 	CurrentWeapon = nullptr;
 
 	PrimaryActorTick.bCanEverTick = true;
+}
+
+
+void APlayerCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+
+	// Spawn our weapon
+	if (bSpawnWeapon && WeaponClass)
+	{
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+		CurrentWeapon = GetWorld()->SpawnActor<ABaseFirearm>(SpawnParams);
+	}
+
+	// Attach our weapon to our character's back
+	if (CurrentWeapon)
+	{
+		CurrentWeapon->SetOwningPawn(this);
+		CurrentWeapon->AttachMeshToPawn(WeaponUnequipSocket);
+	}
 }
 
 
@@ -74,6 +96,7 @@ void APlayerCharacter::Tick(float DeltaTime)
 	ForwardAxisValue = InputComponent->GetAxisValue("MoveForward");
 	RightAxisValue = InputComponent->GetAxisValue("MoveRight");
 }
+
 
 //////////////////////////////////////////////////////////////////////////
 // Input
@@ -106,17 +129,20 @@ void APlayerCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerIn
 	PlayerInputComponent->BindAction("Holster", IE_Pressed, this, &APlayerCharacter::ToggleEquip);
 }
 
+
 void APlayerCharacter::TurnAtRate(float Rate)
 {
 	// calculate delta for this frame from the rate information
 	AddControllerYawInput(Rate * BaseTurnRate * GetWorld()->GetDeltaSeconds());
 }
 
+
 void APlayerCharacter::LookUpAtRate(float Rate)
 {
 	// calculate delta for this frame from the rate information
 	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
 }
+
 
 void APlayerCharacter::MoveForward(float Value)
 {
@@ -131,6 +157,7 @@ void APlayerCharacter::MoveForward(float Value)
 		AddMovementInput(Dir, Value);
 	}
 }
+
 
 void APlayerCharacter::MoveRight(float Value)
 {
@@ -147,6 +174,7 @@ void APlayerCharacter::MoveRight(float Value)
 	}
 }
 
+
 void APlayerCharacter::StartSprinting()
 {
 	StopWeaponFire();
@@ -158,6 +186,7 @@ void APlayerCharacter::StartSprinting()
 		AnimInst->IsSprinting = true;
 }
 
+
 void APlayerCharacter::StopSprinting()
 {
 	bIsSprinting = false;
@@ -166,6 +195,7 @@ void APlayerCharacter::StopSprinting()
 	if (AnimInst)
 		AnimInst->IsSprinting = false;
 }
+
 
 void APlayerCharacter::ToggleCrouch()
 {
@@ -181,6 +211,7 @@ void APlayerCharacter::ToggleCrouch()
 	}
 }
 
+
 float APlayerCharacter::GetDirection() const
 {
 	return Direction;
@@ -193,6 +224,7 @@ float APlayerCharacter::GetRightAxisVal(bool AbsoluteVal) const
 	else
 		return RightAxisValue;
 }
+
 
 float APlayerCharacter::GetForwardAxisValue(bool AbsoluteVal) const
 {
@@ -229,6 +261,7 @@ float APlayerCharacter::CalculateDirection(float ForwardValue, float RightValue)
 	return FinalRot.Yaw;
 }
 
+
 void APlayerCharacter::SetDirection(float NewDir)
 {
 	Direction = NewDir;
@@ -239,10 +272,12 @@ void APlayerCharacter::SetRightAxisVal(float NewVal)
 	RightAxisValue = NewVal;
 }
 
+
 void APlayerCharacter::SetForwardAxisValue(float NewVal)
 {
 	ForwardAxisValue = NewVal;
 }
+
 
 //////////////////////////////////////////////////////////////////////////
 // Combat
@@ -254,7 +289,7 @@ void APlayerCharacter::ToggleEquip()
 		bIsArmed = true;
 
 		if (CurrentWeapon)
-			CurrentWeapon->OnEnterInventory(this);
+			CurrentWeapon->BeginEquip(this);
 
 		UHumanoidAnimInstance* AnimInst = Cast<UHumanoidAnimInstance>(GetMesh()->GetAnimInstance());
 		if (AnimInst)
@@ -265,7 +300,7 @@ void APlayerCharacter::ToggleEquip()
 		bIsArmed = false;
 
 		if (CurrentWeapon)
-			CurrentWeapon->OnLeaveInventory();
+			CurrentWeapon->BeginUnequip();
 
 		UHumanoidAnimInstance* AnimInst = Cast<UHumanoidAnimInstance>(GetMesh()->GetAnimInstance());
 		if (AnimInst)
@@ -273,20 +308,24 @@ void APlayerCharacter::ToggleEquip()
 	}
 }
 
+
 bool APlayerCharacter::GetIsArmed() const
 {
 	return bIsArmed;
 }
+
 
 bool APlayerCharacter::CanReload() const
 {
 	return bIsArmed && !bIsSprinting && !bIsJumping;
 }
 
+
 bool APlayerCharacter::CanFire() const
 {
 	return bIsArmed && !bIsSprinting && !bIsJumping;
 }
+
 
 void APlayerCharacter::OnReload()
 {

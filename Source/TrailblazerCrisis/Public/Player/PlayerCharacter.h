@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Actors/Weapons/BaseFirearm.h"
 #include "PlayerCharacter.generated.h"
 
 UCLASS()
@@ -22,6 +23,12 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
 		float BaseLookUpRate;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
+		FName WeaponEquipSocket;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
+		FName WeaponUnequipSocket;
+
 protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
@@ -33,17 +40,23 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Movement)
 		bool bIsJumping;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon | Combat")
 		bool bIsFiring;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon | Combat")
 		bool bIsAiming;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon | Combat")
 		bool bIsArmed;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Util)
-		FName SkeletonName;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
+		TSubclassOf<ABaseFirearm> WeaponClass;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon")
+		ABaseFirearm* CurrentWeapon;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+		bool bSpawnWeapon;
 
 	bool bWantsToFire;
 
@@ -56,9 +69,6 @@ private:
 	/** Follow camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 		class UCameraComponent* FollowCamera;
-
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, Category = Inventory, meta = (AllowPrivateAccess = "true"))
-		class ABaseFirearm* CurrentWeapon;
 
 	/** Measured in degrees */
 	UPROPERTY(Transient)
@@ -74,6 +84,8 @@ private:
 
 public:
 
+	virtual void BeginPlay() override;
+
 	virtual void Tick(float DeltaTime) override;
 
 	/** Returns CameraBoom subobject **/
@@ -81,8 +93,6 @@ public:
 
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
-
-	FORCEINLINE FName GetSkeletonName() const { return SkeletonName; }
 
 	/** Set private members and update movement component **/
 	UFUNCTION(BlueprintCallable, Category = Movement)
