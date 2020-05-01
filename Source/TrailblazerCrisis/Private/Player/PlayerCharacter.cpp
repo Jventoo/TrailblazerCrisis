@@ -12,6 +12,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 
+#include "Actors/Weapons/BaseFirearm.h"
 #include "Animation/HumanoidAnimInstance.h"
 
 // Sets default values
@@ -75,7 +76,7 @@ void APlayerCharacter::BeginPlay()
 	{
 		FActorSpawnParameters SpawnParams;
 		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
-		CurrentWeapon = GetWorld()->SpawnActor<ABaseFirearm>(SpawnParams);
+		CurrentWeapon = GetWorld()->SpawnActor<ABaseFirearm>(WeaponClass, SpawnParams);
 	}
 
 	// Attach our weapon to our character's back
@@ -115,6 +116,9 @@ void APlayerCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerIn
 
 	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &APlayerCharacter::OnStartFire);
 	PlayerInputComponent->BindAction("Fire", IE_Released, this, &APlayerCharacter::OnStopFire);
+
+	PlayerInputComponent->BindAction("Aim", IE_Pressed, this, &APlayerCharacter::OnStartAiming);
+	PlayerInputComponent->BindAction("Aim", IE_Released, this, &APlayerCharacter::OnStopAiming);
 
 	PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &APlayerCharacter::OnReload);
 
@@ -294,6 +298,10 @@ void APlayerCharacter::ToggleEquip()
 		UHumanoidAnimInstance* AnimInst = Cast<UHumanoidAnimInstance>(GetMesh()->GetAnimInstance());
 		if (AnimInst)
 			AnimInst->IsArmed = true;
+
+		bUseControllerRotationYaw = true;
+
+		UpdateCameraBoom();
 	}
 	else
 	{
@@ -305,6 +313,10 @@ void APlayerCharacter::ToggleEquip()
 		UHumanoidAnimInstance* AnimInst = Cast<UHumanoidAnimInstance>(GetMesh()->GetAnimInstance());
 		if (AnimInst)
 			AnimInst->IsArmed = false;
+
+		bUseControllerRotationYaw = false;
+
+		UpdateCameraBoom();
 	}
 }
 
@@ -361,6 +373,7 @@ void APlayerCharacter::StartWeaponFire()
 		if (CurrentWeapon)
 		{
 			CurrentWeapon->StartFire();
+			bIsFiring = true;
 		}
 	}
 }
@@ -374,6 +387,39 @@ void APlayerCharacter::StopWeaponFire()
 		if (CurrentWeapon)
 		{
 			CurrentWeapon->StopFire();
+			bIsFiring = false;
 		}
+	}
+}
+
+
+void APlayerCharacter::OnStartAiming()
+{
+	if (GetIsSprinting())
+	{
+		StopSprinting();
+	}
+
+	bIsAiming = true;
+}
+
+
+void APlayerCharacter::OnStopAiming()
+{
+	bIsAiming = false;
+}
+
+
+void APlayerCharacter::UpdateCameraBoom_Implementation()
+{
+	if (bIsArmed)
+	{
+		FVector Offset(.0f, CombatArmOffset, .0f);
+		CameraBoom->AddLocalOffset(Offset);
+	}
+	else
+	{
+		FVector Offset(.0f, CombatArmOffset * -1, .0f);
+		CameraBoom->AddLocalOffset(Offset);
 	}
 }

@@ -4,8 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "Actors/Weapons/BaseFirearm.h"
+#include "Components/TimelineComponent.h"
 #include "PlayerCharacter.generated.h"
+
+class UCurveFloat;
 
 UCLASS()
 class TRAILBLAZERCRISIS_API APlayerCharacter : public ACharacter
@@ -40,25 +42,28 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Movement)
 		bool bIsJumping;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon | Combat")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon|Combat")
 		bool bIsFiring;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon | Combat")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon|Combat")
 		bool bIsAiming;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon | Combat")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon|Combat")
 		bool bIsArmed;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
-		TSubclassOf<ABaseFirearm> WeaponClass;
+		TSubclassOf<class ABaseFirearm> WeaponClass;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon")
-		ABaseFirearm* CurrentWeapon;
+		class ABaseFirearm* CurrentWeapon;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
 		bool bSpawnWeapon;
 
 	bool bWantsToFire;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon|Camera")
+		float CombatArmOffset;
 
 private:
 
@@ -203,4 +208,12 @@ protected:
 
 	void StopWeaponFire();
 
+	void OnStartAiming();
+
+	void OnStopAiming();
+
+	UFUNCTION(BlueprintNativeEvent, Category = "Weapon|Camera")
+		void UpdateCameraBoom(); 
+
+	void UpdateCameraBoom_Implementation();
 };

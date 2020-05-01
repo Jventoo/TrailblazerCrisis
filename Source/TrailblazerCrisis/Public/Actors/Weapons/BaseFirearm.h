@@ -134,7 +134,7 @@ protected:
 
 	FHitResult WeaponTrace(const FVector& TraceFrom, const FVector& TraceTo) const;
 
-	virtual void FireWeapon() PURE_VIRTUAL(ABaseFirearm::FireWeapon, );
+	virtual void FireWeapon();
 
 private:
 

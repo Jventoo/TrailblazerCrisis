@@ -10,7 +10,6 @@
 ABaseFirearm::ABaseFirearm()
 {
 	Mesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WeaponMesh"));
-	Mesh->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::OnlyTickPoseWhenRendered;
 	Mesh->bReceivesDecals = true;
 	Mesh->CastShadow = true;
 	Mesh->SetCollisionObjectType(ECC_WorldDynamic);
@@ -22,7 +21,7 @@ ABaseFirearm::ABaseFirearm()
 	bIsEquipped = false;
 	CurrentState = EWeaponState::Idle;
 
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 	PrimaryActorTick.TickGroup = TG_PrePhysics;
 
 	MuzzleAttachPoint = TEXT("Muzzle");
@@ -85,6 +84,7 @@ void ABaseFirearm::AttachMeshToPawn(FName Socket)
 		DetachMeshFromPawn();
 
 		Mesh->AttachToComponent(Pawn->GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, Socket);
+		Mesh->SetHiddenInGame(false);
 	}
 }
 
@@ -437,6 +437,12 @@ EWeaponState ABaseFirearm::GetCurrentState() const
 }
 
 
+void ABaseFirearm::FireWeapon()
+{
+
+}
+
+
 void ABaseFirearm::SetWeaponState(EWeaponState NewState)
 {
 	const EWeaponState PrevState = CurrentState;
@@ -474,11 +480,8 @@ void ABaseFirearm::OnBurstStarted()
 void ABaseFirearm::OnBurstFinished()
 {
 	BurstCounter = 0;
-
-	if (GetNetMode() != NM_DedicatedServer)
-	{
-		StopSimulatingWeaponFire();
-	}
+	
+	StopSimulatingWeaponFire();
 
 	GetWorldTimerManager().ClearTimer(TimerHandle_HandleFiring);
 	bRefiring = false;
