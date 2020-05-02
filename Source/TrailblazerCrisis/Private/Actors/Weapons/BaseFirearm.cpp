@@ -9,6 +9,7 @@
 #include "TimerManager.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Engine.h"
 
 class ABaseProjectile;
 
@@ -23,10 +24,11 @@ ABaseFirearm::ABaseFirearm()
 	Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
 	RootComponent = Mesh;
 
+	bBursting = false;
 	bIsEquipped = false;
 	CurrentState = EWeaponState::Idle;
 
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.TickGroup = TG_PrePhysics;
 
 	MuzzleAttachPoint = TEXT("Muzzle");
@@ -37,6 +39,10 @@ ABaseFirearm::ABaseFirearm()
 	MaxAmmoPerClip = 30;
 	NoAnimReloadDuration = 1.5f;
 	NoEquipAnimDuration = 0.5f;
+
+	BurstCounter = 0;
+	ShotsInBurst = 0;
+	AmtToBurst = 0;
 }
 
 
@@ -57,6 +63,18 @@ void ABaseFirearm::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 	DetachMeshFromPawn();
 	StopSimulatingWeaponFire();
+}
+
+
+void ABaseFirearm::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+
+	GEngine->AddOnScreenDebugMessage(-1, .0f, FColor::Cyan, FString("Burst Counter: " + FString::FromInt(BurstCounter)));
+	GEngine->AddOnScreenDebugMessage(-1, .0f, FColor::Cyan, FString("Ammo in clip: " + FString::FromInt(CurrentAmmoInClip)));
+	GEngine->AddOnScreenDebugMessage(-1, .0f, FColor::Cyan, FString("Is Bursting: " + FString((bBursting) ? "True" : "False")));
+	GEngine->AddOnScreenDebugMessage(-1, .0f, FColor::Cyan, FString("Is ReFiring: " + FString((bRefiring) ? "True" : "False")));
+	GEngine->AddOnScreenDebugMessage(-1, .0f, FColor::Cyan, FString("Can Fire: " + FString((CanFire()) ? "True" : "False")));
 }
 
 
@@ -265,9 +283,15 @@ void ABaseFirearm::StopFire()
 
 bool ABaseFirearm::CanFire() const
 {
-	bool bPawnCanFire = Pawn && Pawn->CanFire();
-	bool bStateOK = CurrentState == EWeaponState::Idle || CurrentState == EWeaponState::Firing;
-	return bPawnCanFire && bStateOK && !bPendingReload;
+	if (bBursting)
+		return true;
+	else
+	{
+		bool bPawnCanFire = Pawn && Pawn->CanFire();
+		bool bStateOK = CurrentState == EWeaponState::Idle || CurrentState == EWeaponState::Firing;
+
+		return bPawnCanFire && bStateOK && !bPendingReload;
+	}
 }
 
 
@@ -313,23 +337,14 @@ FVector ABaseFirearm::GetCameraDamageStartLocation(const FVector& AimDir) const
 }
 
 
-FHitResult ABaseFirearm::WeaponTrace(const FVector& TraceFrom, const FVector& TraceTo) const
-{
-	FCollisionQueryParams TraceParams(TEXT("WeaponTrace"), true, GetInstigator());
-	TraceParams.bReturnPhysicalMaterial = true;
-
-	FHitResult Hit(ForceInit);
-	GetWorld()->LineTraceSingleByChannel(Hit, TraceFrom, TraceTo, ECollisionChannel::ECC_GameTraceChannel1, TraceParams);
-
-	return Hit;
-}
-
-
 
 void ABaseFirearm::HandleFiring()
 {
 	if (CurrentAmmoInClip > 0 && CanFire())
 	{
+		if (CurrentFireMode == EFireModes::Burst)
+			bBursting = true;
+
 		SimulateWeaponFire();
 
 		if (Pawn)
@@ -338,7 +353,7 @@ void ABaseFirearm::HandleFiring()
 
 			UseAmmo();
 
-			BurstCounter++;
+			++BurstCounter;
 		}
 	}
 	else if (CanReload())
@@ -368,12 +383,28 @@ void ABaseFirearm::HandleFiring()
 	if (Pawn)
 	{
 		/* Retrigger HandleFiring on a delay for automatic and burst modes */
-		bRefiring = (CurrentState == EWeaponState::Firing && TimeBetweenShots > 0.0f)
-			&& (CurrentFireMode == EFireModes::Auto || (CurrentFireMode == EFireModes::Burst && BurstCounter < ShotsInBurst));
+		bRefiring = CurrentState == EWeaponState::Firing && TimeBetweenShots > 0.0f && CurrentFireMode == EFireModes::Auto;
+		
+		if (CurrentFireMode == EFireModes::Burst)
+		{
+			bBursting = BurstCounter < AmtToBurst;
+		}
+		else
+			bBursting = false;
 
-		if (bRefiring)
+		if (bRefiring || bBursting)
 		{
 			GetWorldTimerManager().SetTimer(TimerHandle_HandleFiring, this, &ABaseFirearm::HandleFiring, TimeBetweenShots, false);
+		}
+
+		if (!bRefiring && !bBursting)
+		{
+			if (CurrentAmmoInClip <= 0 && CanReload())
+			{
+				StartReload();
+			}
+
+			DetermineWeaponState();
 		}
 	}
 
@@ -391,7 +422,7 @@ void ABaseFirearm::SimulateWeaponFire()
 {
 	if (MuzzleFX)
 	{
-		MuzzlePSC = UGameplayStatics::SpawnEmitterAttached(MuzzleFX, Mesh, MuzzleAttachPoint);
+		MuzzlePSC = UGameplayStatics::SpawnEmitterAttached(MuzzleFX, Mesh, MuzzleAttachPoint, FVector(0, 0, 0), FRotator(0, 0, 0), EAttachLocation::SnapToTargetIncludingScale);
 	}
 
 	if (!bPlayingFireAnim)
@@ -446,26 +477,10 @@ EWeaponState ABaseFirearm::GetCurrentState() const
 
 void ABaseFirearm::FireWeapon()
 {
-	// 3 Cases: Single, Burst, Auto
+	(CurrentFireMode == EFireModes::Burst && BurstCounter < ShotsInBurst);
 
-	// Single: Fire off one projectile, end fire.
-
-	// Burst: Fire off 3 projectiles, end fire.
-
-	// Auto: Fire projectiles on a timer so long as input continues or run out of ammo
-
-		// For all 3 cases: If ammo-- == 0, then call for reload
-
-
-	// For all:
-		// Calculate initial direction then add in accuracy/spread modifiers to get final direction
-		// Calculate damage
-		// Spawn projectile in that direction with the calculated damage
-		// If spawn successful:
-			// Tell character to recoil (add to camera pitch/yaw)
-
-	FTransform& MainDir = CalculateMainProjectileDirection();
-	FTransform& FinalDir = MainDir;
+	FTransform MainDir = CalculateMainProjectileDirection();
+	FTransform FinalDir = MainDir;
 
 	if (CurrentFireMode != EFireModes::Single)
 	{
@@ -474,7 +489,7 @@ void ABaseFirearm::FireWeapon()
 
 	CalculateDamage();
 
-	GetWorld()->SpawnActor<ABaseProjectile>(FinalDir);
+	//GetWorld()->SpawnActor<ABaseProjectile>();
 
 
 	// Handle recoil
@@ -489,7 +504,7 @@ void ABaseFirearm::SetWeaponState(EWeaponState NewState)
 {
 	const EWeaponState PrevState = CurrentState;
 
-	if (PrevState == EWeaponState::Firing && NewState != EWeaponState::Firing)
+	if (PrevState == EWeaponState::Firing && NewState != EWeaponState::Firing && !bBursting)
 	{
 		OnBurstFinished();
 	}
@@ -505,6 +520,9 @@ void ABaseFirearm::SetWeaponState(EWeaponState NewState)
 
 void ABaseFirearm::OnBurstStarted()
 {
+	if (CurrentFireMode == EFireModes::Burst)
+		AmtToBurst = UKismetMathLibrary::Min(ShotsInBurst, CurrentAmmoInClip);
+
 	// Start firing, can be delayed to satisfy TimeBetweenShots
 	const float GameTime = GetWorld()->GetTimeSeconds();
 	if (LastFireTime > 0 && TimeBetweenShots > 0.0f &&
@@ -526,11 +544,13 @@ void ABaseFirearm::OnBurstFinished()
 	StopSimulatingWeaponFire();
 
 	GetWorldTimerManager().ClearTimer(TimerHandle_HandleFiring);
+
 	bRefiring = false;
+	bBursting = false;
 }
 
 
-FTransform& ABaseFirearm::CalculateMainProjectileDirection()
+FTransform ABaseFirearm::CalculateMainProjectileDirection()
 {
 	auto SocketTransform = Mesh->GetSocketTransform(FName("Muzzle"));
 	auto MuzzlePos = SocketTransform.GetLocation()
@@ -560,8 +580,10 @@ FTransform& ABaseFirearm::CalculateMainProjectileDirection()
 		HitPoint = Hit.ImpactPoint;
 	}
 
+	DrawDebugLine(GetWorld(), StartPt, EndPt, FColor::Green, false, 1, 0, 1);
+
 	auto ARot = UKismetMathLibrary::FindLookAtRotation(MuzzlePos, HitPoint);
-	auto BRot = FRotator(XMovepenalty, YMovepenalty, Zmovepenalty);
+	auto BRot = FRotator(0.0f, 0.0f, 0.0f);//XMovepenalty, YMovepenalty, Zmovepenalty);
 
 	auto FinalRot = UKismetMathLibrary::ComposeRotators(ARot, BRot);
 
@@ -569,13 +591,13 @@ FTransform& ABaseFirearm::CalculateMainProjectileDirection()
 }
 
 
-FTransform& ABaseFirearm::CalculateFinalProjectileDirection(FTransform MainDir)
+FTransform ABaseFirearm::CalculateFinalProjectileDirection(const FTransform& MainDir)
 {
 	float Roll = UKismetMathLibrary::RandomFloatInRange(SpreadModifier * -1.0, SpreadModifier);
 	float Pitch = UKismetMathLibrary::RandomFloatInRange(SpreadModifier * -1.0, SpreadModifier);
 	float Yaw = UKismetMathLibrary::RandomFloatInRange(SpreadModifier * -1.0, SpreadModifier);
 
-	return FTransform(UKismetMathLibrary::ComposeRotators(MainDir.Rotator, FRotator(Pitch, Yaw, Roll)),
+	return FTransform(UKismetMathLibrary::ComposeRotators(MainDir.Rotator(), FRotator(Pitch, Yaw, Roll)),
 		MainDir.GetLocation(), MainDir.GetScale3D());
 }
 
@@ -607,7 +629,7 @@ void ABaseFirearm::DetermineWeaponState()
 				NewState = CurrentState;
 			}
 		}
-		else if (!bPendingReload && bWantsToFire && CanFire())
+		else if (bBursting || (!bPendingReload && bWantsToFire && CanFire()))
 		{
 			NewState = EWeaponState::Firing;
 		}
@@ -666,6 +688,7 @@ void ABaseFirearm::UseAmmo()
 	CurrentAmmoInClip--;
 	CurrentAmmo--;
 }
+
 
 void ABaseFirearm::SetAmmoCount(int32 NewTotalAmount)
 {

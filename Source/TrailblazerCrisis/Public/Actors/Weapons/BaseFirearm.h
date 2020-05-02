@@ -37,16 +37,16 @@ struct FRecoilInfo
 	}
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Recoil")
-		int32 UpMin;
+		float UpMin;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Recoil")
-		int32 UpMax;
+		float UpMax;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Recoil")
-		int32 RightMin;
+		float RightMin;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Recoil")
-		int32 RightMax;
+		float RightMax;
 };
 
 USTRUCT(BlueprintType)
@@ -84,6 +84,8 @@ class TRAILBLAZERCRISIS_API ABaseFirearm : public AActor
 
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
+	virtual void Tick(float DeltaSeconds) override;
+
 	float GetEquipStartedTime() const;
 
 	float GetEquipDuration() const;
@@ -99,6 +101,8 @@ class TRAILBLAZERCRISIS_API ABaseFirearm : public AActor
 	bool bPendingEquip;
 
 	FTimerHandle TimerHandle_HandleFiring;
+
+	FTimerHandle TimerHandle_FireWeapon;
 
 	FTimerHandle EquipFinishedTimerHandle;
 
@@ -157,7 +161,8 @@ public:
 
 	void StopFire();
 
-	EWeaponState GetCurrentState() const;
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Weapon State")
+		EWeaponState GetCurrentState() const;
 
 	void AttachMeshToPawn(FName Socket);
 
@@ -178,8 +183,6 @@ protected:
 
 	FVector GetCameraDamageStartLocation(const FVector& AimDir) const;
 
-	FHitResult WeaponTrace(const FVector& TraceFrom, const FVector& TraceTo) const;
-
 	virtual void FireWeapon();
 
 private:
@@ -194,9 +197,9 @@ private:
 
 	void OnBurstFinished();
 
-	FTransform& CalculateMainProjectileDirection();
+	FTransform CalculateMainProjectileDirection();
 
-	FTransform& CalculateFinalProjectileDirection(FTransform MainDir);
+	FTransform CalculateFinalProjectileDirection(const FTransform& MainDir);
 
 	float CalculateDamage();
 
@@ -208,21 +211,25 @@ private:
 
 	bool bRefiring;
 
+	bool bBursting;
+
+	int32 AmtToBurst;
+
 	float LastFireTime;
 
 	/* Time between shots for repeating fire */
 	float TimeBetweenShots;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon Stats")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon Stats", meta = (AllowPrivateAccess = "true"))
 		int32 ShotsInBurst;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon Stats")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon Stats", meta = (AllowPrivateAccess = "true"))
 		float SpreadModifier;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Stats")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Stats", meta = (AllowPrivateAccess = "true"))
 		FRecoilInfo RecoilData;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Stats")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Stats", meta = (AllowPrivateAccess = "true"))
 		FFirearmDamageInfo DamageData;
 
 	/************************************************************************/
