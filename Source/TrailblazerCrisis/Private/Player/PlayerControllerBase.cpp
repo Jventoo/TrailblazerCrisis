@@ -233,6 +233,7 @@ void APlayerControllerBase::TogglePauseMenu()
 	}
 }
 
+
 void APlayerControllerBase::UpdateQuestHUD(int32 QuestID)
 {
 	UHUDWidget* HUD = Cast<UHUDWidget>(HUDRef);
@@ -250,7 +251,19 @@ void APlayerControllerBase::UpdateQuestHUD(int32 QuestID)
 	}
 }
 
+
 void APlayerControllerBase::TransitionToMainMenu()
 {
 	UGameplayStatics::OpenLevel(GetWorld(), MainMenuLevel);
+}
+
+
+void APlayerControllerBase::ToggleCrosshair(bool bEnabled)
+{
+	if (HUDRef)
+	{
+		UHUDWidget* HUD = Cast<UHUDWidget>(HUDRef);
+		
+		HUD->SetCrosshairEnabled(bEnabled);
+	}
 }

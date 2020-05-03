@@ -8,6 +8,7 @@
 #include "PlayerCharacter.generated.h"
 
 class UCurveFloat;
+class APlayerControllerBase;
 
 UCLASS()
 class TRAILBLAZERCRISIS_API APlayerCharacter : public ACharacter
@@ -215,6 +216,8 @@ protected:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	// End of APawn interface
 
+	APlayerControllerBase* GetPlayerController() const;
+
 	void OnReload();
 
 	void OnStartFire();
@@ -232,7 +235,6 @@ protected:
 	UFUNCTION(BlueprintNativeEvent, Category = "Weapon|Camera")
 		void UpdateCombatCamera(); 
 	void UpdateCombatCamera_Implementation();
-
 
 	UFUNCTION(BlueprintNativeEvent, Category = "Weapon|Camera")
 		void UpdateAimingFOV();

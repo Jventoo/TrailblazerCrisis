@@ -74,11 +74,7 @@ void ABaseFirearm::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	GEngine->AddOnScreenDebugMessage(-1, .0f, FColor::Cyan, FString("Burst Counter: " + FString::FromInt(BurstCounter)));
 	GEngine->AddOnScreenDebugMessage(-1, .0f, FColor::Cyan, FString("Ammo in clip: " + FString::FromInt(CurrentAmmoInClip)));
-	GEngine->AddOnScreenDebugMessage(-1, .0f, FColor::Cyan, FString("Is Bursting: " + FString((bBursting) ? "True" : "False")));
-	GEngine->AddOnScreenDebugMessage(-1, .0f, FColor::Cyan, FString("Is ReFiring: " + FString((bRefiring) ? "True" : "False")));
-	GEngine->AddOnScreenDebugMessage(-1, .0f, FColor::Cyan, FString("Can Fire: " + FString((CanFire()) ? "True" : "False")));
 }
 
 

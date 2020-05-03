@@ -56,6 +56,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = UI)
 		void TogglePauseMenu();
 
+	UFUNCTION(BlueprintCallable, Category = UI)
+		void ToggleCrosshair(bool bEnabled);
+
 	///////////////////////////////////////////////////
 	/// Components
 

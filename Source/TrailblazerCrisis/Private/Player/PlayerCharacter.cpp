@@ -11,7 +11,9 @@
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Kismet/GameplayStatics.h"
 
+#include "Player/PlayerControllerBase.h"
 #include "Actors/Weapons/BaseFirearm.h"
 #include "Animation/HumanoidAnimInstance.h"
 
@@ -132,6 +134,14 @@ void APlayerCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerIn
 
 	PlayerInputComponent->BindAction("Holster", IE_Pressed, this, &APlayerCharacter::ToggleEquip);
 	PlayerInputComponent->BindAction("ChangeFireMode", IE_Pressed, this, &APlayerCharacter::NextFireMode);
+}
+
+
+APlayerControllerBase* APlayerCharacter::GetPlayerController() const
+{
+	APlayerControllerBase* PC = Cast<APlayerControllerBase>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+
+	return PC;
 }
 
 
@@ -311,6 +321,9 @@ void APlayerCharacter::ToggleEquip()
 		if (CurrentWeapon)
 			CurrentWeapon->BeginUnequip();
 
+		if (bIsAiming)
+			OnStopAiming();
+
 		UHumanoidAnimInstance* AnimInst = Cast<UHumanoidAnimInstance>(GetMesh()->GetAnimInstance());
 		if (AnimInst)
 			AnimInst->IsArmed = false;
@@ -396,20 +409,28 @@ void APlayerCharacter::StopWeaponFire()
 
 void APlayerCharacter::OnStartAiming()
 {
-	if (GetIsSprinting())
+	if (!bIsAiming && bIsArmed)
 	{
-		StopSprinting();
-	}
+		if (GetIsSprinting())
+		{
+			StopSprinting();
+		}
 
-	bIsAiming = true;
-	UpdateAimingFOV();
+		bIsAiming = true;
+		UpdateAimingFOV();
+		GetPlayerController()->ToggleCrosshair(true);
+	}
 }
 
 
 void APlayerCharacter::OnStopAiming()
 {
-	bIsAiming = false;
-	UpdateAimingFOV();
+	if (bIsAiming)
+	{
+		bIsAiming = false;
+		UpdateAimingFOV();
+		GetPlayerController()->ToggleCrosshair(false);
+	}
 }
 
 
