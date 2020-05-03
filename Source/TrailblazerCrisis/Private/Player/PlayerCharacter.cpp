@@ -131,6 +131,7 @@ void APlayerCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerIn
 	PlayerInputComponent->BindAxis("LookUpRate", this, &APlayerCharacter::LookUpAtRate);
 
 	PlayerInputComponent->BindAction("Holster", IE_Pressed, this, &APlayerCharacter::ToggleEquip);
+	PlayerInputComponent->BindAction("ChangeFireMode", IE_Pressed, this, &APlayerCharacter::NextFireMode);
 }
 
 
@@ -425,6 +426,13 @@ void APlayerCharacter::AddRecoil(float Pitch, float Yaw)
 
 	AddControllerPitchInput(Pitch);
 	AddControllerYawInput(Yaw);
+}
+
+
+void APlayerCharacter::NextFireMode()
+{
+	if (bIsArmed)
+		CurrentWeapon->SwitchToNextFireMode();
 }
 
 

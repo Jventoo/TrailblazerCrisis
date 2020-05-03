@@ -201,7 +201,7 @@ private:
 
 	FTransform CalculateFinalProjectileDirection(const FTransform& MainDir);
 
-	float CalculateDamage();
+	bool CalculateDamage(float& DamageOut);
 
 	bool bWantsToFire;
 
@@ -224,13 +224,24 @@ private:
 		int32 ShotsInBurst;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon Stats", meta = (AllowPrivateAccess = "true"))
+		float BulletSpeed;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon Stats", meta = (AllowPrivateAccess = "true"))
 		float SpreadModifier;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon Stats", meta = (AllowPrivateAccess = "true"))
+		bool bCanRicochet;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Stats", meta = (AllowPrivateAccess = "true"))
 		FRecoilInfo RecoilData;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Stats", meta = (AllowPrivateAccess = "true"))
 		FFirearmDamageInfo DamageData;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon", meta = (AllowPrivateAccess = "true"))
+		TSubclassOf<class ABaseProjectile> ProjectileClass;
+
+	ABaseProjectile* ProjectileRef;
 
 	/************************************************************************/
 	/* Simulation & FX                                                      */

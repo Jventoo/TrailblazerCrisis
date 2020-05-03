@@ -3,6 +3,7 @@
 
 #include "Actors/Weapons/BaseFirearm.h"
 #include "Player/PlayerControllerBase.h"
+#include "Actors/Weapons/BaseProjectile.h"
 
 #include "Camera/CameraComponent.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -24,7 +25,6 @@ ABaseFirearm::ABaseFirearm()
 	Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
 	RootComponent = Mesh;
 
-	bBursting = false;
 	bIsEquipped = false;
 	CurrentState = EWeaponState::Idle;
 
@@ -41,8 +41,12 @@ ABaseFirearm::ABaseFirearm()
 	NoEquipAnimDuration = 0.5f;
 
 	BurstCounter = 0;
-	ShotsInBurst = 0;
 	AmtToBurst = 0;
+
+	ShotsInBurst = 0;
+	BulletSpeed = .0f;
+	SpreadModifier = .0f;
+	bCanRicochet = bBursting = bRefiring = false;
 }
 
 
@@ -477,19 +481,29 @@ EWeaponState ABaseFirearm::GetCurrentState() const
 
 void ABaseFirearm::FireWeapon()
 {
-	(CurrentFireMode == EFireModes::Burst && BurstCounter < ShotsInBurst);
-
+	// Calculate projectile direction
 	FTransform MainDir = CalculateMainProjectileDirection();
 	FTransform FinalDir = MainDir;
 
+	// Add spread for burst and automatic firing
 	if (CurrentFireMode != EFireModes::Single)
 	{
 		FinalDir = CalculateFinalProjectileDirection(MainDir);
 	}
 
-	CalculateDamage();
 
-	//GetWorld()->SpawnActor<ABaseProjectile>();
+	// Calculate projectile damage
+	float DamageToDeal = 0;
+	bool CritHit = CalculateDamage(DamageToDeal);
+
+
+	// Begin spawning the projectile, initalize it, finish spawning
+	ProjectileRef = GetWorld()->SpawnActorDeferred<ABaseProjectile>
+		(ProjectileClass, FinalDir, Pawn, Pawn, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+
+	ProjectileRef->InitializeProjectileStats(DamageToDeal, CritHit, BulletSpeed, bCanRicochet);
+
+	UGameplayStatics::FinishSpawningActor(Cast<AActor>(ProjectileRef), FinalDir);
 
 
 	// Handle recoil
@@ -602,13 +616,15 @@ FTransform ABaseFirearm::CalculateFinalProjectileDirection(const FTransform& Mai
 }
 
 
-float ABaseFirearm::CalculateDamage()
+bool ABaseFirearm::CalculateDamage(float& DamageOut)
 {
-	float InitDamage = UKismetMathLibrary::RandomFloatInRange(DamageData.MinDamage, DamageData.MaxDamage);
+	DamageOut = UKismetMathLibrary::RandomFloatInRange(DamageData.MinDamage, DamageData.MaxDamage);
 	bool IsCrit = (DamageData.CritChance > UKismetMathLibrary::RandomFloatInRange(0.0, 1.0));
 
 	// If we landed a crit, multiple our initial damage by our multiplier. Else, return our randomized damage
-	return IsCrit ? (InitDamage * DamageData.CritDamageMultiplier) : InitDamage;
+	DamageOut = IsCrit ? (DamageOut * DamageData.CritDamageMultiplier) : DamageOut;
+
+	return IsCrit;
 }
 
 

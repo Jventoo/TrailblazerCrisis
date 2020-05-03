@@ -148,6 +148,9 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Combat)
 		bool CanFire() const;
 
+	UFUNCTION(BlueprintCallable, Category = Combat)
+		void NextFireMode();
+
 protected:
 
 	/**
