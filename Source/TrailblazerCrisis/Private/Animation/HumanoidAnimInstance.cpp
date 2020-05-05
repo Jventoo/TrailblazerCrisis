@@ -17,8 +17,7 @@ UHumanoidAnimInstance::UHumanoidAnimInstance()
 
 	bUseRootMotionValues = true;
 
-	Speed = 0.f;
-	Direction = 0.f;
+	Speed = Direction = 0.f;
 }
 
 void UHumanoidAnimInstance::NativeInitializeAnimation()
@@ -82,6 +81,7 @@ void UHumanoidAnimInstance::NativeUninitializeAnimation()
 
 	GetWorld()->GetTimerManager().ClearTimer(UpdateReceivedHandle);
 }
+
 
 void UHumanoidAnimInstance::SetReceivedDirTrue()
 {

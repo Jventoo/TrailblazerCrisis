@@ -8,46 +8,47 @@
 
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/AudioComponent.h"
+#include "PhysicalMaterials/PhysicalMaterial.h"
 
 #include "Engine.h"
 
 void UStepNotify::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation)
 {
 	ATCCharacterBase* Character = Cast<ATCCharacterBase>(MeshComp->GetOwner());
-
 	if (Character)
 	{
+		UHumanoidAnimInstance* AnimInst = Cast<UHumanoidAnimInstance>(MeshComp->GetAnimInstance());
 		auto FootstepsComp = Character->GetFootstepsComp();
 
 		FootstepsComp->Play();
 
 
-		FootstepsComp->SetBoolParameter(UTCStatics::FootstepsPlayParam, Character->bPlayFootsteps);
+		FootstepsComp->SetBoolParameter(UTCStatics::FOOTSTEPS_PLAY_PARAM, Character->bPlayFootsteps);
 
 
 		// Possibly add a lerp and scale volume based on character speed once movement system is finalized
-		FootstepsComp->SetFloatParameter(UTCStatics::FootstepsVolParam, Character->FootstepsVolume);
+		FootstepsComp->SetFloatParameter(UTCStatics::FOOTSTEPS_VOL_PARAM, Character->FootstepsVolume);
 
 
 		// Perform a line trace at the character's feet
 		FCollisionQueryParams Query(TEXT("Footsteps"), false, Character);
 		Query.bReturnPhysicalMaterial = true;
 
-		FHitResult OutHit;
-		GetWorld()->LineTraceSingleByChannel(OutHit, Character->GetActorLocation(),
+		FHitResult OutHit(ForceInit);
+		AnimInst->GetWorld()->LineTraceSingleByChannel(OutHit, Character->GetActorLocation(),
 			Character->GetActorLocation() - FVector(0, 0, 125), ECollisionChannel::ECC_Visibility, Query);
 
+		UPhysicalMaterial* PhysMat = OutHit.PhysMaterial.Get();
+
 		// Get the physical material from our hit, check if we track that surface type, and update the animinstance if we do track it
-		UHumanoidAnimInstance* AnimInst = Cast<UHumanoidAnimInstance>(MeshComp->GetAnimInstance());
-		int32 index = -1;
-
-		//auto physmat = OutHit.PhysMaterial.Get();
-		//GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Cyan, OutHit.Actor.Get()->GetFName().ToString());
-
-		if (true || AnimInst && AnimInst->FloorTypes.Find(OutHit.PhysMaterial.Get(), index))
+		int32 idx = -1;
+		if (AnimInst && AnimInst->FloorTypes.Find(PhysMat, idx))
 		{
-			FootstepsComp->SetIntParameter(UTCStatics::FootstepsFloorParam, 0);
-			GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Cyan, FString(FString("Stepped with index") + FString::FromInt(index)));
+			FootstepsComp->SetIntParameter(UTCStatics::FOOTSTEPS_FLOOR_PARAM, idx);
+		}
+		else
+		{
+			FootstepsComp->SetIntParameter(UTCStatics::FOOTSTEPS_FLOOR_PARAM, UTCStatics::DEFAULT_FOOTSTEP_INDEX);
 		}
 	}
 }
