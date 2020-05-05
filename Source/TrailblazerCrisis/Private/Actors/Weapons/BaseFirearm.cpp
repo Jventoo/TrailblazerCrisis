@@ -10,6 +10,7 @@
 #include "TimerManager.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
+
 #include "Engine.h"
 
 class ABaseProjectile;
@@ -28,7 +29,7 @@ ABaseFirearm::ABaseFirearm()
 	bIsEquipped = false;
 	CurrentState = EWeaponState::Idle;
 
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 	PrimaryActorTick.TickGroup = TG_PrePhysics;
 
 	MuzzleAttachPoint = TEXT("Muzzle");
@@ -47,6 +48,7 @@ ABaseFirearm::ABaseFirearm()
 	BulletSpeed = .0f;
 	SpreadModifier = .0f;
 	bCanRicochet = bBursting = bRefiring = false;
+	bPlayingFireAnim = false;
 }
 
 
@@ -73,8 +75,6 @@ void ABaseFirearm::EndPlay(const EEndPlayReason::Type EndPlayReason)
 void ABaseFirearm::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-
-	GEngine->AddOnScreenDebugMessage(-1, .0f, FColor::Cyan, FString("Ammo in clip: " + FString::FromInt(CurrentAmmoInClip)));
 }
 
 
@@ -422,11 +422,13 @@ void ABaseFirearm::SimulateWeaponFire()
 {
 	if (MuzzleFX)
 	{
+		GEngine->AddOnScreenDebugMessage(-1, .0f, FColor::Cyan, FString("Muzzle fx emitted"));
 		MuzzlePSC = UGameplayStatics::SpawnEmitterAttached(MuzzleFX, Mesh, MuzzleAttachPoint, FVector(0, 0, 0), FRotator(0, 0, 0), EAttachLocation::SnapToTargetIncludingScale);
 	}
 
 	if (!bPlayingFireAnim)
 	{
+		GEngine->AddOnScreenDebugMessage(-1, .0f, FColor::Cyan, FString("Playing fire anim"));
 		PlayWeaponAnimation(FireAnim);
 		bPlayingFireAnim = true;
 	}
@@ -440,6 +442,7 @@ void ABaseFirearm::StopSimulatingWeaponFire()
 	if (bPlayingFireAnim)
 	{
 		StopWeaponAnimation(FireAnim);
+		GEngine->AddOnScreenDebugMessage(-1, .0f, FColor::Cyan, FString("Stopping fire anim"));
 		bPlayingFireAnim = false;
 	}
 }

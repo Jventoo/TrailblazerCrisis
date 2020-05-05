@@ -86,6 +86,10 @@ class TRAILBLAZERCRISIS_API ABaseFirearm : public AActor
 
 	virtual void Tick(float DeltaSeconds) override;
 
+	/************************************************************************/
+	/* Equip & Attachments													*/
+	/************************************************************************/
+
 	float GetEquipStartedTime() const;
 
 	float GetEquipDuration() const;

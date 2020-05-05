@@ -4,14 +4,11 @@
 #include "Player/PlayerCharacter.h"
 
 #include "Camera/CameraComponent.h"
-#include "Components/CapsuleComponent.h"
-#include "Components/InputComponent.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/KismetMathLibrary.h"
-#include "Kismet/GameplayStatics.h"
 
 #include "Player/PlayerControllerBase.h"
 #include "Actors/Weapons/BaseFirearm.h"
@@ -20,25 +17,6 @@
 // Sets default values
 APlayerCharacter::APlayerCharacter()
 {
-	// Set size for collision capsule
-	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
-
-	// set our turn rates for input
-	BaseTurnRate = 45.f;
-	BaseLookUpRate = 45.f;
-
-	// Don't rotate when the controller rotates. Let that just affect the camera.
-	bUseControllerRotationPitch = false;
-	bUseControllerRotationYaw = false;
-	bUseControllerRotationRoll = false;
-
-	// Configure character movement
-	auto charMove = GetCharacterMovement();
-	charMove->bOrientRotationToMovement = true; // Character moves in the direction of input...	
-	charMove->RotationRate = FRotator(0.0f, 540.0f, 0.0f); // ...at this rotation rate
-	charMove->JumpZVelocity = 600.f;
-	charMove->AirControl = 0.2f;
-
 	// Create a camera boom (pulls in towards the player if there is a collision)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
@@ -50,18 +28,11 @@ APlayerCharacter::APlayerCharacter()
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arms
 
-	bIsCrouching = false;
-	bIsSprinting = false;
-	bIsJumping = false;
 	bIsFiring = false;
 	bIsAiming = false;
 	bIsArmed = false;
 
 	bSpawnWeapon = true;
-
-	ForwardAxisValue = 0;
-	RightAxisValue = 0;
-	Direction = 0;
 	
 	CurrentWeapon = nullptr;
 
@@ -94,10 +65,7 @@ void APlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	// Update root motion variables
 	Direction = CalculateDirection(ForwardAxisValue, RightAxisValue);
-	ForwardAxisValue = InputComponent->GetAxisValue("MoveForward");
-	RightAxisValue = InputComponent->GetAxisValue("MoveRight");
 }
 
 
@@ -137,59 +105,6 @@ void APlayerCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerIn
 }
 
 
-APlayerControllerBase* APlayerCharacter::GetPlayerController() const
-{
-	APlayerControllerBase* PC = Cast<APlayerControllerBase>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
-
-	return PC;
-}
-
-
-void APlayerCharacter::TurnAtRate(float Rate)
-{
-	// calculate delta for this frame from the rate information
-	AddControllerYawInput(Rate * BaseTurnRate * GetWorld()->GetDeltaSeconds());
-}
-
-
-void APlayerCharacter::LookUpAtRate(float Rate)
-{
-	// calculate delta for this frame from the rate information
-	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
-}
-
-
-void APlayerCharacter::MoveForward(float Value)
-{
-	if ((Controller != NULL) && (Value != 0.0f))
-	{
-		// find out which way is forward
-		const FRotator Rotation = Controller->GetControlRotation();
-		const FRotator YawRotation(0, Rotation.Yaw, 0);
-
-		// get forward vector
-		const FVector Dir = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-		AddMovementInput(Dir, Value);
-	}
-}
-
-
-void APlayerCharacter::MoveRight(float Value)
-{
-	if ((Controller != NULL) && (Value != 0.0f))
-	{
-		// find out which way is right
-		const FRotator Rotation = Controller->GetControlRotation();
-		const FRotator YawRotation(0, Rotation.Yaw, 0);
-
-		// get right vector 
-		const FVector Dir = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-		// add movement in that direction
-		AddMovementInput(Dir, Value);
-	}
-}
-
-
 void APlayerCharacter::StartSprinting()
 {
 	StopWeaponFire();
@@ -209,50 +124,6 @@ void APlayerCharacter::StopSprinting()
 	UHumanoidAnimInstance* AnimInst = Cast<UHumanoidAnimInstance>(GetMesh()->GetAnimInstance());
 	if (AnimInst)
 		AnimInst->IsSprinting = false;
-}
-
-
-void APlayerCharacter::ToggleCrouch()
-{
-	if (!bIsCrouched)
-	{
-		bIsCrouched = true;
-		GetCharacterMovement()->bWantsToCrouch = true;
-	}
-	else
-	{
-		bIsCrouched = false;
-		GetCharacterMovement()->bWantsToCrouch = false;
-	}
-}
-
-
-float APlayerCharacter::GetDirection() const
-{
-	return Direction;
-}
-
-float APlayerCharacter::GetRightAxisVal(bool AbsoluteVal) const
-{
-	if (AbsoluteVal)
-		return UKismetMathLibrary::Abs(RightAxisValue);
-	else
-		return RightAxisValue;
-}
-
-
-float APlayerCharacter::GetForwardAxisValue(bool AbsoluteVal) const
-{
-	if (AbsoluteVal)
-		return UKismetMathLibrary::Abs(ForwardAxisValue);
-	else
-		return ForwardAxisValue;
-}
-
-
-bool APlayerCharacter::GetIsSprinting() const
-{
-	return bIsSprinting;
 }
 
 
@@ -277,23 +148,6 @@ float APlayerCharacter::CalculateDirection(float ForwardValue, float RightValue)
 }
 
 
-void APlayerCharacter::SetDirection(float NewDir)
-{
-	Direction = NewDir;
-}
-
-void APlayerCharacter::SetRightAxisVal(float NewVal)
-{
-	RightAxisValue = NewVal;
-}
-
-
-void APlayerCharacter::SetForwardAxisValue(float NewVal)
-{
-	ForwardAxisValue = NewVal;
-}
-
-
 //////////////////////////////////////////////////////////////////////////
 // Combat
 
@@ -308,7 +162,10 @@ void APlayerCharacter::ToggleEquip()
 
 		UHumanoidAnimInstance* AnimInst = Cast<UHumanoidAnimInstance>(GetMesh()->GetAnimInstance());
 		if (AnimInst)
+		{
 			AnimInst->IsArmed = true;
+			AnimInst->bUseRootMotionValues = false;
+		}
 
 		bUseControllerRotationYaw = true;
 
@@ -326,7 +183,10 @@ void APlayerCharacter::ToggleEquip()
 
 		UHumanoidAnimInstance* AnimInst = Cast<UHumanoidAnimInstance>(GetMesh()->GetAnimInstance());
 		if (AnimInst)
+		{
 			AnimInst->IsArmed = false;
+			AnimInst->bUseRootMotionValues = false;
+		}
 
 		bUseControllerRotationYaw = false;
 
@@ -419,6 +279,12 @@ void APlayerCharacter::OnStartAiming()
 		bIsAiming = true;
 		UpdateAimingFOV();
 		GetPlayerController()->ToggleCrosshair(true);
+
+		UHumanoidAnimInstance* AnimInst = Cast<UHumanoidAnimInstance>(GetMesh()->GetAnimInstance());
+		if (AnimInst)
+			AnimInst->IsAiming = true;
+
+		GetCharacterMovement()->MaxWalkSpeed /= 2.0f;
 	}
 }
 
@@ -430,6 +296,12 @@ void APlayerCharacter::OnStopAiming()
 		bIsAiming = false;
 		UpdateAimingFOV();
 		GetPlayerController()->ToggleCrosshair(false);
+
+		UHumanoidAnimInstance* AnimInst = Cast<UHumanoidAnimInstance>(GetMesh()->GetAnimInstance());
+		if (AnimInst)
+			AnimInst->IsAiming = false;
+
+		GetCharacterMovement()->MaxWalkSpeed *= 2.0f;
 	}
 }
 

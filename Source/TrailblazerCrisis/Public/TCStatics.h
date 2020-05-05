@@ -26,4 +26,10 @@ public:
 
 	// Do not edit. Default ID for objectives. Used to check whether an objective is valid and essentially allow pointer behavior in BP
 	static int32 DEFAULT_OBJECTIVE_ID;
+
+	static FName FootstepsPlayParam;
+
+	static FName FootstepsVolParam;
+
+	static FName FootstepsFloorParam;
 };

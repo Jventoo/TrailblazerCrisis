@@ -10,3 +10,9 @@ float UTCStatics::SPRINT_MODIFIER = 1.5f;
 int32 UTCStatics::DEFAULT_QUEST_ID = 0;
 
 int32 UTCStatics::DEFAULT_OBJECTIVE_ID = -1;
+
+FName UTCStatics::FootstepsPlayParam = TEXT("PlayFootsteps");
+
+FName UTCStatics::FootstepsVolParam = TEXT("FootstepVolume");
+
+FName UTCStatics::FootstepsFloorParam = TEXT("FloorMaterial");
