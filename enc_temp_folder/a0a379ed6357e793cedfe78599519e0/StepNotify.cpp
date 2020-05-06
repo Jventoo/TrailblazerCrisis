@@ -36,7 +36,7 @@ void UStepNotify::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* An
 
 		FHitResult OutHit(ForceInit);
 		AnimInst->GetWorld()->LineTraceSingleByChannel(OutHit, Character->GetActorLocation(),
-			Character->GetActorLocation() - FVector(0, 0, 120), ECollisionChannel::ECC_Visibility, Query);
+			Character->GetActorLocation() - FVector(0, 0, 125), ECollisionChannel::ECC_Visibility, Query);
 
 		UPhysicalMaterial* PhysMat = OutHit.PhysMaterial.Get();
 
