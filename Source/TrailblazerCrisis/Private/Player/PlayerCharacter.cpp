@@ -185,7 +185,7 @@ void APlayerCharacter::ToggleEquip()
 		if (AnimInst)
 		{
 			AnimInst->IsArmed = false;
-			AnimInst->bUseRootMotionValues = false;
+			AnimInst->bUseRootMotionValues = true;
 		}
 
 		bUseControllerRotationYaw = false;
