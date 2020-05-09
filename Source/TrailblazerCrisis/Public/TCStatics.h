@@ -138,4 +138,8 @@ public:
 	static float DEFAULT_TP_TRACE_RADIUS;
 
 	static FName FP_CAMERA_SOCKET;
+
+	static FName CAMERA_MANAGER_ROT_CURVE;
+
+	static FName CAMERA_MANAGER_DEBUG_CURVE;
 };

@@ -31,3 +31,7 @@ FName UTCStatics::FOOTSTEPS_CURVE_NAME = TEXT("Mask_FootstepSound");
 float UTCStatics::DEFAULT_TP_TRACE_RADIUS = 10.0f;
 
 FName UTCStatics::FP_CAMERA_SOCKET = TEXT("FP_Camera");
+
+FName UTCStatics::CAMERA_MANAGER_ROT_CURVE = TEXT("RotationLagSpeed");
+
+FName UTCStatics::CAMERA_MANAGER_DEBUG_CURVE = TEXT("Override_Debug");
