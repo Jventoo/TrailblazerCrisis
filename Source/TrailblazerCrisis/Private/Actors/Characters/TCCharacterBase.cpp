@@ -8,6 +8,7 @@
 #include "GameFramework/Controller.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -20,7 +21,7 @@ ATCCharacterBase::ATCCharacterBase()
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 
-	// set our turn rates for input
+	// Turn rates for input
 	BaseTurnRate = 45.f;
 	BaseLookUpRate = 45.f;
 
@@ -29,10 +30,6 @@ ATCCharacterBase::ATCCharacterBase()
 	bUseControllerRotationYaw = false;
 	bUseControllerRotationRoll = false;
 
-	bIsCrouching = false;
-	bIsSprinting = false;
-	bIsJumping = false;
-
 	// Configure character movement
 	auto charMove = GetCharacterMovement();
 	charMove->bOrientRotationToMovement = true; // Character moves in the direction of input...	
@@ -40,15 +37,24 @@ ATCCharacterBase::ATCCharacterBase()
 	charMove->JumpZVelocity = 600.f;
 	charMove->AirControl = 0.2f;
 
+	bIsCrouching = bIsSprinting = bIsJumping = false;
 	ForwardAxisValue = RightAxisValue = Direction = 0.0f;
 
+	// Camera
+	ThirdPersonFOV = FirstPersonFOV = 90.0f;
+	bRightShoulder = false;
+
+	// Stats
+	IsMoving = HasMovementInput = false;
+	Speed = MovementInputAmount = AimYawRate = 0.0f;
+
+	// Footsteps
 	bPlayFootsteps = true;
 	FootstepsVolume = 1.0f;
 
 	FootstepsComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("FootstepsComp"));
 	FootstepsComponent->SetupAttachment(RootComponent);
 	FootstepsComponent->bAutoActivate = false;
-
 }
 
 // Called when the game starts or when spawned
@@ -72,7 +78,49 @@ void ATCCharacterBase::Tick(float DeltaTime)
 void ATCCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
+}
 
+
+FCurrentStates ATCCharacterBase::GetCurrentStates_Implementation()
+{
+	return FCurrentStates(GetCharacterMovement()->MovementMode,
+		MovementState, PrevMovementState, MovementAction, RotationMode,
+		Gait, Stance, ViewMode, OverlayState);
+}
+
+FEssentialValues ATCCharacterBase::GetEssentialValues_Implementation()
+{
+	return FEssentialValues(GetVelocity(), Acceleration,
+		GetCharacterMovement()->GetCurrentAcceleration(), IsMoving, HasMovementInput,
+		Speed, MovementInputAmount, GetControlRotation(), AimYawRate);
+}
+
+
+bool ATCCharacterBase::GetCameraParameters_Implementation(float& TPFOV, float& FPFOV)
+{
+	TPFOV = ThirdPersonFOV;
+	FPFOV = FirstPersonFOV;
+
+	return bRightShoulder;
+}
+
+FVector ATCCharacterBase::GetFPCameraTarget_Implementation()
+{
+	return GetMesh()->GetSocketLocation(UTCStatics::FP_CAMERA_SOCKET);
+}
+
+FTransform ATCCharacterBase::GetTPPivotTarget_Implementation()
+{
+	return GetActorTransform();
+}
+
+ECollisionChannel ATCCharacterBase::GetTPTraceParams_Implementation(
+	FVector& TraceOrigin, float& TraceRadius)
+{
+	TraceOrigin = GetActorLocation();
+	TraceRadius = UTCStatics::DEFAULT_TP_TRACE_RADIUS;
+
+	return ECollisionChannel::ECC_Visibility;
 }
 
 

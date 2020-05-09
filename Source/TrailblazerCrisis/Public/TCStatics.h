@@ -6,10 +6,87 @@
 #include "UObject/NoExportTypes.h"
 #include "TCStatics.generated.h"
 
+UENUM(BlueprintType)
+enum class EGait : uint8
+{
+	Walking,
+	Running,
+	Sprinting
+};
+
+UENUM(BlueprintType)
+enum class EMovementAction : uint8
+{
+	None,
+	LowMantle,
+	HighMantle,
+	Rolling,
+	GettingUp
+};
+
+UENUM(BlueprintType)
+enum class EMovementState : uint8
+{
+	None,
+	Grounded,
+	InAir,
+	Mantling,
+	Ragdoll
+};
+
+UENUM(BlueprintType)
+enum class EOverlayState : uint8
+{
+	Default,
+	Masculine,
+	Feminine,
+	Injured,
+	HandsTied,
+	Rifle,
+	Pistol1H,
+	Pistol2H,
+	Bow,
+	Torch,
+	Binos,
+	Box,
+	Barrel
+};
+
+UENUM(BlueprintType)
+enum class ERotationMode : uint8
+{
+	VelocityDirection,
+	LookingDirection,
+	Aiming
+};
+
+UENUM(BlueprintType)
+enum class EStance : uint8
+{
+	Standing,
+	Crouching,
+	Prone
+};
+
+UENUM(BlueprintType)
+enum class EViewMode : uint8
+{
+	ThirdPerson,
+	FirstPerson
+};
+
+UENUM(BlueprintType)
+enum class EGroundedEntryState : uint8
+{
+	None,
+	Roll
+};
+
+
 /**
  * 
  */
-UCLASS()
+UCLASS(abstract)
 class TRAILBLAZERCRISIS_API UTCStatics : public UObject
 {
 	GENERATED_BODY()
@@ -48,5 +125,17 @@ public:
 
 	static FName FOOTSTEPS_FLOOR_PARAM;
 
+	static FName FOOTSTEPS_TYPE_PARAM;
+
 	static int32 DEFAULT_FOOTSTEP_INDEX;
+
+	static FName FOOTSTEPS_CURVE_NAME;
+
+	/************************************************************************/
+	/* Camera																*/
+	/************************************************************************/
+
+	static float DEFAULT_TP_TRACE_RADIUS;
+
+	static FName FP_CAMERA_SOCKET;
 };

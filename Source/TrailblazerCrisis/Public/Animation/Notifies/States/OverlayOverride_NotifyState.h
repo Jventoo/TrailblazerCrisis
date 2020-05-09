@@ -14,4 +14,13 @@ class TRAILBLAZERCRISIS_API UOverlayOverride_NotifyState : public UAnimNotifySta
 {
 	GENERATED_BODY()
 	
+public:
+	UOverlayOverride_NotifyState();
+
+	virtual void NotifyBegin(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, float TotalDuration);
+
+	virtual void NotifyEnd(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation);
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Default")
+		int32 OverrideState;
 };

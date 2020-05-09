@@ -6,6 +6,26 @@
 #include "Animation/AnimInstance.h"
 #include "HumanoidAnimInstance.generated.h"
 
+UENUM(BlueprintType)
+enum class EHipsDirection : uint8
+{
+	F,
+	B,
+	RF,
+	RB,
+	LF,
+	LB
+};
+
+UENUM(BlueprintType)
+enum class EMovementDirection : uint8
+{
+	Forward,
+	Right,
+	Left,
+	Backward
+};
+
 /**
  * 
  */

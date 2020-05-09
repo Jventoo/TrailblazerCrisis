@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
+#include "TCStatics.h"
 #include "AnimationInterface.generated.h"
 
 // This class does not need to be modified.
@@ -20,6 +21,14 @@ class TRAILBLAZERCRISIS_API IAnimationInterface
 {
 	GENERATED_BODY()
 
-	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Character")
+		void Jumped();
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Character")
+		void SetGroundedEntryState(EGroundedEntryState State);
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Character")
+		void SetOverlayOverrideState(int32 OverlayOverrideState);
 };

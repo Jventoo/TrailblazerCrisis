@@ -5,10 +5,21 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Player/PlayerControllerBase.h"
+#include "Interfaces/CharacterInterface.h"
+#include "Interfaces/CameraInterface.h"
 #include "TCCharacterBase.generated.h"
 
+UENUM(BlueprintType)
+enum class EMantleType : uint8
+{
+	HighMantle,
+	LowMantle,
+	FallingCatch
+};
+
 UCLASS()
-class TRAILBLAZERCRISIS_API ATCCharacterBase : public ACharacter
+class TRAILBLAZERCRISIS_API ATCCharacterBase 
+	: public ACharacter, public ICharacterInterface, public ICameraInterface
 {
 	GENERATED_BODY()
 
@@ -28,6 +39,105 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+protected:
+
+	/************************************************************************/
+	/* Character Stats														*/
+	/************************************************************************/
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character Stats|States")
+		FVector Acceleration;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character Stats|States")
+		bool IsMoving;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character Stats|States")
+		bool HasMovementInput;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character Stats|States")
+		FRotator LastVelocityRotation;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character Stats|States")
+		FRotator LastMovementInputRotation;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character Stats|States")
+		float Speed;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character Stats|States")
+		float MovementInputAmount;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character Stats|States")
+		float AimYawRate;
+
+	/************************************************************************/
+	/* Character States														*/
+	/************************************************************************/
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character Stats|States")
+		EMovementState MovementState;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character Stats|States")
+		EMovementState PrevMovementState;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character Stats|States")
+		EMovementAction MovementAction;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character Stats|States")
+		ERotationMode RotationMode;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character Stats|States")
+		EGait Gait;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character Stats|States")
+		EStance Stance;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character Stats|States")
+		EViewMode ViewMode;
+
+public:
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Character States")
+		FCurrentStates GetCurrentStates();
+	virtual FCurrentStates GetCurrentStates_Implementation() override;
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Character States")
+		FEssentialValues GetEssentialValues();
+	virtual FEssentialValues GetEssentialValues_Implementation() override;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character States")
+		EOverlayState OverlayState;
+
+	/************************************************************************/
+	/* Camera																*/
+	/************************************************************************/
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Camera")
+		bool GetCameraParameters(float& TPFOV, float& FPFOV);
+	virtual bool GetCameraParameters_Implementation(float& TPFOV, float& FPFOV) override;
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Camera")
+		FVector GetFPCameraTarget();
+	virtual FVector GetFPCameraTarget_Implementation() override;
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Camera")
+		FTransform GetTPPivotTarget();
+	virtual FTransform GetTPPivotTarget_Implementation() override;
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Camera")
+		ECollisionChannel GetTPTraceParams(FVector& TraceOrigin, float& TraceRadius);
+	virtual ECollisionChannel GetTPTraceParams_Implementation(
+		FVector& TraceOrigin, float& TraceRadius) override;
+
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera")
+		float ThirdPersonFOV;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera")
+		float FirstPersonFOV;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera")
+		bool bRightShoulder;
 
 	/************************************************************************/
 	/* Footsteps															*/

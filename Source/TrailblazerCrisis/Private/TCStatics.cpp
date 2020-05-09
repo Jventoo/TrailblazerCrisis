@@ -21,4 +21,13 @@ FName UTCStatics::FOOTSTEPS_VOL_PARAM = TEXT("FootstepVolume");
 
 FName UTCStatics::FOOTSTEPS_FLOOR_PARAM = TEXT("FloorMaterial");
 
+FName UTCStatics::FOOTSTEPS_TYPE_PARAM = TEXT("FootstepsType");
+
 int32 UTCStatics::DEFAULT_FOOTSTEP_INDEX = 1; // 1 = Concrete
+
+FName UTCStatics::FOOTSTEPS_CURVE_NAME = TEXT("Mask_FootstepSound");
+
+// Camera
+float UTCStatics::DEFAULT_TP_TRACE_RADIUS = 10.0f;
+
+FName UTCStatics::FP_CAMERA_SOCKET = TEXT("FP_Camera");
