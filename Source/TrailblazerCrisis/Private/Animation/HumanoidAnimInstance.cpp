@@ -5,10 +5,13 @@
 #include "TCStatics.h"
 
 #include "Actors/Characters/TCCharacterBase.h"
+#include "GameFramework/Character.h"
 #include "GameFramework/PawnMovementComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "Components/SceneComponent.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Kismet/KismetSystemLibrary.h"
 #include "Curves/CurveVector.h"
 
 UHumanoidAnimInstance::UHumanoidAnimInstance()
@@ -534,7 +537,7 @@ FVelocityBlend UHumanoidAnimInstance::CalculateVelocityBlend()
 
 float UHumanoidAnimInstance::CalculateDiagonalScaleAmount()
 {
-	DiagonalScaleAmountCurve->GetFloatValue(FMath::Abs(VelocityBlend.F + VelocityBlend.B));
+	return DiagonalScaleAmountCurve->GetFloatValue(FMath::Abs(VelocityBlend.F + VelocityBlend.B));
 }
 
 FVector UHumanoidAnimInstance::CalculateRelativeAccelerationAmount()
@@ -588,8 +591,7 @@ float UHumanoidAnimInstance::CalculateStandingPlayRate()
 	auto SceneComp = Cast<USceneComponent>(GetOwningComponent());
 
 	if (SceneComp)
-		return UKismetMathLibrary::Clamp(
-			(Lerped / StrideBlend) / SceneComp->GetComponentScale().Z, 0, 3);
+		return UKismetMathLibrary::Clamp((Lerped / StrideBlend) / SceneComp->GetComponentScale().Z, 0, 3);
 	else
 		return 0.0f;
 }
@@ -606,6 +608,89 @@ float UHumanoidAnimInstance::CalculateCrouchingPlayRate()
 	else
 		return 0.0f;
 }
+
+
+float UHumanoidAnimInstance::CalculateLandPrediction()
+{
+	auto Character = Cast<ACharacter>(Owner);
+
+	if (Character)
+	{
+		auto Capsule = Character->GetCapsuleComponent();
+
+		if (Capsule && FallSpeed < -200.0f)
+		{
+			auto SceneComp = Cast<USceneComponent>(Capsule);
+			auto CapsuleLoc = SceneComp->GetComponentLocation();
+
+			auto UnsafeVect = UKismetMathLibrary::Vector_NormalUnsafe(
+				FVector(Velocity.X, Velocity.Y, UKismetMathLibrary::Clamp(Velocity.Z, -4000.0, -200.0))
+			);
+
+			auto VectMultiplier = UKismetMathLibrary::MapRangeClamped(Velocity.Z, 0, -4000.0, 50.0, 2000.0);
+
+			TArray<AActor*> Ignore;
+			FHitResult OutHit;
+
+			UKismetSystemLibrary::CapsuleTraceSingleByProfile(GetWorld(), CapsuleLoc, CapsuleLoc + (UnsafeVect * VectMultiplier),
+				Capsule->GetScaledCapsuleRadius(), Capsule->GetScaledCapsuleHalfHeight(), TEXT("TC_Character"), false, 
+				Ignore, EDrawDebugTrace::None, OutHit, true);
+
+			if (Character->GetCharacterMovement()->IsWalkable(OutHit) && OutHit.bBlockingHit)
+			{
+				return UKismetMathLibrary::Lerp(
+					LandPredictionCurve->GetFloatValue(OutHit.Time), 0.0, GetCurveValue(TEXT("Mask_LandPrediction"))
+				);
+			}
+		}
+	}
+	return 0.0f;
+}
+
+FLeanAmount UHumanoidAnimInstance::CalculateInAirLeanAmount()
+{
+	FVector Unrotated = Owner->GetActorRotation().UnrotateVector(Velocity) / 350.0f;
+	FVector2D RelativeVelocity(Unrotated.Y, Unrotated.X);
+
+	RelativeVelocity *= LeanInAirCurve->GetFloatValue(FallSpeed);
+
+	return FLeanAmount(RelativeVelocity.X, RelativeVelocity.Y);
+}
+
+
+void UHumanoidAnimInstance::SetFootOffsets(const FName& Enable_FootIK_Curve, const FName& IKFootBone, const FName& RootBone, const FVector& CurrentLocationTarget, const FVector& CurrentLocationOffset, const FRotator& CurrentRotationOffset)
+{
+
+}
+
+void UHumanoidAnimInstance::SetPelvisIKOffset(const FVector& FootOffset_L_Target, const FVector& FootOffset_R_Target)
+{
+}
+
+void UHumanoidAnimInstance::SetFootLocking(const FName& Enable_FootIK_Curve, const FName& FootLockCurve, const FName& IKFootBone, float CurrentFootLockAlpha, const FVector& CurrentFootLockLocation, const FRotator& CurrentFootLockRotation)
+{
+}
+
+void UHumanoidAnimInstance::SetFootLockOffsets(const FVector& LocalLocation, const FRotator& LocalRotation)
+{
+}
+
+
+EMovementDirection UHumanoidAnimInstance::CalculateMovementDirection()
+{
+	return EMovementDirection();
+}
+
+EMovementDirection UHumanoidAnimInstance::CalculateQuadrant(EMovementDirection CurrDir, float FRThreshold, float FLThreshold, float BRThreshold, float BLThreshold, float Buffer, float Angle)
+{
+	return EMovementDirection();
+}
+
+bool UHumanoidAnimInstance::AngleInRange(float Angle, float MinAngle, float MaxAngle, float Buffer, bool IncreaseBuffer)
+{
+	return false;
+}
+
 
 FVelocityBlend UHumanoidAnimInstance::InterpVelocityBlend(FVelocityBlend Current, FVelocityBlend Target, float InterpSpeed, float DeltaTime)
 {

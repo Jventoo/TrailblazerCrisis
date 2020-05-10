@@ -38,19 +38,19 @@ struct FDynamicMontageParams
 		BlendInTime = BlendOutTime = PlayRate = StartTime = 0.0f;
 	}
 
-	UPROPERTY(EditAnywhere, BlueprinReadWrite, Category = "Montage")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Montage")
 		UAnimSequenceBase* Animation;
 
-	UPROPERTY(EditAnywhere, BlueprinReadWrite, Category = "Montage")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Montage")
 		float BlendInTime;
 
-	UPROPERTY(EditAnywhere, BlueprinReadWrite, Category = "Montage")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Montage")
 		float BlendOutTime;
 
-	UPROPERTY(EditAnywhere, BlueprinReadWrite, Category = "Montage")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Montage")
 		float PlayRate;
 
-	UPROPERTY(EditAnywhere, BlueprinReadWrite, Category = "Montage")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Montage")
 		float StartTime;
 };
 
@@ -69,16 +69,16 @@ struct FVelocityBlend
 	{
 	}
 
-	UPROPERTY(EditAnywhere, BlueprinReadWrite, Category = "Velocity")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Velocity")
 		float F;
 
-	UPROPERTY(EditAnywhere, BlueprinReadWrite, Category = "Velocity")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Velocity")
 		float B;
 
-	UPROPERTY(EditAnywhere, BlueprinReadWrite, Category = "Velocity")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Velocity")
 		float L;
 
-	UPROPERTY(EditAnywhere, BlueprinReadWrite, Category = "Velocity")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Velocity")
 		float R;
 };
 
@@ -99,11 +99,11 @@ struct FLeanAmount
 	}
 
 	// Left-right
-	UPROPERTY(EditAnywhere, BlueprinReadWrite, Category = "Lean")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Lean")
 		float LR;
 
 	// Front-back
-	UPROPERTY(EditAnywhere, BlueprinReadWrite, Category = "Lean")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Lean")
 		float FB;
 };
 
@@ -119,19 +119,19 @@ struct FTurnInPlace
 		ScaleTurnAngle = true;
 	}
 
-	UPROPERTY(EditAnywhere, BlueprinReadWrite, Category = "Turn In Place")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Turn In Place")
 		UAnimSequenceBase* Animation;
 
-	UPROPERTY(EditAnywhere, BlueprinReadWrite, Category = "Turn In Place")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Turn In Place")
 		float AnimatedAngle;
 
-	UPROPERTY(EditAnywhere, BlueprinReadWrite, Category = "Turn In Place")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Turn In Place")
 		FName SlotName;
 
-	UPROPERTY(EditAnywhere, BlueprinReadWrite, Category = "Turn In Place")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Turn In Place")
 		float PlayRate;
 
-	UPROPERTY(EditAnywhere, BlueprinReadWrite, Category = "Turn In Place")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Turn In Place")
 		bool ScaleTurnAngle;
 };
 
@@ -146,22 +146,22 @@ struct FRotateInPlace
 		SlowPlayRate = FastPlayRate = 1.0f;
 	}
 
-	UPROPERTY(EditAnywhere, BlueprinReadWrite, Category = "Rotate In Place")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Rotate In Place")
 		UAnimSequenceBase* Animation;
 
-	UPROPERTY(EditAnywhere, BlueprinReadWrite, Category = "Rotate In Place")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Rotate In Place")
 		FName SlotName;
 
-	UPROPERTY(EditAnywhere, BlueprinReadWrite, Category = "Rotate In Place")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Rotate In Place")
 		float SlowTurnRate;
 
-	UPROPERTY(EditAnywhere, BlueprinReadWrite, Category = "Rotate In Place")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Rotate In Place")
 		float FastTurnRate;
 
-	UPROPERTY(EditAnywhere, BlueprinReadWrite, Category = "Rotate In Place")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Rotate In Place")
 		float SlowPlayRate;
 
-	UPROPERTY(EditAnywhere, BlueprinReadWrite, Category = "Rotate In Place")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Rotate In Place")
 		float FastPlayRate;
 };
 
@@ -238,8 +238,8 @@ public:
 	virtual void SetGroundedEntryState_Implementation(EGroundedEntryState State) override;
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Character")
-		void SetOverlayOverrideState(int32 OverlayOverrideState);
-	virtual void SetOverlayOverrideState_Implementation(int32 OverlayOverrideState) override;
+		void SetOverlayOverrideState(int32 NewOverlayOverrideState);
+	virtual void SetOverlayOverrideState_Implementation(int32 NewOverlayOverrideState) override;
 
 	/************************************************************************/
 	/* Updates																*/
@@ -364,7 +364,7 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "Grounded")
 		void RotateInPlaceCheck();
 
-	UFUNCTION(BlueprintCallable, BlueprintImplementable, Category = "Grounded")
+	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "Grounded")
 		void DynamicTransitionCheck();
 
 
@@ -765,43 +765,43 @@ protected:
 	/* Config																*/
 	/************************************************************************/
 
-	UPROPERTY(EditAnywhere, BlueprinReadWrite, Category = "Config")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config")
 		float AnimatedWalkSpeed;
 
-	UPROPERTY(EditAnywhere, BlueprinReadWrite, Category = "Config")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config")
 		float AnimatedRunSpeed;
 
-	UPROPERTY(EditAnywhere, BlueprinReadWrite, Category = "Config")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config")
 		float AnimatedSprintSpeed;
 
-	UPROPERTY(EditAnywhere, BlueprinReadWrite, Category = "Config")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config")
 		float AnimatedCrouchSpeed;
 
-	UPROPERTY(EditAnywhere, BlueprinReadWrite, Category = "Config")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config")
 		float VelocityBlendInterpSpeed;
 
-	UPROPERTY(EditAnywhere, BlueprinReadWrite, Category = "Config")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config")
 		float GroundedLeanInterpSpeed;
 
-	UPROPERTY(EditAnywhere, BlueprinReadWrite, Category = "Config")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config")
 		float InAirLeanInterpSpeed;
 
-	UPROPERTY(EditAnywhere, BlueprinReadWrite, Category = "Config")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config")
 		float SmoothedAimingRotationInterpSpeed;
 
-	UPROPERTY(EditAnywhere, BlueprinReadWrite, Category = "Config")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config")
 		float InputYawOffsetInterpSpeed;
 
-	UPROPERTY(EditAnywhere, BlueprinReadWrite, Category = "Config")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config")
 		float TriggerPivotSpeedLimit;
 
-	UPROPERTY(EditAnywhere, BlueprinReadWrite, Category = "Config")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config")
 		float FootHeight;
 
-	UPROPERTY(EditAnywhere, BlueprinReadWrite, Category = "Config")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config")
 		float IK_TraceDistanceAboveFoot;
 
-	UPROPERTY(EditAnywhere, BlueprinReadWrite, Category = "Config")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config")
 		float IK_TraceDistanceBelowFoot;
 
 	/************************************************************************/
