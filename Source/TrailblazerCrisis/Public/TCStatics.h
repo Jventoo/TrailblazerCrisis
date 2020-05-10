@@ -82,6 +82,19 @@ enum class EGroundedEntryState : uint8
 	Roll
 };
 
+USTRUCT(BlueprintType)
+struct FTransformAndComp
+{
+	GENERATED_USTRUCT_BODY()
+
+	FTransformAndComp() {}
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TransformAndComp")
+		FTransform Transform;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TransformAndComp")
+		class UPrimitiveComponent* Comp;
+};
 
 /**
  * 

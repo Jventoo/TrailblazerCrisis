@@ -6,6 +6,7 @@
 #include "Animation/AnimInstance.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetSystemLibrary.h"
 #include "Math/Rotator.h"
 
 #include "Game/PlayerCameraBehavior.h"
@@ -67,6 +68,24 @@ void ATC_PlayerCameraManager::CustomCameraBehavior(FVector& Loc, FRotator& Rot, 
 
 		// Trace for an object blocking between camera and character
 		TraceForBlockingObject();
+
+		// Lerp FP override and return camera params
+		auto ATrans = UKismetMathLibrary::TLerp(
+			FTransform(TargetCameraRotation, TargetCameraLocation),
+			FTransform(TargetCameraRotation, FPTarg),
+			GetCameraBehaviorParams(TEXT("Weight_FirstPerson"))
+		);
+
+		auto FinalTrans = UKismetMathLibrary::TLerp(ATrans,
+			FTransform(DebugViewRotation, TargetCameraLocation),
+			GetCameraBehaviorParams(UTCStatics::CAMERA_MANAGER_DEBUG_CURVE)
+		);
+
+		Loc = FinalTrans.GetLocation();
+		Rot = FinalTrans.Rotator();
+		FOV = UKismetMathLibrary::Lerp(TPFOV, FPFOV,
+			GetCameraBehaviorParams(TEXT("Weight_FirstPerson"))
+			);
 	}
 }
 
@@ -109,8 +128,10 @@ void ATC_PlayerCameraManager::CalculateTargetCameraRot()
 			GetCameraRotation(),
 			GetOwningPlayerController()->GetControlRotation(),
 			UGameplayStatics::GetWorldDeltaSeconds(GetWorld()),
-			GetCameraBehaviorParams(UTCStatics::CAMERA_MANAGER_ROT_CURVE))),
-		DebugViewRotation, GetCameraBehaviorParams(UTCStatics::CAMERA_MANAGER_DEBUG_CURVE), true);
+			GetCameraBehaviorParams(UTCStatics::CAMERA_MANAGER_ROT_CURVE))
+			),
+		DebugViewRotation, GetCameraBehaviorParams(UTCStatics::CAMERA_MANAGER_DEBUG_CURVE), true
+	);
 }
 
 void ATC_PlayerCameraManager::CalculateSmoothedPivotTarg(const FTransform& PivotTarg)
@@ -123,7 +144,8 @@ void ATC_PlayerCameraManager::CalculateSmoothedPivotTarg(const FTransform& Pivot
 	SmoothedPivotTarget = FTransform(PivotTarg.GetRotation(),
 		CalculateAxisIndependentLag(
 			SmoothedPivotTarget.GetLocation(), PivotTarg.GetLocation(),
-			TargetCameraRotation, Lag));
+			TargetCameraRotation, Lag)
+	);
 }
 
 void ATC_PlayerCameraManager::CalculatePivotLoc()
@@ -158,14 +180,23 @@ void ATC_PlayerCameraManager::CalculateTargetCameraLoc(const FTransform& PivotTa
 
 	TargetCameraLocation =
 		UKismetMathLibrary::VLerp(AVect, BVect,
-			GetCameraBehaviorParams(UTCStatics::CAMERA_MANAGER_DEBUG_CURVE);
+			GetCameraBehaviorParams(UTCStatics::CAMERA_MANAGER_DEBUG_CURVE)
+		);
 }
 
 void ATC_PlayerCameraManager::TraceForBlockingObject()
 {
 	FVector Origin;
 	float Radius;
+	FHitResult OutHit;
+	TArray<AActor*> IgnoreActors;
 	auto Channel = ICameraInterface::Execute_GetTPTraceParams(ControlledPawn, Origin, Radius);
 
-	GetWorld()->SweepTestByChannel(Origin, TargetCameraLocation, Radius, )
+	UKismetSystemLibrary::SphereTraceSingle(GetWorld(), Origin, TargetCameraLocation,
+		Radius, Channel, false, IgnoreActors, EDrawDebugTrace::None, OutHit, true);
+
+	if (OutHit.bBlockingHit && OutHit.Distance > 0)
+	{
+		TargetCameraLocation = OutHit.Location - OutHit.TraceEnd + TargetCameraLocation;
+	}
 }

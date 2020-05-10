@@ -43,6 +43,13 @@ public:
 protected:
 
 	/************************************************************************/
+	/* References															*/
+	/************************************************************************/
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "References")
+		UAnimInstance* MeshAnimInst;
+
+	/************************************************************************/
 	/* Character Stats														*/
 	/************************************************************************/
 
@@ -105,6 +112,33 @@ public:
 		FEssentialValues GetEssentialValues();
 	virtual FEssentialValues GetEssentialValues_Implementation() override;
 
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Character")
+		void SetMovementState(EMovementState NewState);
+	virtual void SetMovementState_Implementation(EMovementState NewState) override;
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Character")
+		void SetMovementAction(EMovementAction NewAction);
+	virtual void SetMovementAction_Implementation(EMovementAction NewAction) override;
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Character")
+		void SetRotationMode(ERotationMode NewRotMode);
+	virtual void SetRotationMode_Implementation(ERotationMode NewRotMode) override;
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Character")
+		void SetGait(EGait NewGait);
+	virtual void SetGait_Implementation(EGait NewGait) override;
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Character")
+		void SetViewMode(EViewMode NewViewMode);
+	virtual void SetViewMode_Implementation(EViewMode NewViewMode) override;
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Character")
+		void SetOverlayState(EOverlayState NewState);
+	virtual void SetOverlayState_Implementation(EOverlayState NewState) override;
+
+	UFUNCTION(BlueprintCallable, Category = "Character")
+		void SetStance(EStance NewStance);
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character States")
 		EOverlayState OverlayState;
 
@@ -125,8 +159,8 @@ public:
 	virtual FTransform GetTPPivotTarget_Implementation() override;
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Camera")
-		ECollisionChannel GetTPTraceParams(FVector& TraceOrigin, float& TraceRadius);
-	virtual ECollisionChannel GetTPTraceParams_Implementation(
+		ETraceTypeQuery GetTPTraceParams(FVector& TraceOrigin, float& TraceRadius);
+	virtual ETraceTypeQuery GetTPTraceParams_Implementation(
 		FVector& TraceOrigin, float& TraceRadius) override;
 
 
@@ -160,6 +194,24 @@ private:
 	/************************************************************************/
 
 public:
+
+	virtual void OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
+
+	virtual void OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
+
+	UFUNCTION(BlueprintCallable, Category = Movement)
+	void Prone();
+
+	UFUNCTION(BlueprintCallable, Category = Movement)
+	void UnProne();
+
+	void OnStartProne();
+
+	void OnEndProne();
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Input")
+		bool bWantsToProne;
+
 	/** Return direction player is looking/moving **/
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Movement)
 		float GetDirection() const;
@@ -234,7 +286,22 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
 		float BaseLookUpRate;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Input")
+		ERotationMode DesiredRotMode;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Input")
+		EGait DesiredGait;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Input")
+		EStance DesiredStance;
+
 protected:
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Input")
+		bool bBreakFall;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Input")
+		bool bSprintHeld;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
 		bool bIsCrouching;
@@ -256,4 +323,54 @@ protected:
 	/** Fwd-bwd movemenet clamped between [-1, 1] */
 	UPROPERTY(Transient)
 		float ForwardAxisValue;
+
+	/************************************************************************/
+	/* Rotation																*/
+	/************************************************************************/
+
+protected:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
+		FRotator TargetRotation;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
+		FRotator InAirRotation;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
+		float YawOffset;
+
+	/************************************************************************/
+	/* Ragdoll																*/
+	/************************************************************************/
+
+	UFUNCTION(BlueprintCallable, Category = "Ragdoll")
+		void RagdollStart();
+
+	UFUNCTION(BlueprintCallable, Category = "Ragdoll")
+		void RagdollEnd();
+
+	UFUNCTION(BlueprintCallable, Category = "Ragdoll")
+		void RagdollUpdate();
+
+	UFUNCTION(BlueprintCallable, Category = "Ragdoll")
+		void SetActorLocationDuringRagdoll();
+
+	UFUNCTION(BlueprintCallable, Category = "Ragdoll")
+		virtual UAnimMontage* GetGetUpAnimation(bool RagdollFaceUp) const;
+
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ragdoll")
+		bool bRagdollOnGround;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ragdoll")
+		bool bRagdollFaceUp;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Ragdoll")
+		FVector LastRagdollVelocity;
+
+	/************************************************************************/
+	/* Mantle																*/
+	/************************************************************************/
+
+	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "Mantle")
+		void StopMantleTimeline();
 };

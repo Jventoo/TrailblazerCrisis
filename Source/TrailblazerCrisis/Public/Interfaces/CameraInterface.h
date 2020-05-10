@@ -46,5 +46,5 @@ public:
 	 * @return TraceChannel		Output parameter what channel we'll be doing our trace from
 	 */
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Character")
-		ECollisionChannel GetTPTraceParams(FVector& TraceOrigin, float& TraceRadius);
+		ETraceTypeQuery GetTPTraceParams(FVector& TraceOrigin, float& TraceRadius);
 };

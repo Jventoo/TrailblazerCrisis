@@ -20,7 +20,7 @@ public:
 
     virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 
-    UPROPERTY(BlueprintCallable, Category = "Default")
+    UFUNCTION(BlueprintCallable, Category = "Default")
         void UpdateCharacterInfo();
 
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Refs")
