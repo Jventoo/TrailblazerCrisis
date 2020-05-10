@@ -59,9 +59,14 @@ struct FVelocityBlend
 {
 	GENERATED_USTRUCT_BODY()
 
-		FVelocityBlend()
+	FVelocityBlend()
 	{
 		F = B = L = R = 0.0f;
+	}
+	
+	FVelocityBlend(float newF, float newB, float newL, float newR)
+		: F(newF), B(newB), L(newL), R(newR)
+	{
 	}
 
 	UPROPERTY(EditAnywhere, BlueprinReadWrite, Category = "Velocity")
@@ -85,6 +90,12 @@ struct FLeanAmount
 	FLeanAmount()
 	{
 		LR = FB = 0.0f;
+	}
+
+	FLeanAmount(float newLR, float newFB)
+		: LR(newLR), FB(newFB)
+	{
+
 	}
 
 	// Left-right
@@ -195,6 +206,10 @@ private:
 
 	FTimerHandle UpdateJumpHandle;
 
+	FTimerHandle AllowTransitionHandle;
+
+	bool bAllowTransition;
+
 public:
 	UHumanoidAnimInstance();
 
@@ -236,10 +251,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Updates")
 		void UpdateAimingValues();
 
-	UFUNCTION(BlueprintCallable, Category = "Updates")
+	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "Updates")
 		void UpdateLayerValues();
 
-	UFUNCTION(BlueprintCallable, Category = "Updates")
+	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "Updates")
 		void UpdateFootIK();
 
 	UFUNCTION(BlueprintCallable, Category = "Updates")
@@ -256,6 +271,9 @@ public:
 	
 protected:
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Character States")
+		float CurrDeltaTime;
+
 	/************************************************************************/
 	/* Character Info														*/
 	/************************************************************************/
@@ -271,6 +289,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character States")
 		FVector Acceleration;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character States")
+		FVector MovementInput;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character States")
 		bool bIsMoving;
@@ -318,19 +339,19 @@ protected:
 	/* Grounded																*/
 	/************************************************************************/
 
-	UFUNCTION(BlueprintCallable, Category = "Grounded")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Grounded")
 		bool ShouldMoveCheck() const;
 
-	UFUNCTION(BlueprintCallable, Category = "Grounded")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Grounded")
 		bool CanTurnInPlace() const;
 
-	UFUNCTION(BlueprintCallable, Category = "Grounded")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Grounded")
 		bool CanRotateInPlace() const;
 
-	UFUNCTION(BlueprintCallable, Category = "Grounded")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Grounded")
 		bool CanDynamicTransition() const;
 
-	UFUNCTION(BlueprintCallable, Category = "Grounded")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Grounded")
 		bool CanOverlayTransition() const;
 
 	UFUNCTION(BlueprintCallable, Category = "Grounded")
@@ -343,7 +364,7 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "Grounded")
 		void RotateInPlaceCheck();
 
-	UFUNCTION(BlueprintCallable, Category = "Grounded")
+	UFUNCTION(BlueprintCallable, BlueprintImplementable, Category = "Grounded")
 		void DynamicTransitionCheck();
 
 
@@ -414,25 +435,25 @@ protected:
 	/* Movement																*/
 	/************************************************************************/
 
-	UFUNCTION(BlueprintCallable, Category = "Movement")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Movement")
 		FVelocityBlend CalculateVelocityBlend();
 
-	UFUNCTION(BlueprintCallable, Category = "Movement")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Movement")
 		float CalculateDiagonalScaleAmount();
 
-	UFUNCTION(BlueprintCallable, Category = "Movement")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Movement")
 		FVector CalculateRelativeAccelerationAmount();
 
-	UFUNCTION(BlueprintCallable, Category = "Movement")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Movement")
 		float CalculateWalkRunBlend();
 
-	UFUNCTION(BlueprintCallable, Category = "Movement")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Movement")
 		float CalculateStrideBlend();
 
-	UFUNCTION(BlueprintCallable, Category = "Movement")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Movement")
 		float CalculateStandingPlayRate();
 
-	UFUNCTION(BlueprintCallable, Category = "Movement")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Movement")
 		float CalculateCrouchingPlayRate();
 
 	/************************************************************************/
@@ -735,10 +756,10 @@ protected:
 		class UCurveFloat* LeanInAirCurve;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Blend Curves")
-		class UCurveFloat* YawOffset_FB;
+		class UCurveVector* YawOffset_FB;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Blend Curves")
-		class UCurveFloat* YawOffset_LR;
+		class UCurveVector* YawOffset_LR;
 
 	/************************************************************************/
 	/* Config																*/
@@ -787,13 +808,16 @@ protected:
 	/* Utility																*/
 	/************************************************************************/
 
-	UFUNCTION(BlueprintCallable, Category = "Interp")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Utility")
 		FVelocityBlend InterpVelocityBlend(FVelocityBlend Current, FVelocityBlend Target,
 			float InterpSpeed, float DeltaTime);
 
-	UFUNCTION(BlueprintCallable, Category = "Interp")
-		FVelocityBlend InterpLeanAmount(FVelocityBlend Current, FVelocityBlend Target,
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Utility")
+		FLeanAmount InterpLeanAmount(FLeanAmount Current, FLeanAmount Target,
 			float InterpSpeed, float DeltaTime);
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Utility")
+		float GetAnimCurve_Clamped(FName Name, float Bias, float Min, float Max);
 
 	UFUNCTION(BlueprintCallable, Category = "Foot IK")
 		void ResetIKOffsets();
@@ -805,4 +829,7 @@ private:
 
 	UFUNCTION()
 		void SetJumpFalse();
+
+	UFUNCTION()
+		void OpenTransition();
 };

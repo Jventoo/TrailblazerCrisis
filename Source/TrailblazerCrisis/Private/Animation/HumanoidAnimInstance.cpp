@@ -6,7 +6,10 @@
 
 #include "Actors/Characters/TCCharacterBase.h"
 #include "GameFramework/PawnMovementComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Components/SceneComponent.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Curves/CurveVector.h"
 
 UHumanoidAnimInstance::UHumanoidAnimInstance()
 {
@@ -18,7 +21,9 @@ UHumanoidAnimInstance::UHumanoidAnimInstance()
 
 	bUseRootMotionValues = true;
 
-	Speed = Direction = 0.f;
+	Speed = Direction = CurrDeltaTime = 0.f;
+
+	bAllowTransition = true;
 
 	// Character State
 	bIsMoving = HasMovementInput = false;
@@ -99,6 +104,8 @@ void UHumanoidAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	if (!Owner)
 		return;
 
+	CurrDeltaTime = DeltaSeconds;
+
 	if (Owner->IsA(ATCCharacterBase::StaticClass()))
 	{
 		UpdateCharacterInfo();
@@ -168,8 +175,42 @@ void UHumanoidAnimInstance::NativeUninitializeAnimation()
 	Super::NativeUninitializeAnimation();
 
 	GetWorld()->GetTimerManager().ClearTimer(UpdateReceivedHandle);
+	GetWorld()->GetTimerManager().ClearTimer(UpdateJumpHandle);
+	GetWorld()->GetTimerManager().ClearTimer(AllowTransitionHandle);
 }
 
+void UHumanoidAnimInstance::SetReceivedDirTrue()
+{
+	bReceivedInitDir = true;
+}
+
+void UHumanoidAnimInstance::PlayTransition(FDynamicMontageParams Parameters)
+{
+	PlaySlotAnimationAsDynamicMontage(Parameters.Animation, TEXT("Grounded Slot"),
+		Parameters.BlendInTime, Parameters.BlendOutTime, Parameters.PlayRate,
+		1, 0.0f, Parameters.StartTime);
+}
+
+void UHumanoidAnimInstance::PlayDynamicTransition(float ReTriggerDelay, FDynamicMontageParams Parameters)
+{
+	if (bAllowTransition)
+	{
+		PlaySlotAnimationAsDynamicMontage(Parameters.Animation, TEXT("Grounded Slot"),
+			Parameters.BlendInTime, Parameters.BlendOutTime, Parameters.PlayRate,
+			1, 0.0f, Parameters.StartTime);
+
+		bAllowTransition = false;
+
+		// Allow retrigger after delay
+		GetWorld()->GetTimerManager().SetTimer(AllowTransitionHandle, this,
+			&UHumanoidAnimInstance::OpenTransition, ReTriggerDelay, false);
+	}
+}
+
+void UHumanoidAnimInstance::OpenTransition()
+{
+	bAllowTransition = true;
+}
 
 void UHumanoidAnimInstance::Jumped_Implementation()
 {
@@ -179,11 +220,6 @@ void UHumanoidAnimInstance::Jumped_Implementation()
 
 	GetWorld()->GetTimerManager().SetTimer(UpdateJumpHandle, this,
 		&UHumanoidAnimInstance::SetJumpFalse, 0.1f, false);
-}
-
-void UHumanoidAnimInstance::SetReceivedDirTrue()
-{
-	bReceivedInitDir = true;
 }
 
 void UHumanoidAnimInstance::SetJumpFalse()
@@ -199,4 +235,412 @@ void UHumanoidAnimInstance::SetGroundedEntryState_Implementation(EGroundedEntryS
 void UHumanoidAnimInstance::SetOverlayOverrideState_Implementation(int32 NewOverlayOverrideState)
 {
 	OverlayOverrideState = NewOverlayOverrideState;
+}
+
+
+void UHumanoidAnimInstance::UpdateCharacterInfo()
+{
+	if (Owner
+		&& Owner->GetClass()->ImplementsInterface(UCharacterInterface::StaticClass()))
+	{
+		auto Vals = ICharacterInterface::Execute_GetEssentialValues(Owner);
+
+		Velocity = Vals.Velocity;
+		Acceleration = Vals.Acceleration;
+		MovementInput = Vals.MovementInput;
+		bIsMoving = Vals.IsMoving;
+		HasMovementInput = Vals.HasMovementInput;
+		Speed = Vals.Speed;
+		MovementInputAmount = Vals.MovementInputAmt;
+		AimingRotation = Vals.AimingRotation;
+		AimYawRate = Vals.AimYawRate;
+
+		auto States = ICharacterInterface::Execute_GetCurrentStates(Owner);
+
+		MovementState = States.MovementState;
+		PrevMovementState = States.PrevMovementState;
+		MovementAction = States.MovementAction;
+		RotationMode = States.VelocityDir;
+		Gait = States.ActualGait;
+		Stance = States.ActualStance;
+		ViewMode = States.ViewMode;
+		OverlayState = States.OverlayState;
+	}
+}
+
+void UHumanoidAnimInstance::UpdateAimingValues()
+{
+	SmoothedAimingRotation = UKismetMathLibrary::RInterpTo(SmoothedAimingRotation,
+		AimingRotation, CurrDeltaTime, SmoothedAimingRotationInterpSpeed);
+
+
+	auto DeltaAimingAngle = UKismetMathLibrary::NormalizedDeltaRotator(
+		AimingRotation, Owner->GetActorRotation());
+	AimingAngle = FVector2D(DeltaAimingAngle.Yaw, DeltaAimingAngle.Pitch);
+
+	auto DeltaSmoothedAimingAngle = UKismetMathLibrary::NormalizedDeltaRotator(
+		SmoothedAimingRotation, Owner->GetActorRotation());
+	SmoothedAimingAngle = FVector2D(DeltaAimingAngle.Yaw, DeltaAimingAngle.Pitch);
+
+
+	if (RotationMode != ERotationMode::VelocityDirection)
+	{
+		AimSweepTime = UKismetMathLibrary::MapRangeClamped(AimingAngle.Y, -90, 90, 1, 0);
+
+		SpineRotation = FRotator(0, AimingAngle.X / 4.0, 0);
+	}
+
+
+	if (RotationMode == ERotationMode::VelocityDirection && HasMovementInput)
+	{
+		float DeltaYawRotYaw = UKismetMathLibrary::NormalizedDeltaRotator(
+			UKismetMathLibrary::Conv_VectorToRotator(MovementInput), Owner->GetActorRotation()).Yaw;
+
+		InputYawOffsetTime = UKismetMathLibrary::FInterpTo(InputYawOffsetTime,
+			UKismetMathLibrary::MapRangeClamped(DeltaYawRotYaw, -100, 100, 0, 1),
+			CurrDeltaTime, InputYawOffsetInterpSpeed);
+	}
+
+	auto SmoothedXABS = UKismetMathLibrary::Abs(SmoothedAimingAngle.X);
+
+	LeftYawTime = UKismetMathLibrary::MapRangeClamped(SmoothedXABS, 0, 100, 0.5, 0);
+	RightYawTime = UKismetMathLibrary::MapRangeClamped(SmoothedXABS, 0, 180, 0.5, 1);
+	ForwardYawTime = UKismetMathLibrary::MapRangeClamped(SmoothedAimingAngle.X, -180, 180, 0, 1);
+}
+
+void UHumanoidAnimInstance::UpdateMovementValues()
+{
+	VelocityBlend = InterpVelocityBlend(VelocityBlend, CalculateVelocityBlend(), 
+		VelocityBlendInterpSpeed, CurrDeltaTime);
+
+	DiagonalScaleAmount = CalculateDiagonalScaleAmount();
+	RelativeAccelerationAmount = CalculateRelativeAccelerationAmount();
+
+	LeanAmount = InterpLeanAmount(LeanAmount, FLeanAmount(RelativeAccelerationAmount.Y, 
+		RelativeAccelerationAmount.X), GroundedLeanInterpSpeed, CurrDeltaTime);
+
+	WalkRunBlend = CalculateWalkRunBlend();
+	StrideBlend = CalculateStrideBlend();
+	StandingPlayRate = CalculateStandingPlayRate();
+	CrouchingPlayRate = CalculateCrouchingPlayRate();
+}
+
+void UHumanoidAnimInstance::UpdateRotationValues()
+{
+	MovementDirection = CalculateMovementDirection();
+
+	auto DeltaRot = UKismetMathLibrary::NormalizedDeltaRotator(
+		UKismetMathLibrary::Conv_VectorToRotator(Velocity), Owner->GetControlRotation()
+	);
+
+	auto TempFB = YawOffset_FB->GetVectorValue(DeltaRot.Yaw);
+	auto TempLR = YawOffset_LR->GetVectorValue(DeltaRot.Yaw);
+
+	FYaw = TempFB.X;
+	BYaw = TempFB.Y;
+	LYaw = TempLR.X;
+	RYaw = TempLR.Y;
+}
+
+void UHumanoidAnimInstance::UpdateInAirValues()
+{
+	FallSpeed = Velocity.Z;
+	LandPrediction = CalculateLandPrediction();
+	LeanAmount = InterpLeanAmount(LeanAmount, CalculateInAirLeanAmount(), 
+		InAirLeanInterpSpeed, CurrDeltaTime);
+}
+
+void UHumanoidAnimInstance::UpdateRagdollValues()
+{
+	FlailRate = UKismetMathLibrary::MapRangeClamped(
+		GetOwningComponent()->GetPhysicsLinearVelocity().Size(), 0, 1000, 0, 1
+	);
+}
+
+
+bool UHumanoidAnimInstance::ShouldMoveCheck() const
+{
+	return (Speed > 150.0f) || (bIsMoving && HasMovementInput);
+}
+
+bool UHumanoidAnimInstance::CanTurnInPlace() const
+{
+	return (RotationMode == ERotationMode::LookingDirection) 
+		&& (ViewMode == EViewMode::ThirdPerson) 
+		&& (GetCurveValue(TEXT("Enable_Transition")) > 0.99);
+}
+
+bool UHumanoidAnimInstance::CanRotateInPlace() const
+{
+	return ViewMode == EViewMode::FirstPerson ||
+		RotationMode == ERotationMode::Aiming;
+}
+
+bool UHumanoidAnimInstance::CanDynamicTransition() const
+{
+	return GetCurveValue(TEXT("Enable_Transition")) == 1.0f;
+}
+
+bool UHumanoidAnimInstance::CanOverlayTransition() const
+{
+	return (Stance == EStance::Standing && !bShouldMove);
+}
+
+void UHumanoidAnimInstance::TurnInPlace(const FRotator& TargetRot, float PlayRateScale, float StartTime, bool OverrideCurrent)
+{
+	float TurnAngle = UKismetMathLibrary::NormalizedDeltaRotator(
+		TargetRot, Owner->GetActorRotation()).Yaw;
+
+	FTurnInPlace TargetTurnAsset;
+
+	if (FMath::Abs(TurnAngle) < Turn180Threshold)
+	{
+		if (TurnAngle < 0)
+		{
+			switch (Stance)
+			{
+			case EStance::Standing:
+				TargetTurnAsset = N_TurnIP_L90;
+				break;
+
+			case EStance::Crouching:
+				TargetTurnAsset = CLF_TurnIP_L90;
+				break;
+
+			default:
+				break;
+			}
+		}
+		else
+		{
+			switch (Stance)
+			{
+			case EStance::Standing:
+				TargetTurnAsset = N_TurnIP_R90;
+				break;
+
+			case EStance::Crouching:
+				TargetTurnAsset = CLF_TurnIP_R90;
+				break;
+
+			default:
+				break;
+			}
+		}
+	}
+	else
+	{
+		if (TurnAngle < 0)
+		{
+			switch (Stance)
+			{
+			case EStance::Standing:
+				TargetTurnAsset = N_TurnIP_L180;
+				break;
+
+			case EStance::Crouching:
+				TargetTurnAsset = CLF_TurnIP_L180;
+				break;
+
+			default:
+				break;
+			}
+		}
+		else
+		{
+			switch (Stance)
+			{
+			case EStance::Standing:
+				TargetTurnAsset = N_TurnIP_R180;
+				break;
+
+			case EStance::Crouching:
+				TargetTurnAsset = CLF_TurnIP_R180;
+				break;
+
+			default:
+				break;
+			}
+		}
+	}
+
+	if (TargetTurnAsset.Animation)
+	{
+		if (OverrideCurrent
+			|| !IsPlayingSlotAnimation(TargetTurnAsset.Animation, TargetTurnAsset.SlotName))
+		{
+			PlaySlotAnimationAsDynamicMontage(TargetTurnAsset.Animation, TargetTurnAsset.SlotName,
+				0.2, 0.2, TargetTurnAsset.PlayRate * PlayRateScale, 1, 0, StartTime);
+
+
+			RotationScale = TargetTurnAsset.PlayRate * PlayRateScale;
+
+			if (TargetTurnAsset.ScaleTurnAngle)
+				RotationScale *= (TurnAngle / TargetTurnAsset.AnimatedAngle);
+		}
+	}
+}
+
+void UHumanoidAnimInstance::TurnInPlaceCheck()
+{
+	float AngleAbs = FMath::Abs(AimingAngle.X);
+
+	if (AngleAbs > TurnCheckMinAngle && AimYawRate < AimYawRateLimit)
+	{
+		ElapsedDelayTime += CurrDeltaTime;
+
+		bool ExceedsDelay = ElapsedDelayTime > (UKismetMathLibrary::MapRangeClamped(
+			AngleAbs, TurnCheckMinAngle, 180, MinAngleDelay, MaxAngleDelay));
+
+		if (ExceedsDelay)
+			TurnInPlace(FRotator(0, AimingRotation.Yaw, 0), 1.0, 0.0, false);
+	}
+	else
+		ElapsedDelayTime = 0.0f;
+}
+
+void UHumanoidAnimInstance::RotateInPlaceCheck()
+{
+	Rotate_L = AimingAngle.X < RotateMinThreshold;
+	Rotate_R = AimingAngle.X > RotateMaxThreshold;
+
+	if (Rotate_L || Rotate_R)
+	{
+		RotateRate = UKismetMathLibrary::MapRangeClamped(
+			AimYawRate, AimYawRateMinRange, AimYawRateMaxRange, MinPlayRate, MaxPlayRate);
+	}
+}
+
+
+FVelocityBlend UHumanoidAnimInstance::CalculateVelocityBlend()
+{
+	auto VelocityCopy = Velocity;
+	VelocityCopy.Normalize(0.1);
+	FVector LocVelacityBlendDir = Owner->GetActorRotation().UnrotateVector(VelocityCopy);
+
+	float Sum = FMath::Abs(LocVelacityBlendDir.X)
+		+ FMath::Abs(LocVelacityBlendDir.Y)
+		+ FMath::Abs(LocVelacityBlendDir.Z);
+
+	FVector RelativeDir = LocVelacityBlendDir / Sum;
+
+	float F = UKismetMathLibrary::Clamp(RelativeDir.X, 0, 1);
+	float B = FMath::Abs(UKismetMathLibrary::Clamp(RelativeDir.X, -1, 0));
+	float L = FMath::Abs(UKismetMathLibrary::Clamp(RelativeDir.Y, -1, 0));
+	float R = UKismetMathLibrary::Clamp(RelativeDir.Y, 0, 1);
+
+	return FVelocityBlend(F, B, L, R);
+}
+
+float UHumanoidAnimInstance::CalculateDiagonalScaleAmount()
+{
+	DiagonalScaleAmountCurve->GetFloatValue(FMath::Abs(VelocityBlend.F + VelocityBlend.B));
+}
+
+FVector UHumanoidAnimInstance::CalculateRelativeAccelerationAmount()
+{
+	float Accel = 0.0;
+
+	auto Character = Cast<ACharacter>(Owner);
+	if (Character)
+	{
+		if (UKismetMathLibrary::Dot_VectorVector(Acceleration, Velocity) > 0)
+			Accel = Character->GetCharacterMovement()->GetMaxAcceleration();
+		else
+			Accel = Character->GetCharacterMovement()->GetMaxBrakingDeceleration();
+
+		return (Owner->GetActorRotation().UnrotateVector(
+			UKismetMathLibrary::Vector_ClampSizeMax(Acceleration, Accel) / Accel));
+	}
+	return FVector::ZeroVector;
+}
+
+float UHumanoidAnimInstance::CalculateWalkRunBlend()
+{
+	switch (Gait)
+	{
+	case EGait::Walking:
+		return 0.0f;
+
+	default:
+		return 1.0f;
+	}
+}
+
+float UHumanoidAnimInstance::CalculateStrideBlend()
+{
+	auto A = UKismetMathLibrary::Lerp(StrideBlend_N_Walk->GetFloatValue(Speed),
+		StrideBlend_N_Run->GetFloatValue(Speed),
+		GetAnimCurve_Clamped(TEXT("Weight_Gait"), -1, 0, 1));
+
+	return UKismetMathLibrary::Lerp(A, StrideBlend_C_Walk->GetFloatValue(Speed),
+		GetCurveValue(TEXT("BasePose_CLF")));
+}
+
+float UHumanoidAnimInstance::CalculateStandingPlayRate()
+{
+	auto A = UKismetMathLibrary::Lerp(Speed / AnimatedWalkSpeed, Speed / AnimatedRunSpeed,
+		GetAnimCurve_Clamped(TEXT("Weight_Gait"), -1, 0, 1));
+
+	auto Lerped = UKismetMathLibrary::Lerp(A, Speed / AnimatedSprintSpeed,
+		GetAnimCurve_Clamped(TEXT("Weight_Gait"), -2, 0, 1));
+
+	auto SceneComp = Cast<USceneComponent>(GetOwningComponent());
+
+	if (SceneComp)
+		return UKismetMathLibrary::Clamp(
+			(Lerped / StrideBlend) / SceneComp->GetComponentScale().Z, 0, 3);
+	else
+		return 0.0f;
+}
+
+float UHumanoidAnimInstance::CalculateCrouchingPlayRate()
+{
+	auto SceneComp = Cast<USceneComponent>(GetOwningComponent());
+
+	if (SceneComp)
+	{
+		float Val = Speed / AnimatedCrouchSpeed / StrideBlend / SceneComp->GetComponentScale().Z;
+		return UKismetMathLibrary::Clamp(Val, 0, 2);
+	}
+	else
+		return 0.0f;
+}
+
+FVelocityBlend UHumanoidAnimInstance::InterpVelocityBlend(FVelocityBlend Current, FVelocityBlend Target, float InterpSpeed, float DeltaTime)
+{
+	float F = UKismetMathLibrary::FInterpTo(Current.F, Target.F, DeltaTime, InterpSpeed);
+	float B = UKismetMathLibrary::FInterpTo(Current.B, Target.B, DeltaTime, InterpSpeed);
+	float L = UKismetMathLibrary::FInterpTo(Current.L, Target.L, DeltaTime, InterpSpeed);
+	float R = UKismetMathLibrary::FInterpTo(Current.R, Target.R, DeltaTime, InterpSpeed);
+
+	return FVelocityBlend(F, B, L, R);
+}
+
+FLeanAmount UHumanoidAnimInstance::InterpLeanAmount(FLeanAmount Current, FLeanAmount Target, float InterpSpeed, float DeltaTime)
+{
+	float LR = UKismetMathLibrary::FInterpTo(Current.LR, Target.LR, DeltaTime, InterpSpeed);
+	float FB = UKismetMathLibrary::FInterpTo(Current.FB, Target.FB, DeltaTime, InterpSpeed);
+	
+	return FLeanAmount(LR, FB);
+}
+
+void UHumanoidAnimInstance::ResetIKOffsets()
+{
+	FootOffset_L_Location = UKismetMathLibrary::VInterpTo(FootOffset_L_Location,
+		FVector::ZeroVector, CurrDeltaTime, 15);
+
+	FootOffset_R_Location = UKismetMathLibrary::VInterpTo(FootOffset_R_Location,
+		FVector::ZeroVector, CurrDeltaTime, 15);
+
+	FootOffset_L_Rotation = UKismetMathLibrary::RInterpTo(FootOffset_L_Rotation,
+		FRotator::ZeroRotator, CurrDeltaTime, 15);
+
+	FootOffset_R_Rotation = UKismetMathLibrary::RInterpTo(FootOffset_R_Rotation,
+		FRotator::ZeroRotator, CurrDeltaTime, 15);
+}
+
+float UHumanoidAnimInstance::GetAnimCurve_Clamped(FName Name, float Bias, float Min, float Max)
+{
+	return UKismetMathLibrary::Clamp(GetCurveValue(Name) + Bias, Min, Max);
 }
