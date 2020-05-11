@@ -9,6 +9,7 @@
 #include "TCStatics.h"
 #include "UI/HUDWidget.h"
 #include "UI/PauseStackWidget.h"
+#include "Game/TC_PlayerCameraManager.h"
 
 APlayerControllerBase::APlayerControllerBase()
 {
@@ -52,6 +53,17 @@ void APlayerControllerBase::SetupInputComponent()
 	auto& PauseAction = InputComponent->BindAction("PauseMenu", IE_Pressed, this, &APlayerControllerBase::TogglePauseMenu);
 	PauseAction.bExecuteWhenPaused = true;
 	PauseAction.bConsumeInput = true;
+}
+
+void APlayerControllerBase::OnPossess(APawn* aPawn)
+{
+	if (PlayerCameraManager)
+	{
+		auto TCCameraManager = Cast<ATC_PlayerCameraManager>(PlayerCameraManager);
+
+		if (TCCameraManager)
+			TCCameraManager->OnPossess(aPawn);
+	}
 }
 
 bool APlayerControllerBase::IsHudOpen() const

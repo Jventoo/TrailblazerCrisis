@@ -82,6 +82,8 @@ protected:
 
 	virtual void SetupInputComponent() override;
 
+	virtual void OnPossess(APawn* aPawn) override;
+
 public:
 	UPROPERTY(BlueprintReadOnly, Category = UI)
 		TArray<UUserWidget*> MenuHistoryStack;
