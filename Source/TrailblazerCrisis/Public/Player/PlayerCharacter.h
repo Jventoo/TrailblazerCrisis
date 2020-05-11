@@ -160,4 +160,70 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon|Camera")
 		float CombatArmOffset;
+
+	/************************************************************************/
+	/* Mantle Animation														*/
+	/************************************************************************/
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animations|Mantle")
+		FMantleAsset Mantle_2m_Default;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animations|Mantle")
+		FMantleAsset Mantle_1m_Default;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animations|Mantle")
+		FMantleAsset Mantle_1m_RH;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animations|Mantle")
+		FMantleAsset Mantle_1m_LH;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animations|Mantle")
+		FMantleAsset Mantle_1m_2H;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animations|Mantle")
+		FMantleAsset Mantle_1m_Box;
+
+	/************************************************************************/
+	/* Roll Animation														*/
+	/************************************************************************/
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animations|Roll")
+		class UAnimMontage* LandRoll_Default;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animations|Roll")
+		class UAnimMontage* LandRoll_RH;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animations|Roll")
+		class UAnimMontage* LandRoll_LH;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animations|Roll")
+		class UAnimMontage* LandRoll_2H;
+
+	/************************************************************************/
+	/* Get Up Animation														*/
+	/************************************************************************/
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animations|Stand")
+		class UAnimMontage* GetUpFront_Default;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animations|Stand")
+		class UAnimMontage* GetUpFront_RH;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animations|Stand")
+		class UAnimMontage* GetUpFront_LH;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animations|Stand")
+		class UAnimMontage* GetUpFront_2H;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animations|Stand")
+		class UAnimMontage* GetUpBack_Default;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animations|Stand")
+		class UAnimMontage* GetUpBack_RH;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animations|Stand")
+		class UAnimMontage* GetUpBack_LH;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animations|Stand")
+		class UAnimMontage* GetUpBack_2H;
 };

@@ -38,8 +38,13 @@ ATCCharacterBase::ATCCharacterBase()
 	charMove->JumpZVelocity = 600.f;
 	charMove->AirControl = 0.2f;
 
+	// Deprecated
 	bIsCrouching = bIsSprinting = bIsJumping = false;
 	ForwardAxisValue = RightAxisValue = Direction = 0.0f;
+
+	// Input
+	LookUpDownRate = LookLeftRightRate = 1.25f;
+	bBreakFall = bSprintHeld = false;
 
 	// Camera
 	ThirdPersonFOV = FirstPersonFOV = 90.0f;
@@ -47,7 +52,7 @@ ATCCharacterBase::ATCCharacterBase()
 
 	// Stats
 	IsMoving = HasMovementInput = false;
-	Speed = MovementInputAmount = AimYawRate = 0.0f;
+	Speed = MovementInputAmount = AimYawRate = PreviousAimYaw = 0.0f;
 
 	// Footsteps
 	bPlayFootsteps = true;
@@ -59,6 +64,14 @@ ATCCharacterBase::ATCCharacterBase()
 
 	// Ragdoll
 	bRagdollOnGround = bRagdollFaceUp = false;
+
+	// Movement
+	CurrentMovementSettings = FMovementSettings(165, 350, 600, nullptr, nullptr);
+
+	// Mantle
+	GroundedTraceSettings = FMantleTraceSettings(250, 50, 75, 30, 30);
+	AutomaticTraceSettings = FMantleTraceSettings(80, 40, 50, 30, 30);
+	FallingTraceSettings = FMantleTraceSettings(150, 50, 70, 30, 30);
 }
 
 // Called when the game starts or when spawned

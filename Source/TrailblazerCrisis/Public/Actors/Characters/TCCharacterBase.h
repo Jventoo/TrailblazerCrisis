@@ -7,6 +7,7 @@
 #include "Player/PlayerControllerBase.h"
 #include "Interfaces/CharacterInterface.h"
 #include "Interfaces/CameraInterface.h"
+#include "Engine/DataTable.h"
 #include "TCCharacterBase.generated.h"
 
 UENUM(BlueprintType)
@@ -53,29 +54,35 @@ protected:
 	/* Character Stats														*/
 	/************************************************************************/
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character Stats|States")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character Stats")
 		FVector Acceleration;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character Stats|States")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character Stats")
 		bool IsMoving;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character Stats|States")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character Stats")
 		bool HasMovementInput;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character Stats|States")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character Stats")
 		FRotator LastVelocityRotation;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character Stats|States")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character Stats")
 		FRotator LastMovementInputRotation;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character Stats|States")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character Stats")
 		float Speed;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character Stats|States")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character Stats")
 		float MovementInputAmount;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character Stats|States")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character Stats")
 		float AimYawRate;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character Stats")
+		FVector PreviousVelocity;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character Stats")
+		float PreviousAimYaw;
 
 	/************************************************************************/
 	/* Character States														*/
@@ -278,38 +285,45 @@ protected:
 
 public:
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
+		ERotationMode DesiredRotMode;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
+		EGait DesiredGait;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
+		EStance DesiredStance;
+
 	/** Base turn rate, in deg/sec. Other scaling may affect final turn rate. */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Camera)
 		float BaseTurnRate;
 
 	/** Base look up/down rate, in deg/sec. Other scaling may affect final rate. */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Camera)
 		float BaseLookUpRate;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Input")
-		ERotationMode DesiredRotMode;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Input")
-		EGait DesiredGait;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Input")
-		EStance DesiredStance;
 
 protected:
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Input")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Input")
+		float LookUpDownRate;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Input")
+		float LookLeftRightRate;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Input")
 		bool bBreakFall;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Input")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Input")
 		bool bSprintHeld;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
+	// Deprecated
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Movement)
 		bool bIsCrouching;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Movement)
 		bool bIsSprinting;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Movement)
 		bool bIsJumping;
 
 	/** Measured in degrees */
@@ -323,6 +337,8 @@ protected:
 	/** Fwd-bwd movemenet clamped between [-1, 1] */
 	UPROPERTY(Transient)
 		float ForwardAxisValue;
+
+	// End Deprecated
 
 	/************************************************************************/
 	/* Rotation																*/
@@ -373,4 +389,45 @@ protected:
 
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "Mantle")
 		void StopMantleTimeline();
+
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+		FMantleParams MantleParams;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+		FTransformAndComp MantleLedgeLS;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+		FTransform MantleTarget;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+		FTransform MantleActualStartOffset;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+		FTransform MantleAnimatedStartOffset;
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+		FMantleTraceSettings GroundedTraceSettings;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+		FMantleTraceSettings AutomaticTraceSettings;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+		FMantleTraceSettings FallingTraceSettings;
+
+	/************************************************************************/
+	/* Movement																*/
+	/************************************************************************/
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+		FDataTableRowHandle MovementModel;
+
+protected:
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+		FMovementSettings MovementData;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+		FMovementSettings CurrentMovementSettings;
 };

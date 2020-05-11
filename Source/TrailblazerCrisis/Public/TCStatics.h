@@ -96,6 +96,200 @@ struct FTransformAndComp
 		class UPrimitiveComponent* Comp;
 };
 
+USTRUCT(BlueprintType)
+struct FMovementSettings
+{
+	GENERATED_USTRUCT_BODY()
+
+	FMovementSettings() 
+	{
+		WalkSpeed = RunSpeed = SprintSpeed = 0.0f;
+		MovementCurve = nullptr;
+		RotationRateCurve = nullptr;
+	}
+
+	FMovementSettings(float NewWalk, float NewRun, float NewSprint, class UCurveVector* MoveCurve, class UCurveFloat* RotCurve)
+		: WalkSpeed(NewWalk), RunSpeed(NewRun), SprintSpeed(NewSprint)
+	{
+		MovementCurve = MoveCurve;
+		RotationRateCurve = RotCurve;
+	}
+
+	FMovementSettings(const FMovementSettings& OtherStruct)
+	{
+		WalkSpeed = OtherStruct.WalkSpeed;
+		RunSpeed = OtherStruct.RunSpeed;
+		SprintSpeed = OtherStruct.SprintSpeed;
+		MovementCurve = OtherStruct.MovementCurve;
+		RotationRateCurve = OtherStruct.RotationRateCurve;
+	}
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MovementSettings")
+		float WalkSpeed;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MovementSettings")
+		float RunSpeed;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MovementSettings")
+		float SprintSpeed;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MovementSettings")
+		class UCurveVector* MovementCurve;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MovementSettings")
+		class UCurveFloat* RotationRateCurve;
+};
+
+USTRUCT(BlueprintType)
+struct FMovementSettings_Stance
+{
+	GENERATED_USTRUCT_BODY()
+
+	FMovementSettings_Stance() {}
+
+	FMovementSettings_Stance(FMovementSettings Stand, FMovementSettings Crouch)
+		: Standing(Stand), Crouching(Crouch) {}
+
+	FMovementSettings_Stance(const FMovementSettings_Stance& Other)
+		: Standing(Other.Standing), Crouching(Other.Crouching) {}
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MovementSettings")
+		FMovementSettings Standing;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MovementSettings")
+		FMovementSettings Crouching;
+};
+
+USTRUCT(BlueprintType)
+struct FMovementSettings_State
+{
+	GENERATED_USTRUCT_BODY()
+
+	FMovementSettings_State() {}
+
+	FMovementSettings_State(FMovementSettings_Stance VelDir, FMovementSettings_Stance LookDir, FMovementSettings_Stance Aim)
+		: VelocityDirection(VelDir), LookingDirection(LookDir), Aiming(Aim)
+	{}
+
+	FMovementSettings_State(const FMovementSettings_State& Other)
+		: VelocityDirection(Other.VelocityDirection), LookingDirection(Other.LookingDirection), Aiming(Other.Aiming)
+	{}
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MovementSettings")
+		FMovementSettings_Stance VelocityDirection;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MovementSettings")
+		FMovementSettings_Stance LookingDirection;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MovementSettings")
+		FMovementSettings_Stance Aiming;
+};
+
+USTRUCT(BlueprintType)
+struct FMantleAsset
+{
+	GENERATED_USTRUCT_BODY()
+
+	FMantleAsset()
+	{
+		AnimMontage = nullptr;
+		PositionCorrectCurve = nullptr;
+		LowHeight = LowPlayRate = LowStartPosition = HighHeight = HighPlayRate = HighStartPosition = 0.0f;
+	}
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mantle")
+		class UAnimMontage* AnimMontage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mantle")
+		class UCurveVector* PositionCorrectCurve;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mantle")
+		FVector StartingOffset;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mantle")
+		float LowHeight;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mantle")
+		float LowPlayRate;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mantle")
+		float LowStartPosition;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mantle")
+		float HighHeight;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mantle")
+		float HighPlayRate;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mantle")
+		float HighStartPosition;
+};
+
+
+USTRUCT(BlueprintType)
+struct FMantleParams
+{
+	GENERATED_USTRUCT_BODY()
+
+	FMantleParams()
+	{
+		AnimMontage = nullptr;
+		PositionCorrectCurve = nullptr;
+		StartingPosition = PlayRate = 0.0f;
+	}
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mantle")
+		class UAnimMontage* AnimMontage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mantle")
+		class UCurveVector* PositionCorrectCurve;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mantle")
+		float StartingPosition;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mantle")
+		float PlayRate;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mantle")
+		FVector StartingOffset;
+};
+
+USTRUCT(BlueprintType)
+struct FMantleTraceSettings
+{
+	GENERATED_USTRUCT_BODY()
+
+	FMantleTraceSettings()
+	{
+		MaxLedgeHeight = MinLedgeHeight = ReachDistance = 
+			ForwardTraceRadius = DownwardTraceRadius = 0.0f;
+	}
+
+	FMantleTraceSettings(float MaxHeight, float MinHeight, float ReachDist, float ForwardRadius, float DownwardRadius)
+		: MaxLedgeHeight(MaxHeight), MinLedgeHeight(MinHeight), ReachDistance(ReachDist),
+		  ForwardTraceRadius(ForwardRadius), DownwardTraceRadius(DownwardRadius)
+	{
+
+	}
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mantle")
+		float MaxLedgeHeight;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mantle")
+		float MinLedgeHeight;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mantle")
+		float ReachDistance;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mantle")
+		float ForwardTraceRadius;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mantle")
+		float DownwardTraceRadius;
+};
+
+
+
 /**
  * 
  */
