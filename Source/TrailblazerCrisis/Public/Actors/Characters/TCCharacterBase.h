@@ -84,6 +84,18 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character Stats")
 		float PreviousAimYaw;
 
+public:
+	UFUNCTION(BlueprintCallable, Category = "Character Stats")
+		void SetEssentialValues();
+
+	UFUNCTION(BlueprintCallable, Category = "Character Stats")
+		void CacheValues();
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Character Stats")
+		FVector CalculateAcceleration();
+
+protected:
+
 	/************************************************************************/
 	/* Character States														*/
 	/************************************************************************/
@@ -202,14 +214,23 @@ private:
 
 public:
 
+	UFUNCTION(BlueprintCallable, Category = "Input")
+		void PlayerMovementInput(bool IsForwardAxis);
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Input")
+		FVector GetPlayerMovementInput() const;
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Input")
+		void FixDiagonalGamepadValues(float XIn, float YIn, float& XOut, float& YOut) const;
+
 	virtual void OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
 
 	virtual void OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
 
-	UFUNCTION(BlueprintCallable, Category = Movement)
+	UFUNCTION(BlueprintCallable, Category = "Input")
 	void Prone();
 
-	UFUNCTION(BlueprintCallable, Category = Movement)
+	UFUNCTION(BlueprintCallable, Category = "Input")
 	void UnProne();
 
 	void OnStartProne();
@@ -220,22 +241,22 @@ public:
 		bool bWantsToProne;
 
 	/** Return direction player is looking/moving **/
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Movement)
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Input")
 		float GetDirection() const;
 
 	/** Return axis value corresponding to right-left movement between [-1, 1] **/
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Movement)
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Input")
 		float GetRightAxisVal(bool AbsoluteVal = false) const;
 
 	/** Return axis value corresponding to fwd-back movement between [-1, 1] **/
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Movement)
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Input")
 		float GetForwardAxisValue(bool AbsoluteVal = false) const;
 
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Movement)
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Input")
 		bool GetIsSprinting() const;
 
 	/** Set private members and update movement component **/
-	UFUNCTION(BlueprintCallable, Category = Movement)
+	UFUNCTION(BlueprintCallable, Category = "Input")
 		void ToggleCrouch();
 
 protected:
@@ -244,43 +265,43 @@ protected:
 	 * Provide fwd-bwd input for non-root motion movement; update input vars for BP root motion.
 	 * @param Value  Ranged between [-1, 1] where 1 is a maximum request forward
 	 */
-	UFUNCTION(BlueprintCallable, Category = Movement)
+	UFUNCTION(BlueprintCallable, Category = "Input")
 		void MoveForward(float Value);
 
 	/**
 	 * Provide left-right input for non-root motion movement; update input vars for BP root motion.
 	 * @param Value  Ranged between [-1, 1] where 1 is a maximum request right
 	 */
-	UFUNCTION(BlueprintCallable, Category = Movement)
+	UFUNCTION(BlueprintCallable, Category = "Input")
 		void MoveRight(float Value);
 
 	/**
 	 * Called via input to turn at a given rate.
 	 * @param Rate	This is a normalized rate, i.e. 1.0 means 100% of desired turn rate
 	 */
-	UFUNCTION(BlueprintCallable, Category = Movement)
+	UFUNCTION(BlueprintCallable, Category = "Input")
 		void TurnAtRate(float Rate);
 
 	/**
 	 * Called via input to turn look up/down at a given rate.
 	 * @param Rate	This is a normalized rate, i.e. 1.0 means 100% of desired turn rate
 	 */
-	UFUNCTION(BlueprintCallable, Category = Movement)
+	UFUNCTION(BlueprintCallable, Category = "Input")
 		void LookUpAtRate(float Rate);
 
 	/**
 	* Set Direction to NewDir
 	* @param NewDir  Float between [-180, 180] degrees
 	*/
-	UFUNCTION(BlueprintCallable, Category = Movement)
+	UFUNCTION(BlueprintCallable, Category = "Input")
 		void SetDirection(float NewDir);
 
 	/** See ForwardAxisValue member declaration for use */
-	UFUNCTION(BlueprintCallable, Category = Movement)
+	UFUNCTION(BlueprintCallable, Category = "Input")
 		void SetRightAxisVal(float NewVal);
 
 	/** See ForwardAxisValue member declaration for use */
-	UFUNCTION(BlueprintCallable, Category = Movement)
+	UFUNCTION(BlueprintCallable, Category = "Input")
 		void SetForwardAxisValue(float NewVal);
 
 public:
@@ -344,14 +365,40 @@ protected:
 	/* Rotation																*/
 	/************************************************************************/
 
+public:
+	UFUNCTION(BlueprintCallable, Category = "Rotation")
+		void UpdateGroundedRotation();
+
+	UFUNCTION(BlueprintCallable, Category = "Rotation")
+		void UpdateInAirRotation();
+
+	UFUNCTION(BlueprintCallable, Category = "Rotation")
+		void SmoothCharacterRotation(const FRotator& Target, float TargetInterpSpeed, float ActorInterpSpeed);
+
+	UFUNCTION(BlueprintCallable, Category = "Rotation")
+		void AddToCharacterRotation(const FRotator& DeltaRot);
+
+	UFUNCTION(BlueprintCallable, Category = "Rotation")
+		void LimitRotation(float AimYawMin, float AimYawMax, float InterpSpeed);
+
+	UFUNCTION(BlueprintCallable, Category = "Rotation")
+		bool SetActorLocationAndRotation(const FVector& NewLocation, const FRotator& NewRotation, 
+			bool bSweep, bool bTeleport, FHitResult& SweepHitResult);
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Rotation")
+		float CalculateGroundedRotationRate();
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Rotation")
+		bool CanUpdateMovingRotation();
+
 protected:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Rotation")
 		FRotator TargetRotation;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Rotation")
 		FRotator InAirRotation;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Rotation")
 		float YawOffset;
 
 	/************************************************************************/
@@ -387,9 +434,26 @@ protected:
 	/* Mantle																*/
 	/************************************************************************/
 
+	UFUNCTION(BlueprintCallable, Category = "Mantle")
+		bool MantleCheck(FMantleTraceSettings TraceSettings);
+
+	UFUNCTION(BlueprintCallable, Category = "Mantle")
+		bool MantleStart(float Height, FTransformAndComp MantleLedge, EMantleType Type);
+
+	UFUNCTION(BlueprintCallable, Category = "Mantle")
+		void MantleEnd();
+
+	UFUNCTION(BlueprintCallable, Category = "Mantle")
+		void MantleUpdate(float BlendIn);
+
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "Mantle")
 		void StopMantleTimeline();
 
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Movement")
+		bool CapsuleHasRoomCheck(UCapsuleComponent* Capsule, const FVector& TargetLoc, float HeightOffset, float RadiusOffset) const;
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Movement")
+		FMantleAsset GetMantleAsset(EMantleType Type) const;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 		FMantleParams MantleParams;
@@ -420,14 +484,59 @@ public:
 	/* Movement																*/
 	/************************************************************************/
 
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+		void SetMovementModel();
+
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+		void UpdateCharacterMovement();
+
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+		void UpdateDynamicMovementSettings(EGait AllowedGait = EGait::Walking);
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Movement")
+		FMovementSettings GetTargetMovementSettings() const;
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Movement")
+		EGait GetAllowedGait() const;
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Movement")
+		EGait GetActualGait(EGait AllowedGait = EGait::Walking) const;
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Movement")
+		virtual bool CanSprint() const;
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Movement")
+		float GetMappedSpeed() const;
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Movement")
+		virtual class UAnimMontage* GetRollAnimation() const;
+
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 		FDataTableRowHandle MovementModel;
 
 protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
-		FMovementSettings MovementData;
+		FMovementSettings_State MovementData;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 		FMovementSettings CurrentMovementSettings;
+
+	/************************************************************************/
+	/* Utility																*/
+	/************************************************************************/
+
+public:
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Utility")
+		void GetControlVectors(FVector& ForwardV, FVector& RightV) const;
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Utility")
+		FVector GetCapsuleBaseLocation(float ZOffset) const;
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Utility")
+		FVector GetCapsuleLocationFromBase(const FVector& BaseLoc, float ZOffset) const;
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Utility")
+		float GetAnimCurveValue(const FName& CurveName) const;
 };

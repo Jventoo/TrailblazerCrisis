@@ -161,7 +161,7 @@ struct FMovementSettings_Stance
 };
 
 USTRUCT(BlueprintType)
-struct FMovementSettings_State
+struct FMovementSettings_State : FTableRowBase
 {
 	GENERATED_USTRUCT_BODY()
 

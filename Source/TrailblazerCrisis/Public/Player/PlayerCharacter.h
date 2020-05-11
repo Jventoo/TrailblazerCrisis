@@ -92,6 +92,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = Combat)
 		void NextFireMode();
 
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Movement")
+		virtual bool CanSprint() const override;
+
 protected:
 
 	void OnReload();

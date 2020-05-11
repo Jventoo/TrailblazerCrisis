@@ -12,6 +12,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #include "Animation/AnimInstance.h"
+#include "Curves/CurveVector.h"
 
 // Sets default values
 ATCCharacterBase::ATCCharacterBase()
@@ -79,8 +80,33 @@ void ATCCharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	// Ensures mesh and it's anim instance update after our character
 	GetMesh()->AddTickPrerequisiteActor(this);
+
+	// Set anim instance
 	MeshAnimInst = GetMesh()->GetAnimInstance();
+
+	// Set movement model
+	SetMovementModel();
+	
+	// Update movement states
+	SetGait(DesiredGait);
+	SetRotationMode(DesiredRotMode);
+	SetViewMode(ViewMode);
+	SetOverlayState(OverlayState);
+
+	if (DesiredStance == EStance::Standing)
+	{
+		UnProne();
+		UnCrouch();
+	}
+	else if (DesiredStance == EStance::Crouching)
+		Crouch();
+	else
+		Prone();
+
+	// Set default rotations
+	TargetRotation = LastVelocityRotation = LastMovementInputRotation = GetActorRotation();
 }
 
 // Called every frame
@@ -99,6 +125,41 @@ void ATCCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 }
 
+
+void ATCCharacterBase::SetEssentialValues()
+{
+	Acceleration = CalculateAcceleration();
+
+	auto LocVelocity = GetVelocity();
+	Speed = FVector(LocVelocity.X, LocVelocity.Y, 0.0f).Size();
+
+	IsMoving = (Speed > 1.0f);
+
+	if (IsMoving)
+		LastVelocityRotation = UKismetMathLibrary::Conv_VectorToRotator(LocVelocity);
+
+	auto CharMove = GetCharacterMovement();
+
+	MovementInputAmount = CharMove->GetCurrentAcceleration().Size() / CharMove->GetMaxAcceleration();
+	
+	HasMovementInput = (MovementInputAmount > 0.0f);
+
+	if (HasMovementInput)
+		LastMovementInputRotation = UKismetMathLibrary::Conv_VectorToRotator(CharMove->GetCurrentAcceleration());
+
+	AimYawRate = FMath::Abs((GetControlRotation().Yaw - PreviousAimYaw) / UGameplayStatics::GetWorldDeltaSeconds(GetWorld()));
+}
+
+void ATCCharacterBase::CacheValues()
+{
+	PreviousVelocity = GetVelocity();
+	PreviousAimYaw = GetControlRotation().Yaw;
+}
+
+FVector ATCCharacterBase::CalculateAcceleration()
+{
+	return (GetVelocity() - PreviousVelocity) / UGameplayStatics::GetWorldDeltaSeconds(GetWorld());
+}
 
 FCurrentStates ATCCharacterBase::GetCurrentStates_Implementation()
 {
@@ -282,6 +343,227 @@ APlayerControllerBase* ATCCharacterBase::GetPlayerController() const
 	APlayerControllerBase* PC = Cast<APlayerControllerBase>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
 
 	return PC;
+}
+
+
+void ATCCharacterBase::SetMovementModel()
+{
+	const FString ContextString = "Set Movement Model Context";
+	MovementData = *MovementModel.GetRow<FMovementSettings_State>(ContextString);
+}
+
+void ATCCharacterBase::UpdateCharacterMovement()
+{
+	auto AllowedGait = GetAllowedGait();
+	auto ActualGait = GetActualGait(AllowedGait);
+
+	if (ActualGait != Gait)
+		SetGait(ActualGait);
+
+	UpdateDynamicMovementSettings(AllowedGait);
+}
+
+void ATCCharacterBase::UpdateDynamicMovementSettings(EGait AllowedGait)
+{
+	CurrentMovementSettings = GetTargetMovementSettings();
+
+	auto CharMove = GetCharacterMovement();
+	auto SwitchSpeed = 0.0f;
+
+	switch (AllowedGait)
+	{
+	case EGait::Sprinting:
+		SwitchSpeed = CurrentMovementSettings.SprintSpeed;
+		break;
+
+	case EGait::Walking:
+		SwitchSpeed = CurrentMovementSettings.WalkSpeed;
+		break;
+
+	default:
+		SwitchSpeed = CurrentMovementSettings.RunSpeed;
+		break;
+	}
+
+	CharMove->MaxWalkSpeed = CharMove->MaxWalkSpeedCrouched = SwitchSpeed;
+
+	auto VectorVal = CurrentMovementSettings.MovementCurve->GetVectorValue(GetMappedSpeed());
+
+	CharMove->MaxAcceleration = VectorVal.X;
+	CharMove->BrakingDecelerationWalking = VectorVal.Y;
+	CharMove->GroundFriction = VectorVal.Z;
+}
+
+FMovementSettings ATCCharacterBase::GetTargetMovementSettings() const
+{
+	switch (RotationMode)
+	{
+	case ERotationMode::VelocityDirection:
+	{
+		switch (Stance)
+		{
+		case EStance::Standing:
+			return MovementData.VelocityDirection.Standing;
+			
+		default:
+			return MovementData.VelocityDirection.Crouching;
+		}
+		break;
+	}
+
+	case ERotationMode::LookingDirection:
+	{
+		switch (Stance)
+		{
+		case EStance::Standing:
+			return MovementData.LookingDirection.Standing;
+
+		default:
+			return MovementData.LookingDirection.Crouching;
+		}
+		break;
+	}
+
+	case ERotationMode::Aiming:
+	{
+		switch (Stance)
+		{
+		case EStance::Standing:
+			return MovementData.Aiming.Standing;
+
+		default:
+			return MovementData.Aiming.Crouching;
+		}
+		break;
+	}
+	}
+}
+
+EGait ATCCharacterBase::GetAllowedGait() const
+{
+	switch (Stance)
+	{
+	case EStance::Standing:
+	{
+		switch (RotationMode)
+		{
+		case ERotationMode::Aiming:
+		{
+			switch (DesiredGait)
+			{
+			case EGait::Walking:
+				return EGait::Walking;
+
+			default:
+				return EGait::Running;
+			}
+		}
+
+		default:
+			switch (DesiredGait)
+			{
+			case EGait::Walking:
+				return EGait::Walking;
+
+			case EGait::Running:
+				return EGait::Running;
+
+			default:
+				if (CanSprint)
+					return EGait::Sprinting;
+				else
+					return EGait::Running;
+			}
+		}
+	}
+
+	case EStance::Crouching:
+	{
+		switch (DesiredGait)
+		{
+		case EGait::Walking:
+			return EGait::Walking;
+
+		default:
+			return EGait::Running;
+		}
+	}
+
+	default:
+		return EGait::Walking;
+	}
+}
+
+EGait ATCCharacterBase::GetActualGait(EGait AllowedGait) const
+{
+	float LocalWalk = CurrentMovementSettings.WalkSpeed;
+	float LocalRun = CurrentMovementSettings.RunSpeed;
+	float LocalSprint = CurrentMovementSettings.SprintSpeed;
+
+	if (Speed >= (LocalRun + 10))
+	{
+		if (AllowedGait == EGait::Sprinting)
+			return EGait::Sprinting;
+		else
+			return EGait::Running;
+	}
+	else if (Speed >= (LocalWalk + 10))
+		return EGait::Running;
+	else
+		return EGait::Walking;
+}
+
+bool ATCCharacterBase::CanSprint() const
+{
+	if (HasMovementInput)
+	{
+		switch (RotationMode)
+		{
+		case ERotationMode::Aiming:
+			return false;
+
+		case ERotationMode::VelocityDirection:
+			return MovementInputAmount > 0.9f;
+
+		case ERotationMode::LookingDirection:
+		{
+			auto A = UKismetMathLibrary::Conv_VectorToRotator(GetCharacterMovement()->GetCurrentAcceleration());
+
+			return MovementInputAmount > 0.9f 
+				&& FMath::Abs(UKismetMathLibrary::NormalizedDeltaRotator(A, GetControlRotation()).Yaw) < 50.0f;
+		}
+		}
+	}
+	else
+		return false;
+}
+
+float ATCCharacterBase::GetMappedSpeed() const
+{
+	float LocalWalk = CurrentMovementSettings.WalkSpeed;
+	float LocalRun = CurrentMovementSettings.RunSpeed;
+	float LocalSprint = CurrentMovementSettings.SprintSpeed;
+
+	if (Speed > LocalRun)
+	{
+		return UKismetMathLibrary::MapRangeClamped(Speed, LocalRun, LocalSprint, 2.0, 3.0);
+	}
+	else
+	{
+		if (Speed > LocalWalk)
+		{
+			return UKismetMathLibrary::MapRangeClamped(Speed, LocalWalk, LocalRun, 1.0, 2.0);
+		}
+		else
+		{
+			return UKismetMathLibrary::MapRangeClamped(Speed, 0.0, LocalWalk, 0.0, 1.0);
+		}
+	}
+}
+
+UAnimMontage* ATCCharacterBase::GetRollAnimation() const
+{
+	return nullptr;
 }
 
 
@@ -520,4 +802,80 @@ void ATCCharacterBase::SetActorLocationDuringRagdoll()
 UAnimMontage* ATCCharacterBase::GetGetUpAnimation(bool RagdollFaceUp) const
 {
 	return nullptr;
+}
+
+void ATCCharacterBase::PlayerMovementInput(bool IsForwardAxis)
+{
+	if (MovementState == EMovementState::Grounded
+		|| MovementState == EMovementState::InAir)
+	{
+		FVector ForwardVect, RightVect;
+		GetControlVectors(ForwardVect, RightVect);
+
+		float XOut = 0.0f, YOut = 0.0f;
+		FixDiagonalGamepadValues(GetInputAxisValue(TEXT("MoveForward")), GetInputAxisValue(TEXT("MoveRight")), XOut, YOut);
+
+		if (IsForwardAxis)
+		{
+			AddMovementInput(ForwardVect, YOut);
+		}
+		else
+		{
+			AddMovementInput(RightVect, XOut);
+		}
+	}
+}
+
+FVector ATCCharacterBase::GetPlayerMovementInput() const
+{
+	FVector Forward, Right;
+
+	GetControlVectors(Forward, Right);
+
+	Forward *= GetInputAxisValue(TEXT("MoveForward"));
+	Right *= GetInputAxisValue(TEXT("MoveRight"));
+
+	auto Final = Forward + Right;
+	Final.Normalize(0.0001);
+
+	return Final;
+}
+
+void ATCCharacterBase::FixDiagonalGamepadValues(float XIn, float YIn, float& XOut, float& YOut) const
+{
+	auto RangedClamped_X = UKismetMathLibrary::MapRangeClamped(FMath::Abs(XIn), 0, 0.6, 1, 1.2);
+	auto RangedClamped_Y = UKismetMathLibrary::MapRangeClamped(FMath::Abs(YIn), 0, 0.6, 1, 1.2);
+
+	XOut = UKismetMathLibrary::Clamp(RangedClamped_Y * XIn, -1.0, 1.0);
+	YOut = UKismetMathLibrary::Clamp(RangedClamped_X * YIn, -1.0, 1.0);
+}
+
+void ATCCharacterBase::GetControlVectors(FVector& ForwardV, FVector& RightV) const
+{
+	float Yaw = GetControlRotation().Yaw;
+
+	ForwardV = UKismetMathLibrary::GetForwardVector(FRotator(0, Yaw, 0));
+	RightV = UKismetMathLibrary::GetRightVector(FRotator(0, Yaw, 0));
+}
+
+FVector ATCCharacterBase::GetCapsuleBaseLocation(float ZOffset) const
+{
+	auto Capsule = GetCapsuleComponent();
+
+	auto Multiplier = Capsule->GetScaledCapsuleHalfHeight() + ZOffset;
+
+	return Capsule->GetComponentLocation() - (Capsule->GetUpVector() * Multiplier);
+}
+
+FVector ATCCharacterBase::GetCapsuleLocationFromBase(const FVector& BaseLoc, float ZOffset) const
+{
+	return BaseLoc + FVector(0, 0, GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + ZOffset);
+}
+
+float ATCCharacterBase::GetAnimCurveValue(const FName& CurveName) const
+{
+	if (MeshAnimInst)
+		return MeshAnimInst->GetCurveValue(CurveName);
+	else
+		return 0.0f;
 }

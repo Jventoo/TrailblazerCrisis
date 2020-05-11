@@ -329,6 +329,11 @@ void APlayerCharacter::NextFireMode()
 		CurrentWeapon->SwitchToNextFireMode();
 }
 
+bool APlayerCharacter::CanSprint() const
+{
+	return Super::CanSprint() && !IsFiring();
+}
+
 
 // Unsmoothed version. Use timeline in BP for smoothed version
 void APlayerCharacter::UpdateCombatCamera_Implementation()
