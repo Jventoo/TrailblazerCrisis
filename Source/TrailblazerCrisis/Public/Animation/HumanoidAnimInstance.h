@@ -600,8 +600,8 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "Movement")
 		void SetFootOffsets(
 			const FName& Enable_FootIK_Curve, const FName& IKFootBone,
-			const FName& RootBone, const FVector& CurrentLocationTarget,
-			const FVector& CurrentLocationOffset, const FRotator& CurrentRotationOffset);
+			const FName& RootBone, FVector& CurrentLocationTarget,
+			FVector& CurrentLocationOffset, FRotator& CurrentRotationOffset);
 
 	UFUNCTION(BlueprintCallable, Category = "Movement")
 		void SetPelvisIKOffset(const FVector& FootOffset_L_Target,
@@ -610,11 +610,11 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "Movement")
 		void SetFootLocking(
 			const FName& Enable_FootIK_Curve, const FName& FootLockCurve,
-			const FName& IKFootBone, float CurrentFootLockAlpha,
-			const FVector& CurrentFootLockLocation, const FRotator& CurrentFootLockRotation);
+			const FName& IKFootBone, float& CurrentFootLockAlpha,
+			FVector& CurrentFootLockLocation, FRotator& CurrentFootLockRotation);
 
 	UFUNCTION(BlueprintCallable, Category = "Movement")
-		void SetFootLockOffsets(const FVector& LocalLocation, const FRotator& LocalRotation);
+		void SetFootLockOffsets(FVector& LocalLocation, FRotator& LocalRotation);
 
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Foot IK")

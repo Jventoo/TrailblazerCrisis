@@ -12,6 +12,7 @@
 #include "Components/SceneComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "Kismet/GameplayStatics.h"
 #include "Curves/CurveVector.h"
 
 UHumanoidAnimInstance::UHumanoidAnimInstance()
@@ -658,37 +659,186 @@ FLeanAmount UHumanoidAnimInstance::CalculateInAirLeanAmount()
 }
 
 
-void UHumanoidAnimInstance::SetFootOffsets(const FName& Enable_FootIK_Curve, const FName& IKFootBone, const FName& RootBone, const FVector& CurrentLocationTarget, const FVector& CurrentLocationOffset, const FRotator& CurrentRotationOffset)
+void UHumanoidAnimInstance::SetFootOffsets(const FName& Enable_FootIK_Curve, const FName& IKFootBone, const FName& RootBone, 
+	FVector& CurrentLocationTarget, FVector& CurrentLocationOffset, FRotator& CurrentRotationOffset)
 {
+	auto SceneComp = Cast<USceneComponent>(GetOwningComponent());
 
+	FVector ImpactPoint, ImpactNormal;
+	FRotator TargetRotationOffset;
+
+	// Clear offsets if weight = 0
+	if (SceneComp && GetCurveValue(Enable_FootIK_Curve) > 0)
+	{
+		// Trace downwards
+		auto FootSocket = SceneComp->GetSocketLocation(IKFootBone);
+
+		FVector IKFootFloorLoc(FootSocket.X, FootSocket.Y, SceneComp->GetSocketLocation(RootBone).Z);
+
+		auto StartVect = FVector(IKFootFloorLoc.X, IKFootFloorLoc.Y, IKFootFloorLoc.Z + IK_TraceDistanceAboveFoot);
+		auto EndVect = FVector(IKFootFloorLoc.X, IKFootFloorLoc.Y, IKFootFloorLoc.Z - IK_TraceDistanceBelowFoot);
+		
+		TArray<AActor*> IgnoreActors;
+		FHitResult HitInfo;
+
+		UKismetSystemLibrary::LineTraceSingle(GetWorld(), StartVect, EndVect, ETraceTypeQuery::TraceTypeQuery1, false,
+			IgnoreActors, EDrawDebugTrace::None, HitInfo, true);
+
+		auto Character = Cast<ACharacter>(Owner);
+
+		// Find delta for angled surfaces and rotation offset
+		if (Character && Character->GetCharacterMovement()->IsWalkable(HitInfo))
+		{
+			ImpactPoint = HitInfo.ImpactPoint;
+			ImpactNormal = HitInfo.ImpactNormal;
+
+			CurrentLocationTarget = (ImpactNormal * FootHeight) + ImpactPoint 
+				- (IKFootFloorLoc + (FVector(0, 0, 1) * FootHeight));
+
+			TargetRotationOffset = FRotator(UKismetMathLibrary::Atan2(ImpactNormal.Y, ImpactNormal.Z), 0, -1.0 * UKismetMathLibrary::Atan2(ImpactNormal.X, ImpactNormal.Z));
+		}
+
+		// Interp the current loc to the new target. Speed depends on above or below
+		if (CurrentLocationOffset.Z > CurrentLocationTarget.Z)
+		{
+			CurrentLocationOffset = UKismetMathLibrary::VInterpTo(
+				CurrentLocationOffset, CurrentLocationTarget, CurrDeltaTime, 30.0f);
+		}
+		else
+		{
+			CurrentLocationOffset = UKismetMathLibrary::VInterpTo(
+				CurrentLocationOffset, CurrentLocationTarget, CurrDeltaTime, 15.0f);
+		}
+
+		// Interp the rotation offset
+		CurrentRotationOffset = UKismetMathLibrary::RInterpTo(
+			CurrentRotationOffset, TargetRotationOffset, CurrDeltaTime, 30.0f);
+
+	}
+	else
+	{
+		// Clear offsets when curve = 0
+		CurrentLocationOffset = FVector::ZeroVector;
+		CurrentRotationOffset = FRotator::ZeroRotator;
+	}
 }
 
 void UHumanoidAnimInstance::SetPelvisIKOffset(const FVector& FootOffset_L_Target, const FVector& FootOffset_R_Target)
 {
+	// Find average foot IK weight
+	PelvisAlpha = (GetCurveValue(TEXT("Enable_FootIK_L")) + GetCurveValue(TEXT("Enable_FootIK_R"))) / 2.0f;
+
+	if (PelvisAlpha > 0)
+	{
+		FVector PelvisTarget;
+
+		// Set new target to lowest offset
+		if (FootOffset_L_Target.Z < FootOffset_R_Target.Z)
+			PelvisTarget = FootOffset_L_Target;
+		else
+			PelvisTarget = FootOffset_R_Target;
+
+		// Interp to new offset
+		if (PelvisTarget.Z > PelvisOffset.Z)
+		{
+			PelvisOffset = UKismetMathLibrary::VInterpTo(PelvisOffset, PelvisTarget, CurrDeltaTime, 10.0f);
+		}
+		else
+		{
+			PelvisOffset = UKismetMathLibrary::VInterpTo(PelvisOffset, PelvisTarget, CurrDeltaTime, 15.0f);
+		}
+	}
+	else
+		PelvisOffset = FVector::ZeroVector;
 }
 
-void UHumanoidAnimInstance::SetFootLocking(const FName& Enable_FootIK_Curve, const FName& FootLockCurve, const FName& IKFootBone, float CurrentFootLockAlpha, const FVector& CurrentFootLockLocation, const FRotator& CurrentFootLockRotation)
+void UHumanoidAnimInstance::SetFootLocking(const FName& Enable_FootIK_Curve, const FName& FootLockCurve, const FName& IKFootBone, float& CurrentFootLockAlpha, FVector& CurrentFootLockLocation, FRotator& CurrentFootLockRotation)
 {
+	// Only update if curve has weight
+	if (GetCurveValue(Enable_FootIK_Curve) > 0)
+	{
+		float FootLockCurveVal = GetCurveValue(FootLockCurve);
+
+		if (FootLockCurveVal >= 0.99 || FootLockCurveVal < CurrentFootLockAlpha)
+			CurrentFootLockAlpha = FootLockCurveVal;
+
+		if (CurrentFootLockAlpha >= 0.99)
+		{
+			auto SceneComp = Cast<USceneComponent>(GetOwningComponent());
+
+			if (SceneComp)
+			{
+				auto SocketTrans = SceneComp->GetSocketTransform(IKFootBone);
+
+				CurrentFootLockLocation = SocketTrans.GetLocation();
+				CurrentFootLockRotation = SocketTrans.Rotator();
+			}
+		}
+
+		if (CurrentFootLockAlpha > 0)
+			SetFootLockOffsets(CurrentFootLockLocation, CurrentFootLockRotation);
+	}
 }
 
-void UHumanoidAnimInstance::SetFootLockOffsets(const FVector& LocalLocation, const FRotator& LocalRotation)
+void UHumanoidAnimInstance::SetFootLockOffsets(FVector& LocalLocation, FRotator& LocalRotation)
 {
+	FRotator RotDifference;
+	FVector LocDifference;
+
+	// Find how much we need to rotate
+	auto Character = Cast<ACharacter>(Owner);
+	if (Character && Character->GetCharacterMovement()->IsMovingOnGround())
+		RotDifference = UKismetMathLibrary::NormalizedDeltaRotator(Character->GetActorRotation(), Character->GetCharacterMovement()->GetLastUpdateRotation());
+
+	// Get distance traveled between frames
+	auto SceneComp = Cast<USceneComponent>(GetOwningComponent());
+	if (SceneComp)
+		LocDifference = SceneComp->GetComponentRotation().UnrotateVector(Velocity * UGameplayStatics::GetWorldDeltaSeconds(GetWorld()));
+
+	LocalLocation = UKismetMathLibrary::RotateAngleAxis(LocalLocation - LocDifference, RotDifference.Yaw, FVector(0, 0, -1));
+	LocalRotation = UKismetMathLibrary::NormalizedDeltaRotator(LocalRotation, RotDifference);
 }
 
 
 EMovementDirection UHumanoidAnimInstance::CalculateMovementDirection()
 {
-	return EMovementDirection();
+	if (Gait == EGait::Sprinting)
+		return EMovementDirection::Forward;
+	else
+	{
+		if (RotationMode == ERotationMode::VelocityDirection)
+			return EMovementDirection::Forward;
+		else
+		{
+			return CalculateQuadrant(MovementDirection, 70, -70, 110, -110, 5,
+				UKismetMathLibrary::NormalizedDeltaRotator(UKismetMathLibrary::Conv_VectorToRotator(Velocity), AimingRotation).Yaw
+				);
+		}
+	}
 }
 
 EMovementDirection UHumanoidAnimInstance::CalculateQuadrant(EMovementDirection CurrDir, float FRThreshold, float FLThreshold, float BRThreshold, float BLThreshold, float Buffer, float Angle)
 {
-	return EMovementDirection();
+	if (AngleInRange(Angle, FLThreshold, FRThreshold, Buffer, (CurrDir != EMovementDirection::Forward || CurrDir != EMovementDirection::Backward)))
+		return EMovementDirection::Forward;
+	else if (AngleInRange(Angle, FRThreshold, BRThreshold, Buffer, (CurrDir != EMovementDirection::Right || CurrDir != EMovementDirection::Left)))
+		return EMovementDirection::Right;
+	else if (AngleInRange(Angle, BLThreshold, FLThreshold, Buffer, (CurrDir != EMovementDirection::Right || CurrDir != EMovementDirection::Left)))
+		return EMovementDirection::Left;
+	else
+		return EMovementDirection::Backward;
 }
 
 bool UHumanoidAnimInstance::AngleInRange(float Angle, float MinAngle, float MaxAngle, float Buffer, bool IncreaseBuffer)
 {
-	return false;
+	if (IncreaseBuffer)
+	{
+		return UKismetMathLibrary::InRange_FloatFloat(Angle, MinAngle - Buffer, MaxAngle + Buffer);
+	}
+	else
+	{
+		return UKismetMathLibrary::InRange_FloatFloat(Angle, MinAngle + Buffer, MaxAngle - Buffer);
+	}
 }
 
 
