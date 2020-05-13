@@ -30,6 +30,18 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 		class UCameraComponent* FollowCamera;
 
+	/** Follow camera */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+		class USceneComponent* HeldObjectRoot;
+
+	/** Follow camera */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+		class USkeletalMeshComponent* SkeletalMeshComp;
+
+	/** Follow camera */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+		class UStaticMeshComponent* StaticMeshComp;
+
 public:
 
 	virtual void BeginPlay() override;
@@ -48,7 +60,7 @@ protected:
 	/* Input																*/
 	/************************************************************************/
 
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	//virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	/** Tell anim inst and camera we're sprinting */
 	UFUNCTION(BlueprintCallable, Category = Movement)
@@ -93,6 +105,20 @@ public:
 		void NextFireMode();
 
 	virtual bool CanSprint() const override;
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Character")
+		void SetOverlayState(EOverlayState NewState);
+	virtual void SetOverlayState_Implementation(EOverlayState NewState) override;
+
+	UFUNCTION(BlueprintCallable, Category = "Character")
+		void AttachToHand(class UStaticMesh* StaticMesh, class USkeletalMesh* SkeletalMesh,
+			TSubclassOf<UAnimInstance> SkelMeshAnimInstance, bool bLeftHand, const FVector& Offset);
+
+	UFUNCTION(BlueprintCallable, Category = "Character")
+		void ClearHeldObject();
+
+	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "Character")
+		void UpdateHeldObject();
 
 protected:
 
@@ -164,8 +190,13 @@ protected:
 		float CombatArmOffset;
 
 	/************************************************************************/
-	/* Mantle Animation														*/
+	/* Mantle																*/
 	/************************************************************************/
+
+public:
+	virtual void MantleStart(float Height, FTransformAndComp MantleLedge, EMantleType Type) override;
+
+	virtual void MantleEnd() override;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animations|Mantle")
 		FMantleAsset Mantle_2m_Default;
@@ -201,9 +232,20 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animations|Roll")
 		class UAnimMontage* LandRoll_2H;
 
+public:
+	virtual class UAnimMontage* GetRollAnimation() const override;
+
 	/************************************************************************/
-	/* Get Up Animation														*/
+	/* Ragdoll																*/
 	/************************************************************************/
+
+	virtual class UAnimMontage* GetGetUpAnimation(bool RagdollFaceUp) const override;
+
+	virtual void RagdollStart() override;
+
+	virtual void RagdollEnd() override;
+
+protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animations|Stand")
 		class UAnimMontage* GetUpFront_Default;
@@ -228,4 +270,23 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animations|Stand")
 		class UAnimMontage* GetUpBack_2H;
+
+public:
+
+	/************************************************************************/
+	/* Camera																*/
+	/************************************************************************/
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Camera")
+		FVector GetFPCameraTarget();
+	virtual FVector GetFPCameraTarget_Implementation() override;
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Camera")
+		FTransform GetTPPivotTarget();
+	virtual FTransform GetTPPivotTarget_Implementation() override;
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Camera")
+		ETraceTypeQuery GetTPTraceParams(FVector& TraceOrigin, float& TraceRadius);
+	virtual ETraceTypeQuery GetTPTraceParams_Implementation(
+		FVector& TraceOrigin, float& TraceRadius) override;
 };

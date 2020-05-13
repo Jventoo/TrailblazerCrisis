@@ -351,6 +351,7 @@ ETraceTypeQuery ATCCharacterBase::GetTPTraceParams_Implementation(
 	TraceOrigin = GetActorLocation();
 	TraceRadius = UTCStatics::DEFAULT_TP_TRACE_RADIUS;
 
+	// Visibility Channel
 	return ETraceTypeQuery::TraceTypeQuery1;
 }
 
@@ -721,8 +722,6 @@ bool ATCCharacterBase::MantleStart(float Height, FTransformAndComp MantleLedge, 
 		MeshAnimInst->Montage_Play(MantleParams.AnimMontage, MantleParams.PlayRate,
 			EMontagePlayReturnType::MontageLength, MantleParams.StartingPosition, false);
 	}
-
-	return false;
 }
 
 void ATCCharacterBase::MantleEnd()

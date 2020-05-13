@@ -13,7 +13,6 @@
 #include "Player/PlayerControllerBase.h"
 #include "Actors/Weapons/BaseFirearm.h"
 #include "Animation/HumanoidAnimInstance.h"
-//#include " "
 
 // Sets default values
 APlayerCharacter::APlayerCharacter()
@@ -28,6 +27,21 @@ APlayerCharacter::APlayerCharacter()
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arms
+
+	// Create components for holding objects
+	HeldObjectRoot = CreateDefaultSubobject<USceneComponent>(TEXT("HeldObjectRoot"));
+	HeldObjectRoot->SetupAttachment(GetMesh());
+
+	SkeletalMeshComp = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("SkeletalMeshComp"));
+	SkeletalMeshComp->SetupAttachment(HeldObjectRoot);
+	StaticMeshComp->SetCollisionProfileName(TEXT("NoCollision"));
+	SkeletalMeshComp->bHiddenInGame = true;
+
+	StaticMeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMeshComp"));
+	StaticMeshComp->SetupAttachment(HeldObjectRoot);
+	StaticMeshComp->SetCollisionProfileName(TEXT("TC_Prop"));
+	StaticMeshComp->bHiddenInGame = true;
+
 
 	bIsFiring = false;
 	bIsAiming = false;
@@ -46,19 +60,19 @@ void APlayerCharacter::BeginPlay()
 	Super::BeginPlay();
 
 	// Spawn our weapon
-	if (bSpawnWeapon && WeaponClass)
-	{
-		FActorSpawnParameters SpawnParams;
-		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
-		CurrentWeapon = GetWorld()->SpawnActor<ABaseFirearm>(WeaponClass, SpawnParams);
-	}
+	//if (bSpawnWeapon && WeaponClass)
+	//{
+	//	FActorSpawnParameters SpawnParams;
+	//	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+	//	CurrentWeapon = GetWorld()->SpawnActor<ABaseFirearm>(WeaponClass, SpawnParams);
+	//}
 
-	// Attach our weapon to our character's back
-	if (CurrentWeapon)
-	{
-		CurrentWeapon->SetOwningPawn(this);
-		CurrentWeapon->AttachMeshToPawn(WeaponUnequipSocket);
-	}
+	//// Attach our weapon to our character's back
+	//if (CurrentWeapon)
+	//{
+	//	CurrentWeapon->SetOwningPawn(this);
+	//	CurrentWeapon->AttachMeshToPawn(WeaponUnequipSocket);
+	//}
 }
 
 
@@ -66,44 +80,46 @@ void APlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	Direction = CalculateDirection(ForwardAxisValue, RightAxisValue);
+	//Direction = CalculateDirection(ForwardAxisValue, RightAxisValue);
 }
 
 
 //////////////////////////////////////////////////////////////////////////
 // Input
 
-void APlayerCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
-{
-	// Set up gameplay key bindings
-	check(PlayerInputComponent);
-	PlayerInputComponent->BindAction("Vault", IE_Pressed, this, &ACharacter::Jump);
-	PlayerInputComponent->BindAction("Vault", IE_Released, this, &ACharacter::StopJumping);
-
-	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &APlayerCharacter::ToggleCrouch);
-
-	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &APlayerCharacter::StartSprinting);
-	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &APlayerCharacter::StopSprinting);
-
-	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &APlayerCharacter::OnStartFire);
-	PlayerInputComponent->BindAction("Fire", IE_Released, this, &APlayerCharacter::OnStopFire);
-
-	PlayerInputComponent->BindAction("Aim", IE_Pressed, this, &APlayerCharacter::OnStartAiming);
-	PlayerInputComponent->BindAction("Aim", IE_Released, this, &APlayerCharacter::OnStopAiming);
-
-	PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &APlayerCharacter::OnReload);
-
-	PlayerInputComponent->BindAxis("MoveForward", this, &APlayerCharacter::MoveForward);
-	PlayerInputComponent->BindAxis("MoveRight", this, &APlayerCharacter::MoveRight);
-
-	PlayerInputComponent->BindAxis("Turn", this, &APawn::AddControllerYawInput);
-	PlayerInputComponent->BindAxis("TurnRate", this, &APlayerCharacter::TurnAtRate);
-	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
-	PlayerInputComponent->BindAxis("LookUpRate", this, &APlayerCharacter::LookUpAtRate);
-
-	PlayerInputComponent->BindAction("Holster", IE_Pressed, this, &APlayerCharacter::ToggleEquip);
-	PlayerInputComponent->BindAction("ChangeFireMode", IE_Pressed, this, &APlayerCharacter::NextFireMode);
-}
+//void APlayerCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
+//{
+//	// Set up gameplay key bindings
+//	check(PlayerInputComponent);
+//	
+//	PlayerInputComponent->BindAction("Vault", IE_Pressed, this, &ACharacter::Jump);
+//	PlayerInputComponent->BindAction("Vault", IE_Released, this, &ACharacter::StopJumping);
+//
+//	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &APlayerCharacter::ToggleCrouch);
+//
+//	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &APlayerCharacter::StartSprinting);
+//	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &APlayerCharacter::StopSprinting);
+//
+//	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &APlayerCharacter::OnStartFire);
+//	PlayerInputComponent->BindAction("Fire", IE_Released, this, &APlayerCharacter::OnStopFire);
+//
+//	PlayerInputComponent->BindAction("Aim", IE_Pressed, this, &APlayerCharacter::OnStartAiming);
+//	PlayerInputComponent->BindAction("Aim", IE_Released, this, &APlayerCharacter::OnStopAiming);
+//
+//	PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &APlayerCharacter::OnReload);
+//
+//	PlayerInputComponent->BindAxis("MoveForward", this, &APlayerCharacter::MoveForward);
+//	PlayerInputComponent->BindAxis("MoveRight", this, &APlayerCharacter::MoveRight);
+//
+//	PlayerInputComponent->BindAxis("Turn", this, &APawn::AddControllerYawInput);
+//	PlayerInputComponent->BindAxis("TurnRate", this, &APlayerCharacter::TurnAtRate);
+//	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
+//	PlayerInputComponent->BindAxis("LookUpRate", this, &APlayerCharacter::LookUpAtRate);
+//
+//	PlayerInputComponent->BindAction("Holster", IE_Pressed, this, &APlayerCharacter::ToggleEquip);
+//	PlayerInputComponent->BindAction("ChangeFireMode", IE_Pressed, this, &APlayerCharacter::NextFireMode);
+//	
+//}
 
 
 void APlayerCharacter::StartSprinting()
@@ -334,6 +350,41 @@ bool APlayerCharacter::CanSprint() const
 	return Super::CanSprint() && !IsFiring();
 }
 
+void APlayerCharacter::SetOverlayState_Implementation(EOverlayState NewState)
+{
+	Super::SetOverlayState(NewState);
+
+	UpdateHeldObject();
+}
+
+void APlayerCharacter::AttachToHand(UStaticMesh* StaticMesh, USkeletalMesh* SkeletalMesh, TSubclassOf<UAnimInstance> SkelMeshAnimInstance, bool bLeftHand, const FVector& Offset)
+{
+	ClearHeldObject();
+
+	if (StaticMesh)
+		StaticMeshComp->SetStaticMesh(StaticMesh);
+	
+	if (SkeletalMesh)
+	{
+		SkeletalMeshComp->SetSkeletalMesh(SkeletalMesh);
+
+		if (SkelMeshAnimInstance)
+			SkeletalMeshComp->SetAnimClass(SkelMeshAnimInstance);
+	}
+
+	HeldObjectRoot->AttachToComponent(GetMesh(),
+		FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true),
+		bLeftHand ? TEXT("VB LHS_ik_hand_gun") : TEXT("VB RHS_ik_hand_gun"));
+	HeldObjectRoot->SetRelativeLocation(Offset);
+}
+
+void APlayerCharacter::ClearHeldObject()
+{
+	StaticMeshComp->SetStaticMesh(nullptr);
+	SkeletalMeshComp->SetSkeletalMesh(nullptr, false);
+	SkeletalMeshComp->SetAnimClass(nullptr);
+}
+
 
 // Unsmoothed version. Use timeline in BP for smoothed version
 void APlayerCharacter::UpdateCombatCamera_Implementation()
@@ -352,14 +403,124 @@ void APlayerCharacter::UpdateCombatCamera_Implementation()
 
 
 // Unsmoothed version. Use timeline in BP for smoothed version
-void APlayerCharacter::UpdateAimingFOV_Implementation()
+
+FVector ATCCharacterBase::GetFPCameraTarget_Implementation()
 {
-	if (bIsAiming)
+	return GetMesh()->GetSocketLocation(UTCStatics::FP_CAMERA_SOCKET);
+}
+
+FTransform ATCCharacterBase::GetTPPivotTarget_Implementation()
+{
+	TArray<FVector> AvgArray;
+	AvgArray.Add(GetMesh()->GetSocketLocation(TEXT("head")));
+	AvgArray.Add(GetMesh()->GetSocketLocation(TEXT("root")));
+
+	return FTransform(GetActorRotation(), UKismetMathLibrary::GetVectorArrayAverage(AvgArray));
+}
+
+ETraceTypeQuery ATCCharacterBase::GetTPTraceParams_Implementation(
+	FVector& TraceOrigin, float& TraceRadius)
+{
+	TraceOrigin = GetMesh()->GetSocketLocation(
+		bRightShoulder ? (TEXT("TP_CameraTrace_R")) : (TEXT("TP_CameraTrace_L")));
+
+	TraceRadius = UTCStatics::DEFAULT_TP_TRACE_RADIUS + 5.0f;
+
+	// Camera channel
+	return ETraceTypeQuery::TraceTypeQuery2;
+}
+
+void APlayerCharacter::MantleStart(float Height, FTransformAndComp MantleLedge, EMantleType Type)
+{
+	Super::MantleStart(Height, MantleLedge, Type);
+
+	if (Type != EMantleType::LowMantle)
+		ClearHeldObject;
+}
+
+void APlayerCharacter::MantleEnd()
+{
+	Super::MantleEnd();
+
+	UpdateHeldObject();
+}
+
+UAnimMontage* APlayerCharacter::GetRollAnimation() const
+{
+	switch (OverlayState)
 	{
-		FollowCamera->SetFieldOfView(DefaultFOV * AimFOVRatio);
+	case EOverlayState::Binos:
+	case EOverlayState::HandsTied:
+	case EOverlayState::Rifle:
+		return LandRoll_2H;
+
+	case EOverlayState::Injured:
+	case EOverlayState::Torch:
+		return LandRoll_LH;
+
+	case EOverlayState::Pistol1H:
+	case EOverlayState::Pistol2H:
+		return LandRoll_RH;
+
+	default:
+		return LandRoll_Default;
+	}
+}
+
+UAnimMontage* APlayerCharacter::GetGetUpAnimation(bool RagdollFaceUp) const
+{
+	if (RagdollFaceUp)
+	{
+		switch (OverlayState)
+		{
+		case EOverlayState::HandsTied:
+			return GetUpBack_2H;
+
+		case EOverlayState::Injured:
+		case EOverlayState::Torch:
+			return GetUpBack_LH;
+
+		case EOverlayState::Pistol1H:
+		case EOverlayState::Pistol2H:
+		case EOverlayState::Rifle:
+		case EOverlayState::Binos:
+			return GetUpBack_RH;
+
+		default:
+			return GetUpBack_Default;
+		}
 	}
 	else
 	{
-		FollowCamera->SetFieldOfView(DefaultFOV);
+		switch (OverlayState)
+		{
+		case EOverlayState::HandsTied:
+			return GetUpFront_2H;
+
+		case EOverlayState::Injured:
+		case EOverlayState::Torch:
+			return GetUpFront_LH;
+
+		case EOverlayState::Pistol1H:
+		case EOverlayState::Pistol2H:
+		case EOverlayState::Rifle:
+		case EOverlayState::Binos:
+			return GetUpFront_RH;
+
+		default:
+			return GetUpFront_Default;
+		}
 	}
+}
+
+void APlayerCharacter::RagdollStart()
+{
+	ClearHeldObject();
+	Super::RagdollStart();
+}
+
+void APlayerCharacter::RagdollEnd()
+{
+	Super::RagdollEnd();
+	UpdateHeldObject();
 }

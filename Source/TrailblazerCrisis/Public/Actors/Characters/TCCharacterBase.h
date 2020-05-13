@@ -410,10 +410,10 @@ protected:
 	/************************************************************************/
 
 	UFUNCTION(BlueprintCallable, Category = "Ragdoll")
-		void RagdollStart();
+		virtual void RagdollStart();
 
 	UFUNCTION(BlueprintCallable, Category = "Ragdoll")
-		void RagdollEnd();
+		virtual void RagdollEnd();
 
 	UFUNCTION(BlueprintCallable, Category = "Ragdoll")
 		void RagdollUpdate();
@@ -442,10 +442,10 @@ protected:
 		bool MantleCheck(FMantleTraceSettings TraceSettings);
 
 	UFUNCTION(BlueprintCallable, Category = "Mantle")
-		bool MantleStart(float Height, FTransformAndComp MantleLedge, EMantleType Type);
+		virtual void MantleStart(float Height, FTransformAndComp MantleLedge, EMantleType Type);
 
 	UFUNCTION(BlueprintCallable, Category = "Mantle")
-		void MantleEnd();
+		virtual void MantleEnd();
 
 	UFUNCTION(BlueprintCallable, Category = "Mantle")
 		void MantleUpdate(float BlendIn);
