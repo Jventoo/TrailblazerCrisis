@@ -2,6 +2,32 @@
 
 
 #include "TCStatics.h"
+#include "Kismet/KismetMathLibrary.h"
+#include "Components/CapsuleComponent.h"
+
+
+FTransformAndComp UTCStatics::ComponentLocalToWorld(const FTransformAndComp& LocalSpace)
+{
+	return FTransformAndComp(LocalSpace.Transform * LocalSpace.Comp->GetComponentTransform(), LocalSpace.Comp);
+}
+
+FTransformAndComp UTCStatics::ComponentWorldToLocal(const FTransformAndComp& WorldSpace)
+{
+	return FTransformAndComp(WorldSpace.Transform * UKismetMathLibrary::InvertTransform(
+		WorldSpace.Comp->GetComponentTransform()), WorldSpace.Comp);
+}
+
+FTransform UTCStatics::AddTransforms(const FTransform& A, const FTransform& B)
+{
+	return FTransform(FRotator(A.Rotator().Pitch + B.Rotator().Pitch, A.Rotator().Yaw + B.Rotator().Yaw, A.Rotator().Roll + B.Rotator().Roll),
+		A.GetLocation() + B.GetLocation());
+}
+
+FTransform UTCStatics::SubTransforms(const FTransform& A, const FTransform& B)
+{
+	return FTransform(FRotator(A.Rotator().Pitch - B.Rotator().Pitch, A.Rotator().Yaw - B.Rotator().Yaw, A.Rotator().Roll - B.Rotator().Roll),
+		A.GetLocation() - B.GetLocation());
+}
 
 // Movement
 float UTCStatics::MAX_MOVE_SPEED = 1.0f;

@@ -4,10 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "Player/PlayerControllerBase.h"
 #include "Interfaces/CharacterInterface.h"
 #include "Interfaces/CameraInterface.h"
 #include "Engine/DataTable.h"
+
+#include "Player/PlayerControllerBase.h"
+
 #include "TCCharacterBase.generated.h"
 
 UENUM(BlueprintType)
@@ -40,6 +42,8 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+	virtual void OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode = 0) override;
 
 protected:
 
@@ -382,8 +386,8 @@ public:
 		void LimitRotation(float AimYawMin, float AimYawMax, float InterpSpeed);
 
 	UFUNCTION(BlueprintCallable, Category = "Rotation")
-		bool SetActorLocationAndRotation(const FVector& NewLocation, const FRotator& NewRotation, 
-			bool bSweep, bool bTeleport, FHitResult& SweepHitResult);
+		bool SetActorLocationAndRotationWithUpdate(const FVector& NewLocation, const FRotator& NewRotation,
+			FHitResult SweepHitResult, bool bSweep = false, bool bTeleport = false);
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Rotation")
 		float CalculateGroundedRotationRate();
@@ -446,14 +450,23 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "Mantle")
 		void MantleUpdate(float BlendIn);
 
-	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "Mantle")
-		void StopMantleTimeline();
-
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Movement")
 		bool CapsuleHasRoomCheck(UCapsuleComponent* Capsule, const FVector& TargetLoc, float HeightOffset, float RadiusOffset) const;
 
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Movement")
+		// Blueprint Functions
+	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "Mantle")
+		void StopMantleTimeline();
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, BlueprintImplementableEvent, Category = "Movement")
 		FMantleAsset GetMantleAsset(EMantleType Type) const;
+
+	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "Movement")
+		void ConfigureMantleTimeline();
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, BlueprintImplementableEvent, Category = "Movement")
+		float GetMantlePlaybackPos() const;
+		// End Blueprint Functions
+
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 		FMantleParams MantleParams;

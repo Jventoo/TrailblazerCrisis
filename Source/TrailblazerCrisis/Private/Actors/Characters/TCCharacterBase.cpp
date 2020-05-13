@@ -125,6 +125,23 @@ void ATCCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 }
 
+void ATCCharacterBase::OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode)
+{
+	Super::OnMovementModeChanged(PrevMovementMode, PreviousCustomMode);
+
+	switch (GetCharacterMovement()->MovementMode)
+	{
+	case EMovementMode::MOVE_Walking:	
+	case EMovementMode::MOVE_NavWalking:
+		ICharacterInterface::Execute_SetMovementState(this, EMovementState::Grounded);
+		break;
+
+	case EMovementMode::MOVE_Falling:
+		ICharacterInterface::Execute_SetMovementState(this, EMovementState::InAir);
+		break;
+	}
+}
+
 
 void ATCCharacterBase::SetEssentialValues()
 {
@@ -346,6 +363,431 @@ APlayerControllerBase* ATCCharacterBase::GetPlayerController() const
 }
 
 
+void ATCCharacterBase::UpdateGroundedRotation()
+{
+	switch (MovementAction)
+	{
+	case EMovementAction::None:
+	{
+		if (CanUpdateMovingRotation())
+		{
+			switch (RotationMode)
+			{
+			case ERotationMode::VelocityDirection:
+				
+				SmoothCharacterRotation(FRotator(0.0f, LastVelocityRotation.Yaw, 0.0f), 800.0f, CalculateGroundedRotationRate());
+				break;
+
+			case ERotationMode::LookingDirection:
+
+				if (Gait == EGait::Sprinting)
+				{
+					SmoothCharacterRotation(FRotator(0.0f, LastVelocityRotation.Yaw, 0.0f), 500.0f, CalculateGroundedRotationRate());
+				}
+				else
+				{
+					SmoothCharacterRotation(
+						FRotator(0.0f, GetControlRotation().Yaw + GetAnimCurveValue(TEXT("YawOffset")), 0.0f),
+						500.0f, CalculateGroundedRotationRate());
+				}
+
+				break;
+
+			case ERotationMode::Aiming:
+				
+				SmoothCharacterRotation(FRotator(0.0f, GetControlRotation().Yaw, 0.0f), 1000.0f, 20.0f);
+				break;
+			}
+
+		}
+		else // Not Moving
+		{
+			if (ViewMode == EViewMode::FirstPerson
+				|| (ViewMode == EViewMode::ThirdPerson && RotationMode == ERotationMode::Aiming))
+			{
+				LimitRotation(-100.0f, 100.0f, 20.0f);
+			}
+
+			// Apply from rotation curve from TIP animations
+			float CurveVal = GetAnimCurveValue(TEXT("RotationAmount"));
+
+			if (FMath::Abs(CurveVal) > 0.001)
+			{
+				// Divided by 30 for 30 FPS animations
+				float DeltaYaw = CurveVal * (UGameplayStatics::GetWorldDeltaSeconds(GetWorld()) / ( 1.0f / 30.0f));
+				
+				AddActorWorldRotation(FRotator(0.0f, DeltaYaw, 0.0f), false, false);
+				
+				TargetRotation = GetActorRotation();
+			}
+		}
+
+		break;
+	}
+
+	case EMovementAction::Rolling:
+	{
+		if (HasMovementInput)
+			SmoothCharacterRotation(FRotator(0.0f, LastMovementInputRotation.Yaw, 0.0f), 0.0f, 2.0f);
+
+		break;
+	}
+
+	default:
+		break;
+	}
+}
+
+void ATCCharacterBase::UpdateInAirRotation()
+{
+	if (RotationMode == ERotationMode::Aiming)
+	{
+		SmoothCharacterRotation(FRotator(0.0f, GetControlRotation().Yaw, 0.0f), 0.0f, 15.0f);
+		InAirRotation = GetActorRotation();
+	}
+	else
+	{
+		SmoothCharacterRotation(FRotator(0.0f, InAirRotation.Yaw, 0.0f), 0.0f, 5.0f);
+	}
+}
+
+void ATCCharacterBase::SmoothCharacterRotation(const FRotator& Target, float TargetInterpSpeed, float ActorInterpSpeed)
+{
+	TargetRotation = UKismetMathLibrary::RInterpTo_Constant(
+		TargetRotation, Target, UGameplayStatics::GetWorldDeltaSeconds(GetWorld()), TargetInterpSpeed);
+
+	SetActorRotation(
+		UKismetMathLibrary::RInterpTo(GetActorRotation(), TargetRotation, UGameplayStatics::GetWorldDeltaSeconds(GetWorld()), ActorInterpSpeed)
+	);
+}
+
+void ATCCharacterBase::AddToCharacterRotation(const FRotator& DeltaRot)
+{
+	TargetRotation = UKismetMathLibrary::ComposeRotators(TargetRotation, DeltaRot);
+
+	AddActorWorldRotation(DeltaRot);
+}
+
+void ATCCharacterBase::LimitRotation(float AimYawMin, float AimYawMax, float InterpSpeed)
+{
+	auto ControlRot = GetControlRotation();
+	auto DeltaRotYaw = UKismetMathLibrary::NormalizedDeltaRotator(ControlRot, GetActorRotation()).Yaw;
+
+	if (!UKismetMathLibrary::InRange_FloatFloat(DeltaRotYaw, AimYawMin, AimYawMax))
+	{
+		float SmoothedYaw = (DeltaRotYaw > 0.0f) ? (ControlRot.Yaw + AimYawMin) : (ControlRot.Yaw + AimYawMax);
+
+		SmoothCharacterRotation(FRotator(0.0f, SmoothedYaw, 0.0f), 0.0f, InterpSpeed);
+	}
+}
+
+bool ATCCharacterBase::SetActorLocationAndRotationWithUpdate(const FVector& NewLocation, const FRotator& NewRotation, FHitResult SweepHitResult, bool bSweep, bool bTeleport)
+{
+	TargetRotation = NewRotation;
+	auto Teleport = (bTeleport) ? ETeleportType::TeleportPhysics : ETeleportType::None;
+
+	FHitResult* ptr = &SweepHitResult;
+
+	return SetActorLocationAndRotation(NewLocation, NewRotation, bSweep, ptr, Teleport);
+}
+
+float ATCCharacterBase::CalculateGroundedRotationRate()
+{
+	float CurveVal = CurrentMovementSettings.RotationRateCurve->GetFloatValue(GetMappedSpeed());
+
+	return CurveVal * UKismetMathLibrary::MapRangeClamped(AimYawRate, 0.0f, 300.0f, 1.0f, 3.0f);
+}
+
+bool ATCCharacterBase::CanUpdateMovingRotation()
+{
+	return ((IsMoving && HasMovementInput) || Speed > 150.0f) && !HasAnyRootMotion();
+}
+
+
+void ATCCharacterBase::RagdollStart()
+{
+	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
+	ICharacterInterface::Execute_SetMovementState(this, EMovementState::Ragdoll);
+
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	auto LocMesh = GetMesh();
+	LocMesh->SetCollisionObjectType(ECollisionChannel::ECC_PhysicsBody);
+	LocMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	LocMesh->SetAllBodiesBelowSimulatePhysics(TEXT("pelvis"), true, true);
+
+	MeshAnimInst->StopAllMontages(0);
+}
+
+void ATCCharacterBase::RagdollEnd()
+{
+	MeshAnimInst->SavePoseSnapshot(TEXT("RagdollPose"));
+
+	if (bRagdollOnGround)
+	{
+		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+		MeshAnimInst->Montage_Play(GetGetUpAnimation(bRagdollFaceUp));
+	}
+	else
+	{
+		GetCharacterMovement()->Velocity = LastRagdollVelocity;
+	}
+
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+
+	auto LocMesh = GetMesh();
+	LocMesh->SetCollisionObjectType(ECollisionChannel::ECC_Pawn);
+	LocMesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	LocMesh->SetAllBodiesSimulatePhysics(false);
+}
+
+void ATCCharacterBase::RagdollUpdate()
+{
+	auto LocMesh = GetMesh();
+
+	LastRagdollVelocity = LocMesh->GetPhysicsLinearVelocity(TEXT("root"));
+
+	LocMesh->SetAllMotorsAngularDriveParams(
+		UKismetMathLibrary::MapRangeClamped(LastRagdollVelocity.Size(), 0, 1000, 0, 25000),
+		0.0f, 0.0f);
+
+	LocMesh->SetEnableGravity(LastRagdollVelocity.Z > -4000);
+
+	SetActorLocationDuringRagdoll();
+}
+
+void ATCCharacterBase::SetActorLocationDuringRagdoll()
+{
+	auto LocMesh = GetMesh();
+	auto SocketRot = LocMesh->GetSocketRotation(TEXT("pelvis"));
+
+	FVector TargetRagdollLocation = LocMesh->GetSocketLocation(TEXT("pelvis"));
+
+	bRagdollFaceUp = SocketRot.Roll < 0.0f;
+
+	float Yaw = (bRagdollFaceUp) ? SocketRot.Yaw - 180 : SocketRot.Yaw;
+	FRotator TargetRagdollRotation(0.0f, Yaw, 0.0f);
+
+	FVector End(TargetRagdollLocation.X, TargetRagdollLocation.Y,
+		TargetRagdollLocation.Z - GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
+	FHitResult OutHit;
+
+	GetWorld()->LineTraceSingleByChannel(OutHit, TargetRagdollLocation, End,
+		ECollisionChannel::ECC_Visibility);
+
+	bRagdollOnGround = OutHit.bBlockingHit;
+
+	if (bRagdollOnGround)
+	{
+		float Delta = GetCapsuleComponent()->GetScaledCapsuleHalfHeight()
+			- UKismetMathLibrary::Abs(OutHit.ImpactPoint.Z - OutHit.TraceStart.Z);
+
+		FVector NewLoc(TargetRagdollLocation.X, TargetRagdollLocation.Y,
+			(TargetRagdollLocation.Z + 2.0 + Delta));
+
+		FHitResult HitInfo;
+		SetActorLocationAndRotationWithUpdate(NewLoc, TargetRagdollRotation, HitInfo);
+	}
+	else
+	{
+		FHitResult HitInfo;
+		SetActorLocationAndRotationWithUpdate(TargetRagdollLocation, TargetRagdollRotation, HitInfo);
+	}
+}
+
+UAnimMontage* ATCCharacterBase::GetGetUpAnimation(bool RagdollFaceUp) const
+{
+	return nullptr;
+}
+
+
+bool ATCCharacterBase::MantleCheck(FMantleTraceSettings TraceSettings)
+{
+	FVector InitialTraceImpactPoint, InitialTraceNormal, DownTraceLocation;
+	UPrimitiveComponent* HitComponent = nullptr;
+	EMantleType MantleType;
+
+	TArray<AActor*> IgnoreActors;
+
+	auto Coll = UCollisionProfile::Get();
+	ETraceTypeQuery Channel = Coll->ConvertToTraceType(ECollisionChannel::ECC_GameTraceChannel1);
+
+	// Trace forward to find nonwalkable wall or obj
+	auto MoveInput = GetPlayerMovementInput();
+
+	FVector Start = GetCapsuleBaseLocation(2.0f) + (MoveInput * -30.0f)
+		+ FVector(0, 0, (TraceSettings.MaxLedgeHeight + TraceSettings.MinLedgeHeight) / 2.0f);
+
+	FVector End = Start + (MoveInput * TraceSettings.ReachDistance);
+	float HalfHeight = (TraceSettings.MaxLedgeHeight - TraceSettings.MinLedgeHeight) / 2.0f + 1.0f;
+
+	FHitResult ForwardHit;
+	UKismetSystemLibrary::CapsuleTraceSingle(GetWorld(), Start, End, TraceSettings.ForwardTraceRadius,
+		HalfHeight, Channel, false, IgnoreActors, EDrawDebugTrace::None, ForwardHit, true);
+
+	if (!GetCharacterMovement()->IsWalkable(ForwardHit) && ForwardHit.bBlockingHit && !ForwardHit.bStartPenetrating)
+	{
+		InitialTraceImpactPoint = ForwardHit.ImpactPoint;
+		InitialTraceNormal = ForwardHit.ImpactNormal;
+	}
+	else
+		return false;
+
+
+	// Trace down from impact point and see if we can walk there
+	End = (InitialTraceNormal * -15.0f) + FVector(InitialTraceImpactPoint.X, InitialTraceImpactPoint.Y, GetCapsuleBaseLocation(2.0f).Z);
+	Start = End + FVector(0, 0, TraceSettings.MaxLedgeHeight + TraceSettings.DownwardTraceRadius + 1.0f);
+
+	FHitResult DownHit;
+	UKismetSystemLibrary::SphereTraceSingle(GetWorld(), Start, End, TraceSettings.DownwardTraceRadius, Channel,
+		false, IgnoreActors, EDrawDebugTrace::None, DownHit, true);
+
+	if (DownHit.bBlockingHit && GetCharacterMovement()->IsWalkable(DownHit))
+	{
+		HitComponent = DownHit.Component.Get();
+		DownTraceLocation = FVector(DownHit.Location.X, DownHit.Location.Y, DownHit.ImpactPoint.Z);
+	}
+	else
+		return false;
+
+	// Check if capsule has room to mantle
+	auto CapsuleLoc = GetCapsuleLocationFromBase(DownTraceLocation, 2.0f);
+	FTransform TargetTransform;
+	float MantleHeight = 0.0f;
+
+	if (CapsuleHasRoomCheck(GetCapsuleComponent(), CapsuleLoc, 0.0f, 0.0f))
+	{
+		TargetTransform = FTransform(UKismetMathLibrary::Conv_VectorToRotator(InitialTraceNormal * FVector(-1.0, -1.0, 0.0)), CapsuleLoc);
+		MantleHeight = (CapsuleLoc - GetActorLocation()).Z;
+	}
+	else
+		return false;
+
+	// Determine mantle type
+	switch (MovementState)
+	{
+	case EMovementState::InAir:
+		MantleType = EMantleType::FallingCatch;
+		break;
+
+	default:
+		if (MantleHeight > 125.0f)
+			MantleType = EMantleType::HighMantle;
+		else
+			MantleType = EMantleType::LowMantle;
+	}
+
+	// Start Mantle
+	MantleStart(MantleHeight, FTransformAndComp(TargetTransform, HitComponent), MantleType);
+
+	return true;
+}
+
+bool ATCCharacterBase::MantleStart(float Height, FTransformAndComp MantleLedge, EMantleType Type)
+{
+	// Set mantle params
+	auto MantleAsset = GetMantleAsset(Type);
+
+	float PlayRate = UKismetMathLibrary::MapRangeClamped(Height, MantleAsset.LowHeight,
+		MantleAsset.HighHeight, MantleAsset.LowPlayRate, MantleAsset.HighPlayRate);
+
+	float StartPos = UKismetMathLibrary::MapRangeClamped(Height, MantleAsset.LowHeight,
+		MantleAsset.HighHeight, MantleAsset.LowStartPosition, MantleAsset.HighStartPosition);
+
+	MantleParams = FMantleParams(MantleAsset.AnimMontage, MantleAsset.PositionCorrectCurve, StartPos, PlayRate, MantleAsset.StartingOffset);
+
+	// Convert component space
+	MantleLedgeLS = UTCStatics::ComponentWorldToLocal(MantleLedge);
+
+	// Calculate target and offset
+	MantleTarget = MantleLedge.Transform;
+	MantleActualStartOffset = UTCStatics::SubTransforms(GetActorTransform(), MantleTarget);
+
+	// Calculate animated start offset
+	FVector ATransLoc = UKismetMathLibrary::Conv_RotatorToVector(MantleTarget.Rotator()) * MantleParams.StartingOffset.Y;
+	ATransLoc.Z = MantleParams.StartingOffset.Z;
+	FTransform ATrans(MantleTarget.Rotator(), MantleTarget.GetLocation() - ATransLoc);
+	MantleAnimatedStartOffset = UTCStatics::SubTransforms(ATrans, MantleTarget);
+
+	// Clear char movement, set to mantling
+	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
+	ICharacterInterface::Execute_SetMovementState(this, EMovementState::Mantling);
+
+	ConfigureMantleTimeline();
+
+	// Play anim montage
+	if (MeshAnimInst && MantleParams.AnimMontage)
+	{
+		MeshAnimInst->Montage_Play(MantleParams.AnimMontage, MantleParams.PlayRate,
+			EMontagePlayReturnType::MontageLength, MantleParams.StartingPosition, false);
+	}
+
+	return false;
+}
+
+void ATCCharacterBase::MantleEnd()
+{
+	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+}
+
+void ATCCharacterBase::MantleUpdate(float BlendIn)
+{
+	MantleTarget = UTCStatics::ComponentLocalToWorld(MantleLedgeLS).Transform;
+
+	auto CurveVect = MantleParams.PositionCorrectCurve->GetVectorValue(MantleParams.StartingPosition + GetMantlePlaybackPos());
+	float PosAlpha = CurveVect.X;
+	float XYCorrectionAlpha = CurveVect.Y;
+	float ZCorrectionAlpha = CurveVect.Z;
+
+	// Blend using the XY value from pos/correction curve
+	FTransform BlendedXY = UKismetMathLibrary::TLerp(MantleActualStartOffset, 
+		FTransform(MantleAnimatedStartOffset.Rotator(), 
+			FVector(
+				MantleAnimatedStartOffset.GetLocation().X, MantleAnimatedStartOffset.GetLocation().Y, MantleActualStartOffset.GetLocation().Z
+			)
+		), XYCorrectionAlpha);
+
+	// Blend using the Z value from pos/correction curve
+	FTransform BlendedZ = UKismetMathLibrary::TLerp(MantleActualStartOffset,
+		FTransform(MantleActualStartOffset.Rotator(),
+			FVector(
+				MantleActualStartOffset.GetLocation().X, MantleActualStartOffset.GetLocation().Y, MantleAnimatedStartOffset.GetLocation().Z
+			)
+		), ZCorrectionAlpha);
+
+	// Blend from currently blending transforms into final target
+	FTransform BTrans = UKismetMathLibrary::TLerp(
+		UTCStatics::AddTransforms(MantleTarget, FTransform(
+			BlendedXY.GetRotation(), FVector(BlendedXY.GetLocation().X, BlendedXY.GetLocation().Y, BlendedZ.GetLocation().Z))),
+		MantleTarget, PosAlpha);
+
+	// Blend at the midpoint
+	FTransform LerpedTarget = UKismetMathLibrary::TLerp(
+		UTCStatics::AddTransforms(MantleTarget, MantleActualStartOffset), BTrans, BlendIn);
+
+	// Set to lerped target
+	FHitResult HitInfo;
+	SetActorLocationAndRotationWithUpdate(LerpedTarget.GetLocation(), LerpedTarget.Rotator(), HitInfo);
+}
+
+bool ATCCharacterBase::CapsuleHasRoomCheck(UCapsuleComponent* Capsule, const FVector& TargetLoc, float HeightOffset, float RadiusOffset) const
+{
+	FHitResult OutHit;
+	TArray<AActor*> IgnoreActors;
+
+	float Z = Capsule->GetScaledCapsuleHalfHeight_WithoutHemisphere() + (RadiusOffset * -1.0f) + HeightOffset;
+
+	auto Start = TargetLoc + FVector(0, 0, Z);
+	auto End = TargetLoc - FVector(0, 0, Z);
+	float Radius = Capsule->GetScaledCapsuleRadius() + RadiusOffset;
+
+	UKismetSystemLibrary::SphereTraceSingleByProfile(GetWorld(), Start, End, Radius, TEXT("TC_Character"),
+		false, IgnoreActors, EDrawDebugTrace::None, OutHit, true);
+
+	return UKismetMathLibrary::BooleanNOR(OutHit.bBlockingHit, OutHit.bStartPenetrating);
+}
+
+
 void ATCCharacterBase::SetMovementModel()
 {
 	const FString ContextString = "Set Movement Model Context";
@@ -424,7 +866,8 @@ FMovementSettings ATCCharacterBase::GetTargetMovementSettings() const
 		break;
 	}
 
-	case ERotationMode::Aiming:
+	default:
+	//case ERotationMode::Aiming:
 	{
 		switch (Stance)
 		{
@@ -469,7 +912,7 @@ EGait ATCCharacterBase::GetAllowedGait() const
 				return EGait::Running;
 
 			default:
-				if (CanSprint)
+				if (CanSprint())
 					return EGait::Sprinting;
 				else
 					return EGait::Running;
@@ -532,6 +975,9 @@ bool ATCCharacterBase::CanSprint() const
 			return MovementInputAmount > 0.9f 
 				&& FMath::Abs(UKismetMathLibrary::NormalizedDeltaRotator(A, GetControlRotation()).Yaw) < 50.0f;
 		}
+
+		default:
+			return false;
 		}
 	}
 	else
@@ -711,98 +1157,6 @@ void ATCCharacterBase::SetForwardAxisValue(float NewVal)
 	ForwardAxisValue = NewVal;
 }
 
-
-void ATCCharacterBase::RagdollStart()
-{
-	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
-	ICharacterInterface::Execute_SetMovementState(this, EMovementState::Ragdoll);
-
-	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	
-	auto LocMesh = GetMesh();
-	LocMesh->SetCollisionObjectType(ECollisionChannel::ECC_PhysicsBody);
-	LocMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	LocMesh->SetAllBodiesBelowSimulatePhysics(TEXT("pelvis"), true, true);
-
-	MeshAnimInst->StopAllMontages(0);
-}
-
-void ATCCharacterBase::RagdollEnd()
-{
-	MeshAnimInst->SavePoseSnapshot(TEXT("RagdollPose"));
-
-	if (bRagdollOnGround)
-	{
-		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
-		MeshAnimInst->Montage_Play(GetGetUpAnimation(bRagdollFaceUp));
-	}
-	else
-	{
-		GetCharacterMovement()->Velocity = LastRagdollVelocity;
-	}
-
-	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-
-	auto LocMesh = GetMesh();
-	LocMesh->SetCollisionObjectType(ECollisionChannel::ECC_Pawn);
-	LocMesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-	LocMesh->SetAllBodiesSimulatePhysics(false);
-}
-
-void ATCCharacterBase::RagdollUpdate()
-{
-	auto LocMesh = GetMesh();
-
-	LastRagdollVelocity = LocMesh->GetPhysicsLinearVelocity(TEXT("root"));
-
-	LocMesh->SetAllMotorsAngularDriveParams(
-		UKismetMathLibrary::MapRangeClamped(LastRagdollVelocity.Size(), 0, 1000, 0, 25000),
-		0.0f, 0.0f);
-
-	LocMesh->SetEnableGravity(LastRagdollVelocity.Z > -4000);
-
-	SetActorLocationDuringRagdoll();
-}
-
-void ATCCharacterBase::SetActorLocationDuringRagdoll()
-{
-	auto LocMesh = GetMesh();
-	auto SocketRot = LocMesh->GetSocketRotation(TEXT("pelvis"));
-
-	FVector TargetRagdollLocation = LocMesh->GetSocketLocation(TEXT("pelvis"));
-
-	bRagdollFaceUp = SocketRot.Roll < 0.0f;
-
-	float Yaw = (bRagdollFaceUp) ? SocketRot.Yaw - 180 : SocketRot.Yaw;
-	FRotator TargetRagdollRotation(0.0f, Yaw, 0.0f);
-
-	FVector End(TargetRagdollLocation.X, TargetRagdollLocation.Y,
-		TargetRagdollLocation.Z - GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
-	FHitResult OutHit;
-
-	GetWorld()->LineTraceSingleByChannel(OutHit, TargetRagdollLocation, End, 
-		ECollisionChannel::ECC_Visibility);
-
-	bRagdollOnGround = OutHit.bBlockingHit;
-
-	if (bRagdollOnGround)
-	{
-		float Delta = GetCapsuleComponent()->GetScaledCapsuleHalfHeight()
-			- UKismetMathLibrary::Abs(OutHit.ImpactPoint.Z - OutHit.TraceStart.Z);
-
-		FVector NewLoc(TargetRagdollLocation.X, TargetRagdollLocation.Y,
-			(TargetRagdollLocation.Z + 2.0 + Delta));
-
-		SetActorLocationAndRotation(NewLoc, TargetRagdollRotation);
-	}
-	else
-		SetActorLocationAndRotation(TargetRagdollLocation, TargetRagdollRotation);
-}
-
-UAnimMontage* ATCCharacterBase::GetGetUpAnimation(bool RagdollFaceUp) const
-{
-	return nullptr;
-}
 
 void ATCCharacterBase::PlayerMovementInput(bool IsForwardAxis)
 {

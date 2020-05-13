@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
+#include "Engine/DataTable.h"
 #include "TCStatics.generated.h"
 
 UENUM(BlueprintType)
@@ -89,6 +90,12 @@ struct FTransformAndComp
 
 	FTransformAndComp() {}
 
+	FTransformAndComp(const FTransform& NewTransform, UPrimitiveComponent* NewComp)
+		: Transform(NewTransform)
+	{
+		Comp = NewComp;
+	}
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TransformAndComp")
 		FTransform Transform;
 
@@ -161,7 +168,7 @@ struct FMovementSettings_Stance
 };
 
 USTRUCT(BlueprintType)
-struct FMovementSettings_State : FTableRowBase
+struct FMovementSettings_State : public FTableRowBase
 {
 	GENERATED_USTRUCT_BODY()
 
@@ -238,6 +245,13 @@ struct FMantleParams
 		StartingPosition = PlayRate = 0.0f;
 	}
 
+	FMantleParams(UAnimMontage* NewMontage, UCurveVector* NewCurve, float StartPos, float NewRate, const FVector& NewStart)
+		: StartingPosition(StartPos), PlayRate(NewRate), StartingOffset(NewStart)
+	{
+		AnimMontage = NewMontage;
+		PositionCorrectCurve = NewCurve;
+	}
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mantle")
 		class UAnimMontage* AnimMontage;
 
@@ -299,6 +313,14 @@ class TRAILBLAZERCRISIS_API UTCStatics : public UObject
 	GENERATED_BODY()
 	
 public:
+
+	static FTransformAndComp ComponentLocalToWorld(const FTransformAndComp& LocalSpace);
+
+	static FTransformAndComp ComponentWorldToLocal(const FTransformAndComp& WorldSpace);
+
+	static FTransform AddTransforms(const FTransform& A, const FTransform& B);
+
+	static FTransform SubTransforms(const FTransform& A, const FTransform& B);
 
 	/************************************************************************/
 	/* Movement																*/

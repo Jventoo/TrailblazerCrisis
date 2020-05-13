@@ -195,7 +195,7 @@ void ATC_PlayerCameraManager::TraceForBlockingObject()
 	UKismetSystemLibrary::SphereTraceSingle(GetWorld(), Origin, TargetCameraLocation,
 		Radius, Channel, false, IgnoreActors, EDrawDebugTrace::None, OutHit, true);
 
-	if (OutHit.bBlockingHit && OutHit.Distance > 0)
+	if (OutHit.bBlockingHit && !OutHit.bStartPenetrating)
 	{
 		TargetCameraLocation = OutHit.Location - OutHit.TraceEnd + TargetCameraLocation;
 	}
