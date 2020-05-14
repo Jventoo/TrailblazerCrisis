@@ -254,7 +254,7 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "Updates")
 		void UpdateLayerValues();
 
-	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "Updates")
+	UFUNCTION(BlueprintCallable, Category = "Updates")
 		void UpdateFootIK();
 
 	UFUNCTION(BlueprintCallable, Category = "Updates")

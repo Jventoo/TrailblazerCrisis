@@ -120,8 +120,41 @@ void UHumanoidAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		switch (MovementState)
 		{
 		case EMovementState::Grounded:
+		{
+			bool Prev = bShouldMove;
+			bShouldMove = ShouldMoveCheck();
+
+			// Reset vals when starting to move
+			if (!Prev && bShouldMove)
+			{
+				ElapsedDelayTime = 0.0f;
+				Rotate_L = Rotate_R = false;
+			}
+
+			// Update vals while moving
+			if (bShouldMove)
+			{
+				UpdateMovementValues();
+				UpdateRotationValues();
+			}
+			else // Update vals while not moving
+			{
+				if (CanRotateInPlace())
+					RotateInPlaceCheck();
+				else
+					Rotate_L = Rotate_R = false;
+
+				if (CanTurnInPlace())
+					TurnInPlaceCheck();
+				else
+					ElapsedDelayTime = 0.0f;
+
+				if (CanDynamicTransition())
+					DynamicTransitionCheck();
+			}
 
 			break;
+		}
 
 		case EMovementState::InAir:
 			UpdateInAirValues();
@@ -134,44 +167,45 @@ void UHumanoidAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		default:
 			break;
 		}
-
-		ATCCharacterBase* Character = Cast<ATCCharacterBase>(Owner);
-		if (Character)
-		{
-			if (bUseRootMotionValues)
-			{
-				IsInAir = Character->GetMovementComponent()->IsFalling();
-
-				// Set speed to the sum of our abs inputs (max 1.0f) or our sprint speed
-				auto Sum = FMath::Min(Character->GetForwardAxisValue(true)
-					+ Character->GetRightAxisVal(true), UTCStatics::MAX_MOVE_SPEED);
-				Speed = IsSprinting ? (Sum * UTCStatics::SPRINT_MODIFIER) : Sum;
-
-				if (Speed > 0.01)
-				{
-					if (!bReceivedInitDir)
-					{
-						Direction = Character->GetDirection();
-
-						if (!GetWorld()->GetTimerManager().IsTimerActive(UpdateReceivedHandle))
-						{
-							GetWorld()->GetTimerManager().SetTimer(UpdateReceivedHandle, this,
-								&UHumanoidAnimInstance::SetReceivedDirTrue, 0.1f, false);
-						}
-					}
-				}
-				else
-				{
-					bReceivedInitDir = false;
-				}
-			}
-			else
-			{
-				Speed = Owner->GetVelocity().Size();
-				Direction = CalculateDirection(Owner->GetVelocity(), Owner->GetActorRotation());
-			}
-		}
 	}
+
+	//	ATCCharacterBase* Character = Cast<ATCCharacterBase>(Owner);
+	//	if (Character)
+	//	{
+	//		if (bUseRootMotionValues)
+	//		{
+	//			IsInAir = Character->GetMovementComponent()->IsFalling();
+
+	//			// Set speed to the sum of our abs inputs (max 1.0f) or our sprint speed
+	//			auto Sum = FMath::Min(Character->GetForwardAxisValue(true)
+	//				+ Character->GetRightAxisVal(true), UTCStatics::MAX_MOVE_SPEED);
+	//			Speed = IsSprinting ? (Sum * UTCStatics::SPRINT_MODIFIER) : Sum;
+
+	//			if (Speed > 0.01)
+	//			{
+	//				if (!bReceivedInitDir)
+	//				{
+	//					Direction = Character->GetDirection();
+
+	//					if (!GetWorld()->GetTimerManager().IsTimerActive(UpdateReceivedHandle))
+	//					{
+	//						GetWorld()->GetTimerManager().SetTimer(UpdateReceivedHandle, this,
+	//							&UHumanoidAnimInstance::SetReceivedDirTrue, 0.1f, false);
+	//					}
+	//				}
+	//			}
+	//			else
+	//			{
+	//				bReceivedInitDir = false;
+	//			}
+	//		}
+	//		else
+	//		{
+	//			Speed = Owner->GetVelocity().Size();
+	//			Direction = CalculateDirection(Owner->GetVelocity(), Owner->GetActorRotation());
+	//		}
+	//	}
+	//}
 }
 
 void UHumanoidAnimInstance::NativeUninitializeAnimation()
@@ -310,6 +344,41 @@ void UHumanoidAnimInstance::UpdateAimingValues()
 	LeftYawTime = UKismetMathLibrary::MapRangeClamped(SmoothedXABS, 0, 100, 0.5, 0);
 	RightYawTime = UKismetMathLibrary::MapRangeClamped(SmoothedXABS, 0, 180, 0.5, 1);
 	ForwardYawTime = UKismetMathLibrary::MapRangeClamped(SmoothedAimingAngle.X, -180, 180, 0, 1);
+}
+
+void UHumanoidAnimInstance::UpdateFootIK()
+{
+	SetFootLocking(TEXT("Enable_FootIK_L"), TEXT("FootLock_L"), TEXT("ik_foot_l"),
+		FootLock_L_Alpha, FootLock_L_Location, FootLock_L_Rotation);
+
+	SetFootLocking(TEXT("Enable_FootIK_R"), TEXT("FootLock_R"), TEXT("ik_foot_R"),
+		FootLock_R_Alpha, FootLock_R_Location, FootLock_R_Rotation);
+
+	switch (MovementState)
+	{
+	case EMovementState::InAir:
+		SetPelvisIKOffset(FVector::ZeroVector, FVector::ZeroVector);
+		ResetIKOffsets();
+		break;
+
+	case EMovementState::Ragdoll:
+		break;
+
+	default:
+	{
+		FVector FootOffsetLTarget, FootOffsetRTarget;
+
+		SetFootOffsets(TEXT("Enable_FootIK_L"), TEXT("ik_foot_l"), TEXT("root"),
+			FootOffsetLTarget, FootLock_L_Location, FootLock_L_Rotation);
+
+		SetFootOffsets(TEXT("Enable_FootIK_R"), TEXT("ik_foot_R"), TEXT("root"),
+			FootOffsetRTarget, FootLock_R_Location, FootLock_R_Rotation);
+
+		SetPelvisIKOffset(FootOffsetLTarget, FootOffsetRTarget);
+
+		break;
+	}
+	}
 }
 
 void UHumanoidAnimInstance::UpdateMovementValues()

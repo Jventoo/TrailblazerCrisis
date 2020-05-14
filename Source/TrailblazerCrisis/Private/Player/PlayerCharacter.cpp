@@ -34,7 +34,7 @@ APlayerCharacter::APlayerCharacter()
 
 	SkeletalMeshComp = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("SkeletalMeshComp"));
 	SkeletalMeshComp->SetupAttachment(HeldObjectRoot);
-	StaticMeshComp->SetCollisionProfileName(TEXT("NoCollision"));
+	SkeletalMeshComp->SetCollisionProfileName(TEXT("NoCollision"));
 	SkeletalMeshComp->bHiddenInGame = true;
 
 	StaticMeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMeshComp"));
@@ -401,15 +401,21 @@ void APlayerCharacter::UpdateCombatCamera_Implementation()
 	}
 }
 
+void APlayerCharacter::UpdateAimingFOV_Implementation()
+{
+	if (bIsAiming)
+		FollowCamera->SetFieldOfView(DefaultFOV * AimFOVRatio);
+	else
+		FollowCamera->SetFieldOfView(DefaultFOV);
+}
 
-// Unsmoothed version. Use timeline in BP for smoothed version
 
-FVector ATCCharacterBase::GetFPCameraTarget_Implementation()
+FVector APlayerCharacter::GetFPCameraTarget_Implementation()
 {
 	return GetMesh()->GetSocketLocation(UTCStatics::FP_CAMERA_SOCKET);
 }
 
-FTransform ATCCharacterBase::GetTPPivotTarget_Implementation()
+FTransform APlayerCharacter::GetTPPivotTarget_Implementation()
 {
 	TArray<FVector> AvgArray;
 	AvgArray.Add(GetMesh()->GetSocketLocation(TEXT("head")));
@@ -418,7 +424,7 @@ FTransform ATCCharacterBase::GetTPPivotTarget_Implementation()
 	return FTransform(GetActorRotation(), UKismetMathLibrary::GetVectorArrayAverage(AvgArray));
 }
 
-ETraceTypeQuery ATCCharacterBase::GetTPTraceParams_Implementation(
+ETraceTypeQuery APlayerCharacter::GetTPTraceParams_Implementation(
 	FVector& TraceOrigin, float& TraceRadius)
 {
 	TraceOrigin = GetMesh()->GetSocketLocation(
@@ -435,7 +441,7 @@ void APlayerCharacter::MantleStart(float Height, FTransformAndComp MantleLedge, 
 	Super::MantleStart(Height, MantleLedge, Type);
 
 	if (Type != EMantleType::LowMantle)
-		ClearHeldObject;
+		ClearHeldObject();
 }
 
 void APlayerCharacter::MantleEnd()

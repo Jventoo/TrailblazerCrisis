@@ -21,7 +21,6 @@ private:
 	/* Character Utility													*/
 	/************************************************************************/
 
-
 	/** Camera boom positioning the camera behind the character */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 		class USpringArmComponent* CameraBoom;
@@ -106,7 +105,6 @@ public:
 
 	virtual bool CanSprint() const override;
 
-	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Character")
 		void SetOverlayState(EOverlayState NewState);
 	virtual void SetOverlayState_Implementation(EOverlayState NewState) override;
 
@@ -277,15 +275,12 @@ public:
 	/* Camera																*/
 	/************************************************************************/
 
-	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Camera")
 		FVector GetFPCameraTarget();
 	virtual FVector GetFPCameraTarget_Implementation() override;
 
-	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Camera")
 		FTransform GetTPPivotTarget();
 	virtual FTransform GetTPPivotTarget_Implementation() override;
 
-	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Camera")
 		ETraceTypeQuery GetTPTraceParams(FVector& TraceOrigin, float& TraceRadius);
 	virtual ETraceTypeQuery GetTPTraceParams_Implementation(
 		FVector& TraceOrigin, float& TraceRadius) override;

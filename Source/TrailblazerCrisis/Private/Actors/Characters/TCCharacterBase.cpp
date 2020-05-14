@@ -23,6 +23,8 @@ ATCCharacterBase::ATCCharacterBase()
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 
+	Tags.Add(TEXT("TC_Character"));
+
 	// Turn rates for input
 	BaseTurnRate = 45.f;
 	BaseLookUpRate = 45.f;
@@ -684,7 +686,7 @@ bool ATCCharacterBase::MantleCheck(FMantleTraceSettings TraceSettings)
 	return true;
 }
 
-bool ATCCharacterBase::MantleStart(float Height, FTransformAndComp MantleLedge, EMantleType Type)
+void ATCCharacterBase::MantleStart(float Height, FTransformAndComp MantleLedge, EMantleType Type)
 {
 	// Set mantle params
 	auto MantleAsset = GetMantleAsset(Type);
