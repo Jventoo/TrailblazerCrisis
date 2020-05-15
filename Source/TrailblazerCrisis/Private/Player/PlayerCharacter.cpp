@@ -87,60 +87,22 @@ void APlayerCharacter::Tick(float DeltaTime)
 //////////////////////////////////////////////////////////////////////////
 // Input
 
-//void APlayerCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
-//{
-//	// Set up gameplay key bindings
-//	check(PlayerInputComponent);
-//	
-//	PlayerInputComponent->BindAction("Vault", IE_Pressed, this, &ACharacter::Jump);
-//	PlayerInputComponent->BindAction("Vault", IE_Released, this, &ACharacter::StopJumping);
-//
-//	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &APlayerCharacter::ToggleCrouch);
-//
-//	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &APlayerCharacter::StartSprinting);
-//	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &APlayerCharacter::StopSprinting);
-//
-//	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &APlayerCharacter::OnStartFire);
-//	PlayerInputComponent->BindAction("Fire", IE_Released, this, &APlayerCharacter::OnStopFire);
-//
-//	PlayerInputComponent->BindAction("Aim", IE_Pressed, this, &APlayerCharacter::OnStartAiming);
-//	PlayerInputComponent->BindAction("Aim", IE_Released, this, &APlayerCharacter::OnStopAiming);
-//
-//	PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &APlayerCharacter::OnReload);
-//
-//	PlayerInputComponent->BindAxis("MoveForward", this, &APlayerCharacter::MoveForward);
-//	PlayerInputComponent->BindAxis("MoveRight", this, &APlayerCharacter::MoveRight);
-//
-//	PlayerInputComponent->BindAxis("Turn", this, &APawn::AddControllerYawInput);
-//	PlayerInputComponent->BindAxis("TurnRate", this, &APlayerCharacter::TurnAtRate);
-//	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
-//	PlayerInputComponent->BindAxis("LookUpRate", this, &APlayerCharacter::LookUpAtRate);
-//
-//	PlayerInputComponent->BindAction("Holster", IE_Pressed, this, &APlayerCharacter::ToggleEquip);
-//	PlayerInputComponent->BindAction("ChangeFireMode", IE_Pressed, this, &APlayerCharacter::NextFireMode);
-//	
-//}
-
-
-void APlayerCharacter::StartSprinting()
+void APlayerCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
-	StopWeaponFire();
+	// Set up gameplay key bindings
+	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-	bIsSprinting = true;
+	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &APlayerCharacter::OnStartFire);
+	PlayerInputComponent->BindAction("Fire", IE_Released, this, &APlayerCharacter::OnStopFire);
 
-	UHumanoidAnimInstance* AnimInst = Cast<UHumanoidAnimInstance>(GetMesh()->GetAnimInstance());
-	if (AnimInst)
-		AnimInst->IsSprinting = true;
-}
+	PlayerInputComponent->BindAction("Aim", IE_Pressed, this, &APlayerCharacter::OnStartAiming);
+	PlayerInputComponent->BindAction("Aim", IE_Released, this, &APlayerCharacter::OnStopAiming);
 
+	PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &APlayerCharacter::OnReload);
 
-void APlayerCharacter::StopSprinting()
-{
-	bIsSprinting = false;
-
-	UHumanoidAnimInstance* AnimInst = Cast<UHumanoidAnimInstance>(GetMesh()->GetAnimInstance());
-	if (AnimInst)
-		AnimInst->IsSprinting = false;
+	PlayerInputComponent->BindAction("Holster", IE_Pressed, this, &APlayerCharacter::ToggleEquip);
+	PlayerInputComponent->BindAction("ChangeFireMode", IE_Pressed, this, &APlayerCharacter::NextFireMode);
+	
 }
 
 
@@ -294,7 +256,7 @@ void APlayerCharacter::OnStartAiming()
 		}
 
 		bIsAiming = true;
-		UpdateAimingFOV();
+		//UpdateAimingFOV();
 		GetPlayerController()->ToggleCrosshair(true);
 
 		UHumanoidAnimInstance* AnimInst = Cast<UHumanoidAnimInstance>(GetMesh()->GetAnimInstance());
@@ -302,6 +264,8 @@ void APlayerCharacter::OnStartAiming()
 			AnimInst->IsAiming = true;
 
 		GetCharacterMovement()->MaxWalkSpeed /= 2.0f;
+
+		ICharacterInterface::Execute_SetRotationMode(this, ERotationMode::Aiming);
 	}
 }
 
@@ -311,7 +275,7 @@ void APlayerCharacter::OnStopAiming()
 	if (bIsAiming)
 	{
 		bIsAiming = false;
-		UpdateAimingFOV();
+		//UpdateAimingFOV();
 		GetPlayerController()->ToggleCrosshair(false);
 
 		UHumanoidAnimInstance* AnimInst = Cast<UHumanoidAnimInstance>(GetMesh()->GetAnimInstance());
@@ -319,6 +283,11 @@ void APlayerCharacter::OnStopAiming()
 			AnimInst->IsAiming = false;
 
 		GetCharacterMovement()->MaxWalkSpeed *= 2.0f;
+
+		if (ViewMode == EViewMode::FirstPerson)
+			ICharacterInterface::Execute_SetRotationMode(this, ERotationMode::LookingDirection);
+		else
+			ICharacterInterface::Execute_SetRotationMode(this, DesiredRotMode);
 	}
 }
 

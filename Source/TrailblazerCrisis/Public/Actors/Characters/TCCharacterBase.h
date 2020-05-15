@@ -162,6 +162,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Character")
 		void SetStance(EStance NewStance);
 
+	virtual void StopWeaponFire();
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character States")
 		EOverlayState OverlayState;
 
@@ -185,6 +187,9 @@ public:
 		ETraceTypeQuery GetTPTraceParams(FVector& TraceOrigin, float& TraceRadius);
 	virtual ETraceTypeQuery GetTPTraceParams_Implementation(
 		FVector& TraceOrigin, float& TraceRadius) override;
+
+	UFUNCTION(BlueprintCallable, Category = "Camera")
+		void ChangeCameraView();
 
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera")
@@ -227,9 +232,32 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Input")
 		void FixDiagonalGamepadValues(float XIn, float YIn, float& XOut, float& YOut) const;
 
-	virtual void OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
+	UFUNCTION(BlueprintCallable, Category = "Input")
+		void ToggleCrouch();
 
-	virtual void OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
+	UFUNCTION(BlueprintCallable, Category = "Input")
+		virtual void OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
+
+	UFUNCTION(BlueprintCallable, Category = "Input")
+		virtual void OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
+
+	UFUNCTION(BlueprintCallable, Category = "Input")
+		virtual void Jump() override;
+
+	UFUNCTION(BlueprintCallable, Category = "Input")
+		virtual void StopJumping() override;
+
+	UFUNCTION(BlueprintCallable, Category = "Input")
+		void StartWalking();
+
+	UFUNCTION(BlueprintCallable, Category = "Input")
+		void StopWalking();
+
+	UFUNCTION(BlueprintCallable, Category = "Input")
+		void StartSprinting();
+
+	UFUNCTION(BlueprintCallable, Category = "Input")
+		void StopSprinting();
 
 	UFUNCTION(BlueprintCallable, Category = "Input")
 	void Prone();
@@ -319,34 +347,26 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
 		EStance DesiredStance;
 
-	/** Base turn rate, in deg/sec. Other scaling may affect final turn rate. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Camera)
-		float BaseTurnRate;
-
-	/** Base look up/down rate, in deg/sec. Other scaling may affect final rate. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Camera)
-		float BaseLookUpRate;
-
 protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Input")
-		float LookUpDownRate;
+		float LookUpRate;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Input")
-		float LookLeftRightRate;
+		float TurnRate;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Input")
 		bool bBreakFall;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Input")
-		bool bSprintHeld;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+		bool bIsSprinting;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+		bool bIsWalking;
 
 	// Deprecated
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Movement)
 		bool bIsCrouching;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Movement)
-		bool bIsSprinting;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Movement)
 		bool bIsJumping;

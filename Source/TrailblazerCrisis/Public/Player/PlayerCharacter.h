@@ -59,15 +59,7 @@ protected:
 	/* Input																*/
 	/************************************************************************/
 
-	//virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
-	/** Tell anim inst and camera we're sprinting */
-	UFUNCTION(BlueprintCallable, Category = Movement)
-		void StartSprinting();
-
-	/** Tell anim inst and camera we're done sprinting */
-	UFUNCTION(BlueprintCallable, Category = Movement)
-		void StopSprinting();
+	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	/**
 	* Calculate movement/look direction from Fwd and Right axis values; called every tick.
@@ -128,7 +120,7 @@ protected:
 
 	void StartWeaponFire();
 
-	void StopWeaponFire();
+	virtual void StopWeaponFire() override;
 
 	void OnStartAiming();
 	

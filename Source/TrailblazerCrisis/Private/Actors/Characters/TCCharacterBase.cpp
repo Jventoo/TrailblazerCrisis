@@ -25,10 +25,6 @@ ATCCharacterBase::ATCCharacterBase()
 
 	Tags.Add(TEXT("TC_Character"));
 
-	// Turn rates for input
-	BaseTurnRate = 45.f;
-	BaseLookUpRate = 45.f;
-
 	// Don't rotate when the controller rotates. Let that just affect the camera.
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = false;
@@ -41,13 +37,15 @@ ATCCharacterBase::ATCCharacterBase()
 	charMove->JumpZVelocity = 600.f;
 	charMove->AirControl = 0.2f;
 
+	DesiredRotMode = ERotationMode::LookingDirection;
+
 	// Deprecated
 	bIsCrouching = bIsSprinting = bIsJumping = false;
 	ForwardAxisValue = RightAxisValue = Direction = 0.0f;
 
 	// Input
-	LookUpDownRate = LookLeftRightRate = 1.25f;
-	bBreakFall = bSprintHeld = false;
+	LookUpRate = TurnRate = 1.25f;
+	bBreakFall = bIsSprinting = bIsWalking = false;
 
 	// Camera
 	ThirdPersonFOV = FirstPersonFOV = 90.0f;
@@ -125,6 +123,24 @@ void ATCCharacterBase::Tick(float DeltaTime)
 void ATCCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
+
+	PlayerInputComponent->BindAction("Vault", IE_Pressed, this, &ATCCharacterBase::Jump);
+	PlayerInputComponent->BindAction("Vault", IE_Released, this, &ATCCharacterBase::StopJumping);
+
+	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &APlayerCharacter::ToggleCrouch);
+
+	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &ATCCharacterBase::StartSprinting);
+	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &ATCCharacterBase::StopSprinting);
+
+	PlayerInputComponent->BindAction("CameraAction", IE_Released, this, &ATCCharacterBase::ChangeCameraView);
+
+	PlayerInputComponent->BindAxis("MoveForward", this, &ATCCharacterBase::MoveForward);
+	PlayerInputComponent->BindAxis("MoveRight", this, &ATCCharacterBase::MoveRight);
+
+	PlayerInputComponent->BindAxis("TurnRate", this, &ATCCharacterBase::TurnAtRate);
+	PlayerInputComponent->BindAxis("LookUpRate", this, &ATCCharacterBase::LookUpAtRate);
+
+	// Potentially have key for changing rotation mode
 }
 
 void ATCCharacterBase::OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode)
@@ -328,6 +344,10 @@ void ATCCharacterBase::SetStance(EStance NewStance)
 	Stance = NewStance;
 }
 
+void ATCCharacterBase::StopWeaponFire()
+{
+}
+
 
 bool ATCCharacterBase::GetCameraParameters_Implementation(float& TPFOV, float& FPFOV)
 {
@@ -355,6 +375,13 @@ ETraceTypeQuery ATCCharacterBase::GetTPTraceParams_Implementation(
 
 	// Visibility Channel
 	return ETraceTypeQuery::TraceTypeQuery1;
+}
+
+void ATCCharacterBase::ChangeCameraView()
+{
+	// If held, go to FP/TP
+
+	// If tapped, change shoulder
 }
 
 
@@ -1016,52 +1043,71 @@ UAnimMontage* ATCCharacterBase::GetRollAnimation() const
 
 void ATCCharacterBase::TurnAtRate(float Rate)
 {
-	// calculate delta for this frame from the rate information
-	AddControllerYawInput(Rate * BaseTurnRate * GetWorld()->GetDeltaSeconds());
+	AddControllerYawInput(Rate * TurnRate);// * GetWorld()->GetDeltaSeconds());
 }
 
 
 void ATCCharacterBase::LookUpAtRate(float Rate)
 {
-	// calculate delta for this frame from the rate information
-	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
+	AddControllerPitchInput(Rate * LookUpRate);//BaseLookUpRate * GetWorld()->GetDeltaSeconds());
 }
 
 
 void ATCCharacterBase::MoveForward(float Value)
 {
-	if ((Controller != NULL) && (Value != 0.0f))
-	{
-		// find out which way is forward
-		const FRotator Rotation = Controller->GetControlRotation();
-		const FRotator YawRotation(0, Rotation.Yaw, 0);
+	PlayerMovementInput(true);
 
-		// get forward vector
-		const FVector Dir = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-		AddMovementInput(Dir, Value);
-	}
+	//if ((Controller != NULL) && (Value != 0.0f))
+	//{
+	//	// find out which way is forward
+	//	const FRotator Rotation = Controller->GetControlRotation();
+	//	const FRotator YawRotation(0, Rotation.Yaw, 0);
+
+	//	// get forward vector
+	//	const FVector Dir = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+	//	AddMovementInput(Dir, Value);
+	//}
 }
 
 
 void ATCCharacterBase::MoveRight(float Value)
 {
-	if ((Controller != NULL) && (Value != 0.0f))
-	{
-		// find out which way is right
-		const FRotator Rotation = Controller->GetControlRotation();
-		const FRotator YawRotation(0, Rotation.Yaw, 0);
+	PlayerMovementInput(false);
 
-		// get right vector 
-		const FVector Dir = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-		// add movement in that direction
-		AddMovementInput(Dir, Value);
-	}
+	//if ((Controller != NULL) && (Value != 0.0f))
+	//{
+	//	// find out which way is right
+	//	const FRotator Rotation = Controller->GetControlRotation();
+	//	const FRotator YawRotation(0, Rotation.Yaw, 0);
+
+	//	// get right vector 
+	//	const FVector Dir = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+	//	// add movement in that direction
+	//	AddMovementInput(Dir, Value);
+	//}
 }
 
 
 void ATCCharacterBase::ToggleCrouch()
 {
-	if (!bIsCrouched)
+	// Potentially add break fall mechanic where if hit in air, reduce damage taken
+	// Add interaction with prone system
+
+	if (MovementState == EMovementState::Grounded)
+	{
+		if (Stance == EStance::Standing)
+		{
+			DesiredStance = EStance::Crouching;
+			Crouch();
+		}
+		else if (Stance == EStance::Standing)
+		{
+			DesiredStance = EStance::Standing;
+			UnCrouch();
+		}
+	}
+
+	/*if (!bIsCrouched)
 	{
 		bIsCrouched = true;
 		GetCharacterMovement()->bWantsToCrouch = true;
@@ -1070,7 +1116,7 @@ void ATCCharacterBase::ToggleCrouch()
 	{
 		bIsCrouched = false;
 		GetCharacterMovement()->bWantsToCrouch = false;
-	}
+	}*/
 }
 
 
@@ -1088,6 +1134,81 @@ void ATCCharacterBase::OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeigh
 	SetStance(EStance::Standing);
 }
 
+void ATCCharacterBase::Jump()
+{
+	// Only jump if we are not currently preoccupied with another action
+	if (MovementAction == EMovementAction::None)
+	{
+		// If ragdolling, stop. Otherwise, try to jump if we're on the ground
+		switch (MovementState)
+		{
+		case EMovementState::Ragdoll:
+			RagdollEnd();
+			break;
+
+		case EMovementState::Mantling:
+			return;
+
+		default:
+		{
+			if (MovementState == EMovementState::Grounded)
+			{
+				// If we're moving and can mantle, mantle
+				if (HasMovementInput)
+				{
+					if (MantleCheck(GroundedTraceSettings))
+						return;
+				}
+
+				// If we can't mantle, take the character to a 'standing' stance
+				switch (Stance)
+				{
+				case EStance::Prone:
+					UnProne();
+					break;
+
+				case EStance::Crouching:
+					UnCrouch();
+					break;
+					
+				default:
+					break;
+				}
+
+				// Finally, jump
+				Super::Jump();
+			}
+			else if (MovementState == EMovementState::InAir)
+			{
+				// See if we can mantle
+				MantleCheck(FallingTraceSettings);
+			}
+
+			break;
+		}
+		}
+	}
+}
+
+void ATCCharacterBase::StopJumping()
+{
+	Super::StopJumping();
+}
+
+void ATCCharacterBase::StartWalking()
+{
+	DesiredGait = EGait::Walking;
+
+	bIsWalking = true;
+}
+
+void ATCCharacterBase::StopWalking()
+{
+	DesiredGait = EGait::Running;
+
+	bIsWalking = false;
+}
+
 
 void ATCCharacterBase::Prone()
 {
@@ -1095,6 +1216,23 @@ void ATCCharacterBase::Prone()
 	{
 		bWantsToProne = true;
 	}
+}
+
+void ATCCharacterBase::StartSprinting()
+{
+	StopWeaponFire();
+
+	DesiredGait = EGait::Sprinting;
+
+	bIsSprinting = true;
+}
+
+
+void ATCCharacterBase::StopSprinting()
+{
+	DesiredGait = EGait::Running;
+
+	bIsSprinting = false;
 }
 
 void ATCCharacterBase::UnProne()

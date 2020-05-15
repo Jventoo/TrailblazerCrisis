@@ -175,17 +175,6 @@ class TRAILBLAZERCRISIS_API UHumanoidAnimInstance : public UAnimInstance, public
 	GENERATED_BODY()
 	
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Anim Instance")
-		bool IsInAir;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Anim Instance")
-		bool bReceivedInitDir;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Anim Instance")
-		bool bUseRootMotionValues;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Anim Instance")
-		float Direction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Anim Instance")
 		bool IsArmed;
@@ -194,15 +183,10 @@ public:
 		bool IsAiming;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Anim Instance")
-		bool IsSprinting;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Anim Instance")
 		TArray<class UPhysicalMaterial*> FloorTypes;
 
 private:
 	class APawn* Owner;
-
-	FTimerHandle UpdateReceivedHandle;
 
 	FTimerHandle UpdateJumpHandle;
 
