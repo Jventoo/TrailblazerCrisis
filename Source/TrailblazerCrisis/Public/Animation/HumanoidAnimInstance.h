@@ -252,6 +252,10 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Updates")
 		void UpdateRagdollValues();
+
+	// Debug for now
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Updates")
+		void UpdateGrounded();
 	
 protected:
 

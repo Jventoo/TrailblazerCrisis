@@ -116,39 +116,41 @@ void UHumanoidAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		{
 		case EMovementState::Grounded:
 		{
-			bool Prev = bShouldMove;
-			bShouldMove = ShouldMoveCheck();
+			UpdateGrounded();
 
-			// Reset vals when starting to move
-			if (!Prev && bShouldMove)
-			{
-				ElapsedDelayTime = 0.0f;
-				Rotate_L = Rotate_R = false;
-			}
+			//bool Prev = bShouldMove;
+			//bShouldMove = ShouldMoveCheck();
 
-			// Update vals while moving
-			if (bShouldMove)
-			{
-				UpdateMovementValues();
-				UpdateRotationValues();
-			}
-			else // Update vals while not moving
-			{
-				if (CanRotateInPlace())
-					RotateInPlaceCheck();
-				else
-					Rotate_L = Rotate_R = false;
+			//// Reset vals when starting to move
+			//if (!Prev && bShouldMove)
+			//{
+			//	ElapsedDelayTime = 0.0f;
+			//	Rotate_L = Rotate_R = false;
+			//}
 
-				if (CanTurnInPlace())
-					TurnInPlaceCheck();
-				else
-					ElapsedDelayTime = 0.0f;
+			//// Update vals while moving
+			//if (bShouldMove)
+			//{
+			//	UpdateMovementValues();
+			//	UpdateRotationValues();
+			//}
+			//else // Update vals while not moving
+			//{
+			//	if (CanRotateInPlace())
+			//		RotateInPlaceCheck();
+			//	else
+			//		Rotate_L = Rotate_R = false;
 
-				if (CanDynamicTransition())
-					DynamicTransitionCheck();
-			}
+			//	if (CanTurnInPlace())
+			//		TurnInPlaceCheck();
+			//	else
+			//		ElapsedDelayTime = 0.0f;
 
-			break;
+			//	if (CanDynamicTransition())
+			//		DynamicTransitionCheck();
+			//}
+
+			//break;
 		}
 
 		case EMovementState::InAir:
