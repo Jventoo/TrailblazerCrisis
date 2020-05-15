@@ -97,7 +97,7 @@ public:
 
 	virtual bool CanSprint() const override;
 
-		void SetOverlayState(EOverlayState NewState);
+	//	void SetOverlayState(EOverlayState NewState);
 	virtual void SetOverlayState_Implementation(EOverlayState NewState) override;
 
 	UFUNCTION(BlueprintCallable, Category = "Character")

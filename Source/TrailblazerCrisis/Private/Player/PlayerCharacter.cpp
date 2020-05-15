@@ -14,6 +14,8 @@
 #include "Actors/Weapons/BaseFirearm.h"
 #include "Animation/HumanoidAnimInstance.h"
 
+#include "Engine.h"
+
 // Sets default values
 APlayerCharacter::APlayerCharacter()
 {
@@ -89,6 +91,8 @@ void APlayerCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerIn
 {
 	// Set up gameplay key bindings
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
+
+	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Cyan, FString("Binding PlayerCharInput"));
 
 	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &APlayerCharacter::OnStartFire);
 	PlayerInputComponent->BindAction("Fire", IE_Released, this, &APlayerCharacter::OnStopFire);

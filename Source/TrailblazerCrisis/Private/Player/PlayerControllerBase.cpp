@@ -11,6 +11,9 @@
 #include "UI/PauseStackWidget.h"
 #include "Game/TC_PlayerCameraManager.h"
 
+#include "GameFramework/Character.h"
+#include "GameFramework/Pawn.h"
+
 APlayerControllerBase::APlayerControllerBase()
 {
 	HUDRef = nullptr;
@@ -40,6 +43,17 @@ void APlayerControllerBase::BeginPlay()
 		HUDRef->AddToViewport();
 		bHUDOpen = true;
 	}
+
+	/*if (PlayerCameraManager)
+	{
+		auto TCCameraManager = Cast<ATC_PlayerCameraManager>(PlayerCameraManager);
+
+		ACharacter* CharacterPtr = UGameplayStatics::GetPlayerCharacter(GetWorld(), 0);
+		APawn* PawnPtr = Cast<APawn>(CharacterPtr);
+
+		if (TCCameraManager && PawnPtr)
+			TCCameraManager->OnPossess(PawnPtr);
+	}*/
 }
 
 void APlayerControllerBase::SetupInputComponent()
@@ -48,15 +62,17 @@ void APlayerControllerBase::SetupInputComponent()
 
 	auto& QuestAction = InputComponent->BindAction("QuestMenu", IE_Pressed, this, &APlayerControllerBase::ToggleQuestMenu);
 	QuestAction.bExecuteWhenPaused = true;
-	QuestAction.bConsumeInput = true;
+	//QuestAction.bConsumeInput = true;
 
 	auto& PauseAction = InputComponent->BindAction("PauseMenu", IE_Pressed, this, &APlayerControllerBase::TogglePauseMenu);
 	PauseAction.bExecuteWhenPaused = true;
-	PauseAction.bConsumeInput = true;
+	//PauseAction.bConsumeInput = true;
 }
 
 void APlayerControllerBase::OnPossess(APawn* aPawn)
 {
+	Super::OnPossess(aPawn);
+
 	if (PlayerCameraManager)
 	{
 		auto TCCameraManager = Cast<ATC_PlayerCameraManager>(PlayerCameraManager);

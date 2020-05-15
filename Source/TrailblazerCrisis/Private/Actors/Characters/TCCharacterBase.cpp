@@ -16,6 +16,8 @@
 
 #include "Interfaces/AnimationInterface.h"
 
+#include "Engine.h"
+
 // Sets default values
 ATCCharacterBase::ATCCharacterBase()
 {
@@ -40,6 +42,10 @@ ATCCharacterBase::ATCCharacterBase()
 	charMove->AirControl = 0.2f;
 
 	DesiredRotMode = ERotationMode::LookingDirection;
+	DesiredGait = EGait::Running;
+	ViewMode = EViewMode::ThirdPerson;
+	OverlayState = EOverlayState::Default;
+	DesiredStance = EStance::Standing;
 
 	// Deprecated
 	bIsCrouching = bIsSprinting = bIsJumping = false;
@@ -154,6 +160,8 @@ void ATCCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
+	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Cyan, FString("Binding BaseCharInput"));
+
 	PlayerInputComponent->BindAction("Vault", IE_Pressed, this, &ATCCharacterBase::Jump);
 	PlayerInputComponent->BindAction("Vault", IE_Released, this, &ATCCharacterBase::StopJumping);
 
@@ -161,6 +169,9 @@ void ATCCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
 	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &ATCCharacterBase::StartSprinting);
 	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &ATCCharacterBase::StopSprinting);
+
+	PlayerInputComponent->BindAction("Walk", IE_Pressed, this, &ATCCharacterBase::StartWalking);
+	PlayerInputComponent->BindAction("Walk", IE_Released, this, &ATCCharacterBase::StopWalking);
 
 	PlayerInputComponent->BindAction("CameraAction", IE_Released, this, &ATCCharacterBase::ChangeCameraView);
 
@@ -491,7 +502,6 @@ void ATCCharacterBase::UpdateGroundedRotation()
 				SmoothCharacterRotation(FRotator(0.0f, GetControlRotation().Yaw, 0.0f), 1000.0f, 20.0f);
 				break;
 			}
-
 		}
 		else // Not Moving
 		{
@@ -891,7 +901,7 @@ void ATCCharacterBase::UpdateCharacterMovement()
 	auto ActualGait = GetActualGait(AllowedGait);
 
 	if (ActualGait != Gait)
-		SetGait(ActualGait);
+		SetGait_Implementation(ActualGait);
 
 	UpdateDynamicMovementSettings(AllowedGait);
 }
@@ -1335,14 +1345,16 @@ void ATCCharacterBase::PlayerMovementInput(bool IsForwardAxis)
 		GetControlVectors(ForwardVect, RightVect);
 
 		float XOut = 0.0f, YOut = 0.0f;
-		FixDiagonalGamepadValues(GetInputAxisValue(TEXT("MoveForward")), GetInputAxisValue(TEXT("MoveRight")), XOut, YOut);
-
+		FixDiagonalGamepadValues(GetInputAxisValue(TEXT("MoveRight")), GetInputAxisValue(TEXT("MoveForward")), XOut, YOut);
+		
 		if (IsForwardAxis)
 		{
+			GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red, FString("Forward= " + FString::SanitizeFloat(YOut)));
 			AddMovementInput(ForwardVect, YOut);
 		}
 		else
 		{
+			GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red, FString("Right= " + FString::SanitizeFloat(XOut)));
 			AddMovementInput(RightVect, XOut);
 		}
 	}

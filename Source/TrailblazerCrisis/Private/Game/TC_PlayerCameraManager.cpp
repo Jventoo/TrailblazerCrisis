@@ -12,6 +12,8 @@
 #include "Game/PlayerCameraBehavior.h"
 #include "Interfaces/CameraInterface.h"
 
+#include "Engine.h"
+
 ATC_PlayerCameraManager::ATC_PlayerCameraManager()
 {
 	CameraBehavior = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("CameraBehavior"));
