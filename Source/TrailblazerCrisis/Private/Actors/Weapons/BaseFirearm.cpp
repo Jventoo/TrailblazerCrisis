@@ -168,7 +168,7 @@ void ABaseFirearm::BeginUnequip()
 		OnUnEquip();
 	}
 
-	DetachMeshFromPawn();
+	//DetachMeshFromPawn();
 }
 
 
@@ -230,7 +230,7 @@ void ABaseFirearm::OnUnEquip()
 
 void ABaseFirearm::OnEquipFinished()
 {
-	AttachMeshToPawn(Pawn->WeaponEquipSocket);
+	//AttachMeshToPawn(Pawn->WeaponEquipSocket);
 
 	bIsEquipped = true;
 	bPendingEquip = false;

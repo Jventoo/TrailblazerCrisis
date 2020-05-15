@@ -807,10 +807,6 @@ protected:
 		void ResetIKOffsets();
 
 private:
-
-	UFUNCTION()
-		void SetReceivedDirTrue();
-
 	UFUNCTION()
 		void SetJumpFalse();
 

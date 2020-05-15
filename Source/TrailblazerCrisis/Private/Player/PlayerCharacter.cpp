@@ -18,15 +18,15 @@
 APlayerCharacter::APlayerCharacter()
 {
 	// Create a camera boom (pulls in towards the player if there is a collision)
-	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
-	CameraBoom->SetupAttachment(RootComponent);
-	CameraBoom->TargetArmLength = 300.0f; // The camera follows at this distance behind the character	
-	CameraBoom->bUsePawnControlRotation = true; // Rotate the arm based on the controller
+	//CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
+	//CameraBoom->SetupAttachment(RootComponent);
+	//CameraBoom->TargetArmLength = 300.0f; // The camera follows at this distance behind the character	
+	//CameraBoom->bUsePawnControlRotation = true; // Rotate the arm based on the controller
 
-	// Create a follow camera
-	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
-	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
-	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arms
+	//// Create a follow camera
+	//FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
+	//FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
+	//FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arms
 
 	// Create components for holding objects
 	HeldObjectRoot = CreateDefaultSubobject<USceneComponent>(TEXT("HeldObjectRoot"));
@@ -79,8 +79,6 @@ void APlayerCharacter::BeginPlay()
 void APlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
-	//Direction = CalculateDirection(ForwardAxisValue, RightAxisValue);
 }
 
 
@@ -143,12 +141,11 @@ void APlayerCharacter::ToggleEquip()
 		if (AnimInst)
 		{
 			AnimInst->IsArmed = true;
-			AnimInst->bUseRootMotionValues = false;
 		}
 
-		bUseControllerRotationYaw = true;
+		//ICharacterInterface::Execute_SetOverlayState(this, EOverlayState::Rifle);
 
-		UpdateCombatCamera();
+		//UpdateCombatCamera();
 	}
 	else
 	{
@@ -164,12 +161,11 @@ void APlayerCharacter::ToggleEquip()
 		if (AnimInst)
 		{
 			AnimInst->IsArmed = false;
-			AnimInst->bUseRootMotionValues = true;
 		}
 
-		bUseControllerRotationYaw = false;
+		//ICharacterInterface::Execute_SetOverlayState(this, EOverlayState::Default);
 
-		UpdateCombatCamera();
+		//UpdateCombatCamera();
 	}
 }
 
@@ -321,7 +317,7 @@ bool APlayerCharacter::CanSprint() const
 
 void APlayerCharacter::SetOverlayState_Implementation(EOverlayState NewState)
 {
-	Super::SetOverlayState(NewState);
+	Super::SetOverlayState_Implementation(NewState);
 
 	UpdateHeldObject();
 }

@@ -167,10 +167,10 @@ void UHumanoidAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 
 void UHumanoidAnimInstance::NativeUninitializeAnimation()
 {
-	Super::NativeUninitializeAnimation();
-
 	GetWorld()->GetTimerManager().ClearTimer(UpdateJumpHandle);
 	GetWorld()->GetTimerManager().ClearTimer(AllowTransitionHandle);
+
+	Super::NativeUninitializeAnimation();
 }
 
 void UHumanoidAnimInstance::PlayTransition(FDynamicMontageParams Parameters)

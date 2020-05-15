@@ -14,6 +14,8 @@
 #include "Animation/AnimInstance.h"
 #include "Curves/CurveVector.h"
 
+#include "Interfaces/AnimationInterface.h"
+
 // Sets default values
 ATCCharacterBase::ATCCharacterBase()
 {
@@ -41,7 +43,6 @@ ATCCharacterBase::ATCCharacterBase()
 
 	// Deprecated
 	bIsCrouching = bIsSprinting = bIsJumping = false;
-	ForwardAxisValue = RightAxisValue = Direction = 0.0f;
 
 	// Input
 	LookUpRate = TurnRate = 1.25f;
@@ -90,10 +91,10 @@ void ATCCharacterBase::BeginPlay()
 	SetMovementModel();
 	
 	// Update movement states
-	SetGait(DesiredGait);
-	SetRotationMode(DesiredRotMode);
-	SetViewMode(ViewMode);
-	SetOverlayState(OverlayState);
+	SetGait_Implementation(DesiredGait);
+	SetRotationMode_Implementation(DesiredRotMode);
+	SetViewMode_Implementation(ViewMode);
+	SetOverlayState_Implementation(OverlayState);
 
 	if (DesiredStance == EStance::Standing)
 	{
@@ -109,14 +110,43 @@ void ATCCharacterBase::BeginPlay()
 	TargetRotation = LastVelocityRotation = LastMovementInputRotation = GetActorRotation();
 }
 
+void ATCCharacterBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	GetWorld()->GetTimerManager().ClearTimer(ResetBrakingFrictionHandle);
+
+	Super::EndPlay(EndPlayReason);
+}
+
 // Called every frame
 void ATCCharacterBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	// Update root motion variables
-	ForwardAxisValue = InputComponent->GetAxisValue("MoveForward");
-	RightAxisValue = InputComponent->GetAxisValue("MoveRight");
+	SetEssentialValues();
+
+	switch (MovementState)
+	{
+	case EMovementState::Grounded:
+		UpdateCharacterMovement();
+		UpdateGroundedRotation();
+		break;
+
+	case EMovementState::InAir:
+		UpdateInAirRotation();
+
+		if (HasMovementInput)
+			MantleCheck(FallingTraceSettings);
+		break;
+
+	case EMovementState::Ragdoll:
+		RagdollUpdate();
+		break;
+
+	default:
+		break;
+	}
+
+	CacheValues();
 }
 
 // Called to bind functionality to input
@@ -127,7 +157,7 @@ void ATCCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	PlayerInputComponent->BindAction("Vault", IE_Pressed, this, &ATCCharacterBase::Jump);
 	PlayerInputComponent->BindAction("Vault", IE_Released, this, &ATCCharacterBase::StopJumping);
 
-	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &APlayerCharacter::ToggleCrouch);
+	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &ATCCharacterBase::ToggleCrouch);
 
 	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &ATCCharacterBase::StartSprinting);
 	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &ATCCharacterBase::StopSprinting);
@@ -158,6 +188,38 @@ void ATCCharacterBase::OnMovementModeChanged(EMovementMode PrevMovementMode, uin
 		ICharacterInterface::Execute_SetMovementState(this, EMovementState::InAir);
 		break;
 	}
+}
+
+void ATCCharacterBase::Landed(const FHitResult& Hit)
+{
+	Super::Landed(Hit);
+
+	if (bBreakFall)
+		PlayBreakfall();
+	else
+	{
+		auto CharMove = GetCharacterMovement();
+
+		if (HasMovementInput)
+			CharMove->BrakingFrictionFactor = 0.5f;
+		else
+			CharMove->BrakingFrictionFactor = 3.0f;
+
+		GetWorld()->GetTimerManager().ClearTimer(ResetBrakingFrictionHandle);
+		GetWorld()->GetTimerManager().SetTimer(ResetBrakingFrictionHandle, this,
+			&ATCCharacterBase::ResetBrakingFriction, 0.5f, false);
+	}
+}
+
+void ATCCharacterBase::OnJumped_Implementation()
+{
+	Super::OnJumped_Implementation();
+
+	// Set in air rotation to velocity rotation if we're moving
+	InAirRotation = (Speed > 100.0f) ? LastVelocityRotation : GetActorRotation();
+
+	if (MeshAnimInst)
+		IAnimationInterface::Execute_Jumped(MeshAnimInst);
 }
 
 
@@ -382,6 +444,7 @@ void ATCCharacterBase::ChangeCameraView()
 	// If held, go to FP/TP
 
 	// If tapped, change shoulder
+	bRightShoulder = !bRightShoulder;
 }
 
 
@@ -1040,6 +1103,12 @@ UAnimMontage* ATCCharacterBase::GetRollAnimation() const
 	return nullptr;
 }
 
+void ATCCharacterBase::PlayRoll()
+{
+	if (MeshAnimInst)
+		MeshAnimInst->Montage_Play(GetRollAnimation(), 1.15f);
+}
+
 
 void ATCCharacterBase::TurnAtRate(float Rate)
 {
@@ -1251,49 +1320,9 @@ void ATCCharacterBase::OnEndProne()
 }
 
 
-float ATCCharacterBase::GetDirection() const
-{
-	return Direction;
-}
-
-float ATCCharacterBase::GetRightAxisVal(bool AbsoluteVal) const
-{
-	if (AbsoluteVal)
-		return UKismetMathLibrary::Abs(RightAxisValue);
-	else
-		return RightAxisValue;
-}
-
-
-float ATCCharacterBase::GetForwardAxisValue(bool AbsoluteVal) const
-{
-	if (AbsoluteVal)
-		return UKismetMathLibrary::Abs(ForwardAxisValue);
-	else
-		return ForwardAxisValue;
-}
-
-
 bool ATCCharacterBase::GetIsSprinting() const
 {
 	return bIsSprinting;
-}
-
-
-void ATCCharacterBase::SetDirection(float NewDir)
-{
-	Direction = NewDir;
-}
-
-void ATCCharacterBase::SetRightAxisVal(float NewVal)
-{
-	RightAxisValue = NewVal;
-}
-
-
-void ATCCharacterBase::SetForwardAxisValue(float NewVal)
-{
-	ForwardAxisValue = NewVal;
 }
 
 
@@ -1371,4 +1400,15 @@ float ATCCharacterBase::GetAnimCurveValue(const FName& CurveName) const
 		return MeshAnimInst->GetCurveValue(CurveName);
 	else
 		return 0.0f;
+}
+
+void ATCCharacterBase::PlayBreakfall()
+{
+	if (MeshAnimInst)
+		MeshAnimInst->Montage_Play(GetRollAnimation(), 1.35f);
+}
+
+void ATCCharacterBase::ResetBrakingFriction()
+{
+	GetCharacterMovement()->BrakingFrictionFactor = 0.0f;
 }

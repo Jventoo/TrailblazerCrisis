@@ -31,8 +31,9 @@ public:
 	ATCCharacterBase();
 
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	APlayerControllerBase* GetPlayerController() const;
 
@@ -44,6 +45,10 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	virtual void OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode = 0) override;
+
+	virtual void Landed(const FHitResult& Hit) override;
+
+	virtual void OnJumped_Implementation() override;
 
 protected:
 
@@ -241,11 +246,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Input")
 		virtual void OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
 
-	UFUNCTION(BlueprintCallable, Category = "Input")
-		virtual void Jump() override;
+	virtual void Jump() override;
 
-	UFUNCTION(BlueprintCallable, Category = "Input")
-		virtual void StopJumping() override;
+	virtual void StopJumping() override;
 
 	UFUNCTION(BlueprintCallable, Category = "Input")
 		void StartWalking();
@@ -272,24 +275,8 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Input")
 		bool bWantsToProne;
 
-	/** Return direction player is looking/moving **/
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Input")
-		float GetDirection() const;
-
-	/** Return axis value corresponding to right-left movement between [-1, 1] **/
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Input")
-		float GetRightAxisVal(bool AbsoluteVal = false) const;
-
-	/** Return axis value corresponding to fwd-back movement between [-1, 1] **/
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Input")
-		float GetForwardAxisValue(bool AbsoluteVal = false) const;
-
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Input")
 		bool GetIsSprinting() const;
-
-	/** Set private members and update movement component **/
-	UFUNCTION(BlueprintCallable, Category = "Input")
-		void ToggleCrouch();
 
 protected:
 
@@ -320,21 +307,6 @@ protected:
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Input")
 		void LookUpAtRate(float Rate);
-
-	/**
-	* Set Direction to NewDir
-	* @param NewDir  Float between [-180, 180] degrees
-	*/
-	UFUNCTION(BlueprintCallable, Category = "Input")
-		void SetDirection(float NewDir);
-
-	/** See ForwardAxisValue member declaration for use */
-	UFUNCTION(BlueprintCallable, Category = "Input")
-		void SetRightAxisVal(float NewVal);
-
-	/** See ForwardAxisValue member declaration for use */
-	UFUNCTION(BlueprintCallable, Category = "Input")
-		void SetForwardAxisValue(float NewVal);
 
 public:
 
@@ -370,18 +342,6 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Movement)
 		bool bIsJumping;
-
-	/** Measured in degrees */
-	UPROPERTY(Transient)
-		float Direction;
-
-	/** Left-right movement clamped between [-1, 1] */
-	UPROPERTY(Transient)
-		float RightAxisValue;
-
-	/** Fwd-bwd movemenet clamped between [-1, 1] */
-	UPROPERTY(Transient)
-		float ForwardAxisValue;
 
 	// End Deprecated
 
@@ -544,6 +504,9 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Movement")
 		virtual class UAnimMontage* GetRollAnimation() const;
 
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+		void PlayRoll();
+
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 		FDataTableRowHandle MovementModel;
@@ -572,4 +535,17 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Utility")
 		float GetAnimCurveValue(const FName& CurveName) const;
+
+	/************************************************************************/
+	/* Falling																*/
+	/************************************************************************/
+
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+		void PlayBreakfall();
+	
+private:
+	FTimerHandle ResetBrakingFrictionHandle;
+
+	UFUNCTION()
+		void ResetBrakingFriction();
 };
