@@ -65,8 +65,8 @@ protected:
 	* Calculate movement/look direction from Fwd and Right axis values; called every tick.
 	* @return  Float between [-180, 180] degrees
 	*/
-	UFUNCTION(BlueprintCallable, Category = Movement)
-		float CalculateDirection(float ForwardValue, float RightValue);
+	/*UFUNCTION(BlueprintCallable, Category = Movement)
+		float CalculateDirection(float ForwardValue, float RightValue);*/
 
 
 	/************************************************************************/

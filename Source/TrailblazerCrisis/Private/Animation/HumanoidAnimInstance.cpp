@@ -116,10 +116,10 @@ void UHumanoidAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		{
 		case EMovementState::Grounded:
 		{
-			UpdateGrounded();
+			bool Prev = bShouldMove;
+			bShouldMove = ShouldMoveCheck();
 
-			//bool Prev = bShouldMove;
-			//bShouldMove = ShouldMoveCheck();
+			UpdateGrounded();
 
 			//// Reset vals when starting to move
 			//if (!Prev && bShouldMove)
@@ -336,6 +336,8 @@ void UHumanoidAnimInstance::UpdateFootIK()
 
 void UHumanoidAnimInstance::UpdateMovementValues()
 {
+	GEngine->AddOnScreenDebugMessage(-1, 0.2f, FColor::Red, FString("Updating movement vals"));
+
 	VelocityBlend = InterpVelocityBlend(VelocityBlend, CalculateVelocityBlend(), 
 		VelocityBlendInterpSpeed, CurrDeltaTime);
 
@@ -498,7 +500,6 @@ void UHumanoidAnimInstance::TurnInPlace(const FRotator& TargetRot, float PlayRat
 			PlaySlotAnimationAsDynamicMontage(TargetTurnAsset.Animation, TargetTurnAsset.SlotName,
 				0.2, 0.2, TargetTurnAsset.PlayRate * PlayRateScale, 1, 0, StartTime);
 
-
 			RotationScale = TargetTurnAsset.PlayRate * PlayRateScale;
 
 			if (TargetTurnAsset.ScaleTurnAngle)
@@ -550,10 +551,15 @@ FVelocityBlend UHumanoidAnimInstance::CalculateVelocityBlend()
 
 	FVector RelativeDir = LocVelacityBlendDir / Sum;
 
-	float F = UKismetMathLibrary::Clamp(RelativeDir.X, 0, 1);
-	float B = FMath::Abs(UKismetMathLibrary::Clamp(RelativeDir.X, -1, 0));
-	float L = FMath::Abs(UKismetMathLibrary::Clamp(RelativeDir.Y, -1, 0));
-	float R = UKismetMathLibrary::Clamp(RelativeDir.Y, 0, 1);
+	float F = UKismetMathLibrary::FClamp(RelativeDir.X, 0, 1);
+	float B = FMath::Abs(UKismetMathLibrary::FClamp(RelativeDir.X, -1, 0));
+	float L = FMath::Abs(UKismetMathLibrary::FClamp(RelativeDir.Y, -1, 0));
+	float R = UKismetMathLibrary::FClamp(RelativeDir.Y, 0, 1);
+
+	GEngine->AddOnScreenDebugMessage(-1, 0.1f, FColor::Purple, FString("F: " + FString::SanitizeFloat(F)));
+	GEngine->AddOnScreenDebugMessage(-1, 0.1f, FColor::Purple, FString("B: " + FString::SanitizeFloat(B)));
+	GEngine->AddOnScreenDebugMessage(-1, 0.1f, FColor::Purple, FString("L: " + FString::SanitizeFloat(L)));
+	GEngine->AddOnScreenDebugMessage(-1, 0.1f, FColor::Purple, FString("R: " + FString::SanitizeFloat(R)));
 
 	return FVelocityBlend(F, B, L, R);
 }
@@ -595,7 +601,8 @@ float UHumanoidAnimInstance::CalculateWalkRunBlend()
 
 float UHumanoidAnimInstance::CalculateStrideBlend()
 {
-	auto A = UKismetMathLibrary::Lerp(StrideBlend_N_Walk->GetFloatValue(Speed),
+	auto A = UKismetMathLibrary::Lerp(
+		StrideBlend_N_Walk->GetFloatValue(Speed),
 		StrideBlend_N_Run->GetFloatValue(Speed),
 		GetAnimCurve_Clamped(TEXT("Weight_Gait"), -1, 0, 1));
 
@@ -614,7 +621,7 @@ float UHumanoidAnimInstance::CalculateStandingPlayRate()
 	auto SceneComp = Cast<USceneComponent>(GetOwningComponent());
 
 	if (SceneComp)
-		return UKismetMathLibrary::Clamp((Lerped / StrideBlend) / SceneComp->GetComponentScale().Z, 0, 3);
+		return UKismetMathLibrary::FClamp((Lerped / StrideBlend) / SceneComp->GetComponentScale().Z, 0, 3);
 	else
 		return 0.0f;
 }
@@ -626,7 +633,7 @@ float UHumanoidAnimInstance::CalculateCrouchingPlayRate()
 	if (SceneComp)
 	{
 		float Val = Speed / AnimatedCrouchSpeed / StrideBlend / SceneComp->GetComponentScale().Z;
-		return UKismetMathLibrary::Clamp(Val, 0, 2);
+		return UKismetMathLibrary::FClamp(Val, 0, 2);
 	}
 	else
 		return 0.0f;
@@ -647,7 +654,7 @@ float UHumanoidAnimInstance::CalculateLandPrediction()
 			auto CapsuleLoc = SceneComp->GetComponentLocation();
 
 			auto UnsafeVect = UKismetMathLibrary::Vector_NormalUnsafe(
-				FVector(Velocity.X, Velocity.Y, UKismetMathLibrary::Clamp(Velocity.Z, -4000.0, -200.0))
+				FVector(Velocity.X, Velocity.Y, UKismetMathLibrary::FClamp(Velocity.Z, -4000.0, -200.0))
 			);
 
 			auto VectMultiplier = UKismetMathLibrary::MapRangeClamped(Velocity.Z, 0, -4000.0, 50.0, 2000.0);
@@ -903,5 +910,5 @@ void UHumanoidAnimInstance::ResetIKOffsets()
 
 float UHumanoidAnimInstance::GetAnimCurve_Clamped(FName Name, float Bias, float Min, float Max)
 {
-	return UKismetMathLibrary::Clamp(GetCurveValue(Name) + Bias, Min, Max);
+	return UKismetMathLibrary::FClamp(GetCurveValue(Name) + Bias, Min, Max);
 }

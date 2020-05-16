@@ -1378,8 +1378,8 @@ void ATCCharacterBase::FixDiagonalGamepadValues(float XIn, float YIn, float& XOu
 	auto RangedClamped_X = UKismetMathLibrary::MapRangeClamped(FMath::Abs(XIn), 0, 0.6, 1, 1.2);
 	auto RangedClamped_Y = UKismetMathLibrary::MapRangeClamped(FMath::Abs(YIn), 0, 0.6, 1, 1.2);
 
-	XOut = UKismetMathLibrary::Clamp(RangedClamped_Y * XIn, -1.0, 1.0);
-	YOut = UKismetMathLibrary::Clamp(RangedClamped_X * YIn, -1.0, 1.0);
+	XOut = UKismetMathLibrary::FClamp(RangedClamped_Y * XIn, -1.0, 1.0);
+	YOut = UKismetMathLibrary::FClamp(RangedClamped_X * YIn, -1.0, 1.0);
 }
 
 void ATCCharacterBase::GetControlVectors(FVector& ForwardV, FVector& RightV) const

@@ -104,7 +104,6 @@ void APlayerCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerIn
 
 	PlayerInputComponent->BindAction("Holster", IE_Pressed, this, &APlayerCharacter::ToggleEquip);
 	PlayerInputComponent->BindAction("ChangeFireMode", IE_Pressed, this, &APlayerCharacter::NextFireMode);
-	
 }
 
 
@@ -114,19 +113,19 @@ bool APlayerCharacter::IsFiring() const
 }
 
 
-float APlayerCharacter::CalculateDirection(float ForwardValue, float RightValue)
-{
-	FVector InputVector(ForwardValue, (RightValue * -1), 0);
-	FRotator InputRot = InputVector.ToOrientationRotator();
-
-	FRotator CameraRot = FollowCamera->GetComponentTransform().GetRotation().Rotator();
-	FRotator CapsuleRot = GetCapsuleComponent()->GetComponentTransform().GetRotation().Rotator();
-
-	FRotator DeltaRot = UKismetMathLibrary::NormalizedDeltaRotator(CameraRot, CapsuleRot);
-	FRotator FinalRot = UKismetMathLibrary::NormalizedDeltaRotator(DeltaRot, InputRot);
-
-	return FinalRot.Yaw;
-}
+//float APlayerCharacter::CalculateDirection(float ForwardValue, float RightValue)
+//{
+//	FVector InputVector(ForwardValue, (RightValue * -1), 0);
+//	FRotator InputRot = InputVector.ToOrientationRotator();
+//
+//	FRotator CameraRot = FollowCamera->GetComponentTransform().GetRotation().Rotator();
+//	FRotator CapsuleRot = GetCapsuleComponent()->GetComponentTransform().GetRotation().Rotator();
+//
+//	FRotator DeltaRot = UKismetMathLibrary::NormalizedDeltaRotator(CameraRot, CapsuleRot);
+//	FRotator FinalRot = UKismetMathLibrary::NormalizedDeltaRotator(DeltaRot, InputRot);
+//
+//	return FinalRot.Yaw;
+//}
 
 
 //////////////////////////////////////////////////////////////////////////
