@@ -690,7 +690,7 @@ void UHumanoidAnimInstance::SetFootOffsets(const FName& Enable_FootIK_Curve, con
 	FRotator TargetRotationOffset;
 
 	// Clear offsets if weight = 0
-	if (SceneComp && GetCurveValue(Enable_FootIK_Curve) > 0)
+	if (SceneComp && GetCurveValue(Enable_FootIK_Curve) > 0.0f)
 	{
 		// Trace downwards
 		auto FootSocket = SceneComp->GetSocketLocation(IKFootBone);
@@ -714,10 +714,14 @@ void UHumanoidAnimInstance::SetFootOffsets(const FName& Enable_FootIK_Curve, con
 			ImpactPoint = HitInfo.ImpactPoint;
 			ImpactNormal = HitInfo.ImpactNormal;
 
-			CurrentLocationTarget = (ImpactNormal * FootHeight) + ImpactPoint 
+			CurrentLocationTarget = ((ImpactNormal * FootHeight) + ImpactPoint) 
 				- (IKFootFloorLoc + (FVector(0, 0, 1) * FootHeight));
 
-			TargetRotationOffset = FRotator(UKismetMathLibrary::Atan2(ImpactNormal.Y, ImpactNormal.Z), 0, -1.0 * UKismetMathLibrary::Atan2(ImpactNormal.X, ImpactNormal.Z));
+			TargetRotationOffset = FRotator(
+				-1.0 * UKismetMathLibrary::Atan2(ImpactNormal.X, ImpactNormal.Z),
+				0, 
+				UKismetMathLibrary::Atan2(ImpactNormal.Y, ImpactNormal.Z)
+			);
 		}
 
 		// Interp the current loc to the new target. Speed depends on above or below
@@ -790,7 +794,7 @@ void UHumanoidAnimInstance::SetFootLocking(const FName& Enable_FootIK_Curve, con
 
 			if (SceneComp)
 			{
-				auto SocketTrans = SceneComp->GetSocketTransform(IKFootBone);
+				auto SocketTrans = SceneComp->GetSocketTransform(IKFootBone, ERelativeTransformSpace::RTS_Component);
 
 				CurrentFootLockLocation = SocketTrans.GetLocation();
 				CurrentFootLockRotation = SocketTrans.Rotator();

@@ -1349,12 +1349,10 @@ void ATCCharacterBase::PlayerMovementInput(bool IsForwardAxis)
 		
 		if (IsForwardAxis)
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red, FString("Forward= " + FString::SanitizeFloat(YOut)));
 			AddMovementInput(ForwardVect, YOut);
 		}
 		else
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red, FString("Right= " + FString::SanitizeFloat(XOut)));
 			AddMovementInput(RightVect, XOut);
 		}
 	}

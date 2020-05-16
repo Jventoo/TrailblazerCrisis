@@ -7,6 +7,54 @@
 #include "Engine/DataTable.h"
 #include "TCStatics.generated.h"
 
+/************************************************************************/
+/* Animation																*/
+/************************************************************************/
+
+USTRUCT(BlueprintType)
+struct FAnimCurveCreation
+{
+	GENERATED_USTRUCT_BODY()
+
+		FAnimCurveCreation()
+	{
+		FrameNumber = 0;
+		CurveValue = 0.0f;
+	}
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AnimModifier")
+		int32 FrameNumber;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AnimModifier")
+		float CurveValue;
+};
+
+USTRUCT(BlueprintType)
+struct FAnimCurveCreationParams
+{
+	GENERATED_USTRUCT_BODY()
+
+		FAnimCurveCreationParams()
+	{
+		CurveName = TEXT("None");
+		KeyEachFrame = false;
+	}
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AnimModifier")
+		FName CurveName;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AnimModifier")
+		bool KeyEachFrame;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AnimModifier")
+		TArray<FAnimCurveCreation> Keys;
+};
+
+
+/************************************************************************/
+/* Locomotion															*/
+/************************************************************************/
+
 UENUM(BlueprintType)
 enum class EGait : uint8
 {
