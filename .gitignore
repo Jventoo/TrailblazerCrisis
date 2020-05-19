@@ -77,5 +77,5 @@ DerivedDataCache/*
 #*.uasset
 *.zip
 Content/*/*
-!Content/TC/*
+!Content/HorizonsTC/*
 *.fbx
