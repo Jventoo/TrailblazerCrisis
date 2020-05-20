@@ -31,7 +31,7 @@ struct FRecoilInfo
 {
 	GENERATED_USTRUCT_BODY()
 
-		FRecoilInfo()
+	FRecoilInfo()
 	{
 		UpMin = UpMax = RightMin = RightMax = 0;
 	}
@@ -54,7 +54,7 @@ struct FFirearmDamageInfo
 {
 	GENERATED_USTRUCT_BODY()
 
-		FFirearmDamageInfo()
+	FFirearmDamageInfo()
 	{
 		MinDamage = MaxDamage = CritChance = CritDamageMultiplier = 0;
 	}
@@ -77,7 +77,7 @@ class HORIZONSTC_API ABaseFirearm : public AActor
 {
 	GENERATED_BODY()
 
-		virtual void PostInitializeComponents() override;
+	virtual void PostInitializeComponents() override;
 
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
@@ -114,20 +114,16 @@ protected:
 
 	ABaseFirearm();
 
-	/** pawn owner */
 	UPROPERTY(Transient)
 		class ATCCharacter* Pawn;
 
-	/** weapon mesh: 3rd person view */
 	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
 		USkeletalMeshComponent* Mesh;
 
-	/** detaches weapon mesh from pawn */
+	/** Detaches weapon mesh from pawn */
 	void DetachMeshFromPawn();
 
 	virtual void OnEquipFinished();
-
-	bool IsEquipped() const;
 
 	bool IsAttachedToPawn() const;
 
@@ -137,9 +133,16 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 		USkeletalMeshComponent* GetWeaponMesh() const;
 
+	virtual void BeginEquip(ATCCharacter* NewOwner);
+
+	virtual void BeginUnequip();
+
 	virtual void OnUnEquip();
 
 	void OnEquip(bool bPlayAnimation);
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+		bool IsEquipped() const;
 
 	/* Set the weapon's owning pawn */
 	void SetOwningPawn(ATCCharacter* NewOwner);
@@ -147,10 +150,6 @@ public:
 	/* Get pawn owner */
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 		class ATCCharacter* GetPawnOwner() const;
-
-	virtual void BeginEquip(ATCCharacter* NewOwner);
-
-	virtual void BeginUnequip();
 
 	/************************************************************************/
 	/* Fire & Damage Handling                                               */
@@ -165,10 +164,14 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Weapon State")
 		EWeaponState GetCurrentState() const;
 
+	/* Used for putting the weapon in a character's holster (not their hand; that's in character class) */
 	void AttachMeshToPawn(FName Socket);
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Weapon State")
 		EFireModes GetFireMode() const;
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Weapon State")
+		bool CanFire() const;
 
 	UFUNCTION(BlueprintCallable, Category = "Weapon State")
 		void SwitchToNextFireMode();
@@ -177,8 +180,6 @@ public:
 		void SetFireMode(EFireModes NewMode);
 
 protected:
-
-	bool CanFire() const;
 
 	FVector GetAdjustedAim() const;
 

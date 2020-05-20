@@ -17,6 +17,8 @@ class HORIZONSTC_API ATCCharacter : public ATCBaseCharacter
 	ATCCharacter();
 
 public:
+	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
+
 	/** Implement on BP to update held objects */
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HeldObject")
 		void UpdateHeldObject();
@@ -85,6 +87,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = Combat)
 		void NextFireMode();
 
+	UFUNCTION(BlueprintCallable, Category = Combat)
+		void ToggleEquip();
+
 protected:
 
 	void OnReload();
@@ -114,6 +119,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon|Combat")
 		bool bIsFiring;
 
+	/** Indicates whether we have a weapon ready to be equipped (i.e. in holster) */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon|Combat")
 		bool bIsArmed;
 

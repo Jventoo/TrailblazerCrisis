@@ -16,24 +16,52 @@ ATCCharacter::ATCCharacter()
 	StaticMesh->SetupAttachment(HeldObjectRoot);
 }
 
-//void ATCCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
-//{
-//	// Set up gameplay key bindings
-//	Super::SetupPlayerInputComponent(PlayerInputComponent);
-//
-//	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Cyan, FString("Binding PlayerCharInput"));
-//
-//	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &ATCCharacter::OnStartFire);
-//	PlayerInputComponent->BindAction("Fire", IE_Released, this, &ATCCharacter::OnStopFire);
-//
-//	PlayerInputComponent->BindAction("Aim", IE_Pressed, this, &ATCCharacter::OnStartAiming);
-//	PlayerInputComponent->BindAction("Aim", IE_Released, this, &ATCCharacter::OnStopAiming);
-//
-//	PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &ATCCharacter::OnReload);
-//
-//	PlayerInputComponent->BindAction("Holster", IE_Pressed, this, &ATCCharacter::ToggleEquip);
-//	PlayerInputComponent->BindAction("ChangeFireMode", IE_Pressed, this, &ATCCharacter::NextFireMode);
-//}
+void ATCCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+
+	// Spawn our weapon
+	if (bSpawnWeapon && WeaponClass)
+	{
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+		CurrentWeapon = GetWorld()->SpawnActor<ABaseFirearm>(WeaponClass, SpawnParams);
+
+		// Attach our weapon to our character's back
+		if (CurrentWeapon)
+		{
+			CurrentWeapon->SetOwningPawn(this);
+			CurrentWeapon->AttachMeshToPawn(WeaponUnequipSocket);
+			
+			bIsArmed = true;
+		}
+	}
+}
+
+void ATCCharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+	UpdateHeldObjectAnimations();
+}
+
+void ATCCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
+{
+	// Set up gameplay key bindings
+	Super::SetupPlayerInputComponent(PlayerInputComponent);
+
+	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Cyan, FString("Binding PlayerCharInput"));
+
+	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &ATCCharacter::OnStartFire);
+	PlayerInputComponent->BindAction("Fire", IE_Released, this, &ATCCharacter::OnStopFire);
+
+	/*PlayerInputComponent->BindAction("Aim", IE_Pressed, this, &ATCCharacter::OnStartAiming);
+	PlayerInputComponent->BindAction("Aim", IE_Released, this, &ATCCharacter::OnStopAiming);*/
+
+	PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &ATCCharacter::OnReload);
+
+	PlayerInputComponent->BindAction("Holster", IE_Pressed, this, &ATCCharacter::ToggleEquip);
+	PlayerInputComponent->BindAction("ChangeFireMode", IE_Pressed, this, &ATCCharacter::NextFireMode);
+}
 
 
 bool ATCCharacter::IsFiring() const
@@ -87,18 +115,22 @@ void ATCCharacter::OnReload()
 
 void ATCCharacter::OnStartFire()
 {
-	if (Gait == EGait::Sprinting)
+	if (bIsArmed && CurrentWeapon)
 	{
-		SetDesiredGait(EGait::Running);
-	}
+		if (Gait == EGait::Sprinting)
+		{
+			SetDesiredGait(EGait::Running);
+		}
 
-	StartWeaponFire();
+		StartWeaponFire();
+	}
 }
 
 
 void ATCCharacter::OnStopFire()
 {
-	StopWeaponFire();
+	if (bIsArmed && CurrentWeapon)
+		StopWeaponFire();
 }
 
 
@@ -151,8 +183,22 @@ void ATCCharacter::NextFireMode()
 		CurrentWeapon->SwitchToNextFireMode();
 }
 
-void ATCCharacter::AttachToHand(UStaticMesh* NewStaticMesh, USkeletalMesh* NewSkeletalMesh, UClass* NewAnimClass,
-                                bool bLeftHand, FVector Offset)
+void ATCCharacter::ToggleEquip()
+{
+	if (bIsArmed && CurrentWeapon)
+	{
+		if (!CurrentWeapon->IsEquipped())
+		{
+			CurrentWeapon->BeginEquip(this);
+		}
+		else
+		{
+			CurrentWeapon->BeginUnequip();
+		}
+	}
+}
+
+void ATCCharacter::AttachToHand(UStaticMesh* NewStaticMesh, USkeletalMesh* NewSkeletalMesh, UClass* NewAnimClass, bool bLeftHand, FVector Offset)
 {
 	ClearHeldObject();
 
@@ -179,8 +225,7 @@ void ATCCharacter::AttachToHand(UStaticMesh* NewStaticMesh, USkeletalMesh* NewSk
 		AttachBone = TEXT("VB RHS_ik_hand_gun");
 	}
 
-	HeldObjectRoot->AttachToComponent(GetMesh(),
-	                                  FAttachmentTransformRules::SnapToTargetNotIncludingScale, AttachBone);
+	HeldObjectRoot->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, AttachBone);
 	HeldObjectRoot->SetRelativeLocation(Offset);
 }
 
@@ -228,17 +273,6 @@ void ATCCharacter::OnOverlayStateChanged(EOverlayState PreviousState)
 {
 	Super::OnOverlayStateChanged(PreviousState);
 	UpdateHeldObject();
-}
-
-void ATCCharacter::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-	UpdateHeldObjectAnimations();
-}
-
-void ATCCharacter::BeginPlay()
-{
-	Super::BeginPlay();
 }
 
 void ATCCharacter::MantleStart(float MantleHeight, const FComponentAndTransform& MantleLedgeWS, EMantleType MantleType)

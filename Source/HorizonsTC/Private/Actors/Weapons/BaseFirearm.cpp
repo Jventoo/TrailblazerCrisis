@@ -154,6 +154,7 @@ void ABaseFirearm::SetFireMode(EFireModes NewMode)
 
 void ABaseFirearm::BeginEquip(ATCCharacter* NewOwner)
 {
+	// Set this weapon's owner and start equip process
 	SetOwningPawn(NewOwner);
 	OnEquip(true);
 }
@@ -167,8 +168,6 @@ void ABaseFirearm::BeginUnequip()
 	{
 		OnUnEquip();
 	}
-
-	//DetachMeshFromPawn();
 }
 
 
@@ -177,6 +176,7 @@ void ABaseFirearm::OnEquip(bool bPlayAnimation)
 	bPendingEquip = true;
 	DetermineWeaponState();
 
+	// Play equip animation
 	if (bPlayAnimation)
 	{
 		float Duration = PlayWeaponAnimation(EquipAnim);
@@ -196,6 +196,7 @@ void ABaseFirearm::OnEquip(bool bPlayAnimation)
 		OnEquipFinished();
 	}
 
+	// Play equip sound (TODO: move to anim notify potentially)
 	if (Pawn)
 	{
 		PlayWeaponSound(EquipSound);
@@ -208,6 +209,7 @@ void ABaseFirearm::OnUnEquip()
 	bIsEquipped = false;
 	StopFire();
 
+	// Stop playing any weapon animation
 	if (bPendingEquip)
 	{
 		StopWeaponAnimation(EquipAnim);
@@ -224,14 +226,19 @@ void ABaseFirearm::OnUnEquip()
 		GetWorldTimerManager().ClearTimer(TimerHandle_ReloadWeapon);
 	}
 
+	// TODO: Cache overlay state on equip and reset back to that desired state here
+	if (Pawn)
+		Pawn->SetOverlayState(EOverlayState::Default);
+
+	// TODO: Play unequip animation (equip anim in reverse?)
+
+	// Set our weapon's current state
 	DetermineWeaponState();
 }
 
 
 void ABaseFirearm::OnEquipFinished()
 {
-	//AttachMeshToPawn(Pawn->WeaponEquipSocket);
-
 	bIsEquipped = true;
 	bPendingEquip = false;
 
@@ -239,6 +246,12 @@ void ABaseFirearm::OnEquipFinished()
 
 	if (Pawn)
 	{
+		// Move the gun into our hand from our holster
+		Pawn->AttachToHand(nullptr, Mesh->SkeletalMesh, nullptr, false, FVector::ZeroVector);
+
+		// TODO: Dynamically set overlay based on weapon type, assuming other types are eventually added
+		Pawn->SetOverlayState(EOverlayState::Rifle);
+
 		// Try to reload empty clip
 		if (CurrentAmmoInClip <= 0 &&
 			CanReload())
@@ -335,7 +348,6 @@ FVector ABaseFirearm::GetCameraDamageStartLocation(const FVector& AimDir) const
 
 	return OutStartTrace;
 }
-
 
 
 void ABaseFirearm::HandleFiring()
@@ -697,7 +709,6 @@ void ABaseFirearm::StopWeaponAnimation(UAnimMontage* Animation)
 		}
 	}
 }
-
 
 
 void ABaseFirearm::UseAmmo()
