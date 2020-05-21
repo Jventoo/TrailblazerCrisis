@@ -44,20 +44,15 @@ void ATCBaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	
 	PlayerInputComponent->BindAction("JumpAction", IE_Pressed, this, &ATCBaseCharacter::JumpPressedAction);
 	PlayerInputComponent->BindAction("JumpAction", IE_Released, this, &ATCBaseCharacter::JumpReleasedAction);
-
 	PlayerInputComponent->BindAction("StanceAction", IE_Pressed, this, &ATCBaseCharacter::StancePressedAction);
 	PlayerInputComponent->BindAction("WalkAction", IE_Pressed, this, &ATCBaseCharacter::WalkPressedAction);
 	PlayerInputComponent->BindAction("RagdollAction", IE_Pressed, this, &ATCBaseCharacter::RagdollPressedAction);
-
 	PlayerInputComponent->BindAction("SelectRotationMode_1", IE_Pressed, this, &ATCBaseCharacter::VelocityDirectionPressedAction);
 	PlayerInputComponent->BindAction("SelectRotationMode_2", IE_Pressed, this, &ATCBaseCharacter::LookingDirectionPressedAction);
-
 	PlayerInputComponent->BindAction("SprintAction", IE_Pressed, this, &ATCBaseCharacter::SprintPressedAction);
 	PlayerInputComponent->BindAction("SprintAction", IE_Released, this, &ATCBaseCharacter::SprintReleasedAction);
-
 	PlayerInputComponent->BindAction("AimAction", IE_Pressed, this, &ATCBaseCharacter::AimPressedAction);
 	PlayerInputComponent->BindAction("AimAction", IE_Released, this, &ATCBaseCharacter::AimReleasedAction);
-
 	PlayerInputComponent->BindAction("CameraAction", IE_Pressed, this, &ATCBaseCharacter::CameraPressedAction);
 	PlayerInputComponent->BindAction("CameraAction", IE_Released, this, &ATCBaseCharacter::CameraReleasedAction);
 }

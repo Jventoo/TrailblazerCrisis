@@ -69,31 +69,22 @@ bool ATCCharacter::IsFiring() const
 	return bIsArmed && CurrentWeapon && CurrentWeapon->GetCurrentState() == EWeaponState::Firing;
 }
 
-bool ATCCharacter::GetIsArmed() const
-{
-	return bIsArmed;
-}
-
 
 bool ATCCharacter::CanReload() const
 {
-	bool HasWeaponEquipped = bIsArmed && (OverlayState == EOverlayState::Rifle 
-		|| OverlayState == EOverlayState::PistolTwoHanded || OverlayState == EOverlayState::PistolOneHanded);
 	bool IsInCorrectState = MovementState == EMovementState::Grounded 
 		&& MovementAction == EMovementAction::None && Gait != EGait::Sprinting;
 		
-	return HasWeaponEquipped && IsInCorrectState;
+	return HasWeaponEquipped() && IsInCorrectState;
 }
 
 
 bool ATCCharacter::CanFire() const
 {
-	bool HasWeaponEquipped = bIsArmed && (OverlayState == EOverlayState::Rifle
-		|| OverlayState == EOverlayState::PistolTwoHanded || OverlayState == EOverlayState::PistolOneHanded);
-	bool IsInCorrectState = MovementState == EMovementState::Grounded
+	bool IsInCorrectState = RotationMode == ERotationMode::Aiming && MovementState == EMovementState::Grounded
 		&& MovementAction == EMovementAction::None && Gait != EGait::Sprinting;
 
-	return HasWeaponEquipped && IsInCorrectState;
+	return HasWeaponEquipped() && IsInCorrectState;
 }
 
 void ATCCharacter::ClearHeldObject()
@@ -115,7 +106,7 @@ void ATCCharacter::OnReload()
 
 void ATCCharacter::OnStartFire()
 {
-	if (bIsArmed && CurrentWeapon)
+	if (CanFire() && CurrentWeapon)
 	{
 		if (Gait == EGait::Sprinting)
 		{
@@ -202,7 +193,7 @@ void ATCCharacter::AttachToHand(UStaticMesh* NewStaticMesh, USkeletalMesh* NewSk
 {
 	ClearHeldObject();
 
-	if (IsValid(NewStaticMesh))
+	/*if (IsValid(NewStaticMesh))
 	{
 		StaticMesh->SetStaticMesh(NewStaticMesh);
 	}
@@ -213,7 +204,7 @@ void ATCCharacter::AttachToHand(UStaticMesh* NewStaticMesh, USkeletalMesh* NewSk
 		{
 			SkeletalMesh->SetAnimInstanceClass(NewAnimClass);
 		}
-	}
+	}*/
 
 	FName AttachBone;
 	if (bLeftHand)
@@ -225,8 +216,9 @@ void ATCCharacter::AttachToHand(UStaticMesh* NewStaticMesh, USkeletalMesh* NewSk
 		AttachBone = TEXT("VB RHS_ik_hand_gun");
 	}
 
-	HeldObjectRoot->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, AttachBone);
-	HeldObjectRoot->SetRelativeLocation(Offset);
+	CurrentWeapon->GetWeaponMesh()->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, AttachBone);
+	CurrentWeapon->GetWeaponMesh()->SetHiddenInGame(false);
+	//HeldObjectRoot->SetRelativeLocation(Offset);
 }
 
 void ATCCharacter::RagdollStart()

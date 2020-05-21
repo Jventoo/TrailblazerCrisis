@@ -185,6 +185,9 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "Debug")
 	void DrawDebugSpheres();
 
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Utility")
+		ATCPlayerController* GetPlayerController() const;
+
 	/** Camera System */
 
 	UFUNCTION(BlueprintGetter, Category = "Camera System")
@@ -357,8 +360,13 @@ protected:
 
 	void LookingDirectionPressedAction();
 
-
 	virtual void StopWeaponFire();
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Combat)
+		bool GetIsArmed() const;
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Combat)
+		bool HasWeaponEquipped() const;
 
 
 	/************************************************************************/
@@ -403,6 +411,9 @@ protected:
 
 	UPROPERTY(Category = "Input", BlueprintReadOnly)
 	bool bSprintHeld = false;
+
+	UPROPERTY(Category = "Input", BlueprintReadOnly)
+		bool bIsArmed = false;
 
 	/** Camera System */
 

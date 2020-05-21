@@ -75,9 +75,6 @@ public:
 
 	void AddRecoil(float Pitch, float Yaw);
 
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Combat)
-		bool GetIsArmed() const;
-
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Movement)
 		bool IsFiring() const;
 
@@ -121,10 +118,6 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon|Combat")
 		bool bIsFiring;
-
-	/** Indicates whether we have a weapon ready to be equipped (i.e. in holster) */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon|Combat")
-		bool bIsArmed;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
 		TSubclassOf<class ABaseFirearm> WeaponClass;
