@@ -189,7 +189,7 @@ void ATCCharacter::ToggleEquip()
 	{
 		if (!CurrentWeapon->IsEquipped())
 		{
-			CurrentWeapon->BeginEquip(this);
+			CurrentWeapon->BeginEquip();
 		}
 		else
 		{

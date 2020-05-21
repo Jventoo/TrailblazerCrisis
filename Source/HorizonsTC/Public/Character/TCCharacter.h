@@ -30,6 +30,9 @@ public:
 		void AttachToHand(UStaticMesh* NewStaticMesh, USkeletalMesh* NewSkeletalMesh,
 						class UClass* NewAnimClass, bool bLeftHand, FVector Offset);
 
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "HeldObject")
+		ABaseFirearm* GetCurrentWeapon() { return CurrentWeapon;  }
+
 	virtual void RagdollStart() override;
 
 	virtual void RagdollEnd() override;

@@ -97,9 +97,11 @@ class HORIZONSTC_API ABaseFirearm : public AActor
 	/** how much time weapon needs to be equipped */
 	float EquipDuration;
 
-	bool bIsEquipped;
+	bool bIsEquipped = false;
 
-	bool bPendingEquip;
+	bool bPendingEquip = false;
+
+	bool bIsHolstered = false;
 
 	FTimerHandle TimerHandle_HandleFiring;
 
@@ -120,12 +122,7 @@ protected:
 	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
 		USkeletalMeshComponent* Mesh;
 
-	/** Detaches weapon mesh from pawn */
-	void DetachMeshFromPawn();
-
 	virtual void OnEquipFinished();
-
-	bool IsAttachedToPawn() const;
 
 public:
 
@@ -133,16 +130,19 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 		USkeletalMeshComponent* GetWeaponMesh() const;
 
-	virtual void BeginEquip(ATCCharacter* NewOwner);
+	virtual void BeginEquip();
 
-	virtual void BeginUnequip();
+	virtual void BeginUnequip(bool ReturnToHolster = true);
 
-	virtual void OnUnEquip();
+	virtual void OnUnEquip(bool ReturnToHolster = true);
 
 	void OnEquip(bool bPlayAnimation);
 
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 		bool IsEquipped() const;
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+		bool IsInHolster() const;
 
 	/* Set the weapon's owning pawn */
 	void SetOwningPawn(ATCCharacter* NewOwner);
@@ -165,7 +165,10 @@ public:
 		EWeaponState GetCurrentState() const;
 
 	/* Used for putting the weapon in a character's holster (not their hand; that's in character class) */
-	void AttachMeshToPawn(FName Socket);
+	void AttachMeshToPawn(FName Socket, bool Detach = true);
+
+	/** Detaches weapon mesh from pawn */
+	void DetachMeshFromPawn();
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Weapon State")
 		EFireModes GetFireMode() const;

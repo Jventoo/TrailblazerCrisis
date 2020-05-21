@@ -26,7 +26,6 @@ ABaseFirearm::ABaseFirearm()
 	Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
 	RootComponent = Mesh;
 
-	bIsEquipped = false;
 	CurrentState = EWeaponState::Idle;
 
 	PrimaryActorTick.bCanEverTick = false;
@@ -83,7 +82,6 @@ USkeletalMeshComponent* ABaseFirearm::GetWeaponMesh() const
 	return Mesh;
 }
 
-
 class ATCCharacter* ABaseFirearm::GetPawnOwner() const
 {
 	return Pawn;
@@ -100,14 +98,17 @@ void ABaseFirearm::SetOwningPawn(ATCCharacter* NewOwner)
 }
 
 
-void ABaseFirearm::AttachMeshToPawn(FName Socket)
+void ABaseFirearm::AttachMeshToPawn(FName Socket, bool Detach)
 {
 	if (Pawn)
 	{
-		DetachMeshFromPawn();
+		if (Detach)
+			DetachMeshFromPawn();
 
 		Mesh->AttachToComponent(Pawn->GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, Socket);
 		Mesh->SetHiddenInGame(false);
+
+		bIsHolstered = true;
 	}
 }
 
@@ -116,6 +117,8 @@ void ABaseFirearm::DetachMeshFromPawn()
 {
 	Mesh->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
 	Mesh->SetHiddenInGame(true);
+
+	bIsHolstered = false;
 }
 
 
@@ -152,21 +155,28 @@ void ABaseFirearm::SetFireMode(EFireModes NewMode)
 }
 
 
-void ABaseFirearm::BeginEquip(ATCCharacter* NewOwner)
+void ABaseFirearm::BeginEquip()
 {
-	// Set this weapon's owner and start equip process
-	SetOwningPawn(NewOwner);
+	// Moved to anim notify for better syncing
+	/*if (bIsHolstered)
+		DetachMeshFromPawn();*/
+
 	OnEquip(true);
 }
 
 
-void ABaseFirearm::BeginUnequip()
+void ABaseFirearm::BeginUnequip(bool ReturnToHolster)
 {
-	SetOwningPawn(nullptr);
-
-	if (IsAttachedToPawn())
+	if (IsEquipped() && Pawn)
 	{
-		OnUnEquip();
+		// Stop firing and any other animations, then play unequip animation/sound
+		OnUnEquip(ReturnToHolster);
+
+		// To be moved to anim notify. Current in OnUnEquip until unequip montage created
+		/*DetachMeshFromPawn();
+
+		if (ReturnToHolster)
+			AttachMeshToPawn(Pawn->WeaponUnequipSocket, false);*/
 	}
 }
 
@@ -184,6 +194,9 @@ void ABaseFirearm::OnEquip(bool bPlayAnimation)
 		{
 			// Failsafe in case animation is missing
 			Duration = NoEquipAnimDuration;
+
+			DetachMeshFromPawn();
+			Pawn->AttachToHand(nullptr, Mesh->SkeletalMesh, nullptr, false, FVector::ZeroVector);
 		}
 		EquipStartedTime = GetWorld()->TimeSeconds;
 		EquipDuration = Duration;
@@ -192,6 +205,10 @@ void ABaseFirearm::OnEquip(bool bPlayAnimation)
 	}
 	else
 	{
+		// Move the gun into our hand from our holster
+		DetachMeshFromPawn();
+		Pawn->AttachToHand(nullptr, Mesh->SkeletalMesh, nullptr, false, FVector::ZeroVector);
+
 		/* Immediately finish equipping */
 		OnEquipFinished();
 	}
@@ -204,12 +221,12 @@ void ABaseFirearm::OnEquip(bool bPlayAnimation)
 }
 
 
-void ABaseFirearm::OnUnEquip()
+void ABaseFirearm::OnUnEquip(bool ReturnToHolster)
 {
 	bIsEquipped = false;
 	StopFire();
 
-	// Stop playing any weapon animation
+	// Stop playing any weapon animations
 	if (bPendingEquip)
 	{
 		StopWeaponAnimation(EquipAnim);
@@ -230,7 +247,12 @@ void ABaseFirearm::OnUnEquip()
 	if (Pawn)
 		Pawn->SetOverlayState(EOverlayState::Default);
 
-	// TODO: Play unequip animation (equip anim in reverse?)
+	// TODO: Play unequip animation, call weapon toggle notify
+	DetachMeshFromPawn();
+
+	if (ReturnToHolster)
+		AttachMeshToPawn(Pawn->WeaponUnequipSocket, false);
+	// End TODO
 
 	// Set our weapon's current state
 	DetermineWeaponState();
@@ -246,15 +268,11 @@ void ABaseFirearm::OnEquipFinished()
 
 	if (Pawn)
 	{
-		// Move the gun into our hand from our holster
-		Pawn->AttachToHand(nullptr, Mesh->SkeletalMesh, nullptr, false, FVector::ZeroVector);
-
 		// TODO: Dynamically set overlay based on weapon type, assuming other types are eventually added
 		Pawn->SetOverlayState(EOverlayState::Rifle);
 
 		// Try to reload empty clip
-		if (CurrentAmmoInClip <= 0 &&
-			CanReload())
+		if (CurrentAmmoInClip <= 0 && CanReload())
 		{
 			StartReload();
 		}
@@ -268,9 +286,9 @@ bool ABaseFirearm::IsEquipped() const
 }
 
 
-bool ABaseFirearm::IsAttachedToPawn() const
+bool ABaseFirearm::IsInHolster() const
 {
-	return bIsEquipped || bPendingEquip;
+	return bIsHolstered;
 }
 
 
