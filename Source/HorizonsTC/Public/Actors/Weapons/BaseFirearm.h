@@ -182,6 +182,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Weapon State")
 		void SetFireMode(EFireModes NewMode);
 
+	UFUNCTION(BlueprintPure, BlueprintCallable, Category = "Weapon State")
+		float GetCurrentSpread() const;
+
+	UFUNCTION(BlueprintPure, BlueprintCallable, Category = "Weapon State")
+		float GetCurrentSpreadPercentage() const;
+
 protected:
 
 	FVector GetAdjustedAim() const;
@@ -232,15 +238,27 @@ private:
 		float BulletSpeed;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon Stats", meta = (AllowPrivateAccess = "true"))
-		float SpreadModifier;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon Stats", meta = (AllowPrivateAccess = "true"))
 		bool bCanRicochet;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Stats", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon Stats|Accuracy", meta = (AllowPrivateAccess = "true"))
 		FRecoilInfo RecoilData;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Stats", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon Stats|Accuracy", meta = (AllowPrivateAccess = "true"))
+		float WeaponSpread;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon Stats|Accuracy", meta = (AllowPrivateAccess = "true"))
+		float FiringSpreadMax;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon Stats|Accuracy", meta = (AllowPrivateAccess = "true"))
+		float FiringSpreadIncrement;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon Stats|Accuracy", meta = (AllowPrivateAccess = "true"))
+		float FiringSpreadHipFirePenalty;
+
+	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+		float CurrentFiringSpread;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon Stats", meta = (AllowPrivateAccess = "true"))
 		FFirearmDamageInfo DamageData;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon", meta = (AllowPrivateAccess = "true"))

@@ -3,8 +3,7 @@
 
 #include "Character/TCCharacter.h"
 #include "Actors/Weapons/BaseFirearm.h"
-
-#include "Engine.h"
+#include "Kismet/KismetMathLibrary.h"
 
 ATCCharacter::ATCCharacter()
 {
@@ -156,8 +155,11 @@ void ATCCharacter::StopWeaponFire()
 
 void ATCCharacter::AddRecoil(float Pitch, float Yaw)
 {
-	Pitch *= AccuracyMultiplier;
-	Yaw *= AccuracyMultiplier;
+	// Find multiplier (1.0-0.0) based on accuracy stat (range 0-10)
+	float RecoilMultiplier = UKismetMathLibrary::MapRangeClamped(AccuracyMultiplier, 0, 10, 1.0, 0.0);
+
+	Pitch *= RecoilMultiplier;
+	Yaw *= RecoilMultiplier;
 
 	if (RotationMode != ERotationMode::Aiming)
 	{
