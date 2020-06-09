@@ -4,6 +4,8 @@
 #include "Character/TCCharacter.h"
 #include "Actors/Weapons/BaseFirearm.h"
 
+#include "Engine.h"
+
 ATCCharacter::ATCCharacter()
 {
 	HeldObjectRoot = CreateDefaultSubobject<USceneComponent>(TEXT("HeldObjectRoot"));
