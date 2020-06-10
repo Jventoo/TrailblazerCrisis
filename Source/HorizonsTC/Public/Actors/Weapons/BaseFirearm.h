@@ -104,9 +104,7 @@ class HORIZONSTC_API ABaseFirearm : public AActor
 	bool bIsHolstered = false;
 
 	FTimerHandle TimerHandle_HandleFiring;
-
 	FTimerHandle TimerHandle_FireWeapon;
-
 	FTimerHandle EquipFinishedTimerHandle;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon Stats")
@@ -188,6 +186,10 @@ public:
 	UFUNCTION(BlueprintPure, BlueprintCallable, Category = "Weapon State")
 		float GetCurrentSpreadPercentage() const;
 
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Recoil")
+		void DecreaseSpread();
+	virtual void DecreaseSpread_Implementation();
+
 protected:
 
 	FVector GetAdjustedAim() const;
@@ -210,7 +212,7 @@ private:
 
 	FTransform CalculateMainProjectileDirection();
 
-	FTransform CalculateFinalProjectileDirection(const FTransform& MainDir);
+	FTransform CalculateFinalProjectileDirection(const FTransform& MainDir, const float Spread);
 
 	bool CalculateDamage(float& DamageOut);
 
@@ -255,7 +257,7 @@ private:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon Stats|Accuracy", meta = (AllowPrivateAccess = "true"))
 		float FiringSpreadHipFirePenalty;
 
-	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 		float CurrentFiringSpread;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon Stats", meta = (AllowPrivateAccess = "true"))
@@ -324,7 +326,6 @@ private:
 		USoundCue* OutOfAmmoSound;
 
 	FTimerHandle TimerHandle_ReloadWeapon;
-
 	FTimerHandle TimerHandle_StopReload;
 
 protected:

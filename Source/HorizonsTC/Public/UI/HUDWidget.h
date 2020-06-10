@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "UI/CrosshairWidget.h"
 #include "HUDWidget.generated.h"
 
 /**
@@ -15,7 +16,6 @@ class HORIZONSTC_API UHUDWidget : public UUserWidget
 	GENERATED_BODY()
 
 public:
-	UHUDWidget(const FObjectInitializer& ObjectInitializer);
 
 	UFUNCTION(BlueprintCallable, Category = HUD)
 		void UpdateQuestText(const FText& Text);
@@ -30,7 +30,7 @@ public:
 		class UTextBlock* ObjTextBlock;
 
 	UPROPERTY(BlueprintReadWrite, Category = HUD, meta = (BindWidget))
-		UUserWidget* CrosshairWidget;
+		UCrosshairWidget* CrosshairWidget;
 
-	bool bCrosshairEnabled;
+	bool bCrosshairEnabled = false;
 };

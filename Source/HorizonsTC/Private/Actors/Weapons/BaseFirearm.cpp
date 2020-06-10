@@ -158,10 +158,10 @@ float ABaseFirearm::GetCurrentSpread() const
 {
 	float Spread = WeaponSpread + CurrentFiringSpread;
 	
-	if (Pawn && Pawn->GetRotationMode() != ERotationMode::Aiming)
+	/*if (Pawn && Pawn->GetRotationMode() != ERotationMode::Aiming)
 	{
 		Spread *= FiringSpreadHipFirePenalty;
-	}
+	}*/
 
 	return Spread;
 }
@@ -170,10 +170,10 @@ float ABaseFirearm::GetCurrentSpreadPercentage() const
 {
 	float Spread = CurrentFiringSpread;
 
-	if (Pawn && Pawn->GetRotationMode() != ERotationMode::Aiming)
+	/*if (Pawn && Pawn->GetRotationMode() != ERotationMode::Aiming)
 	{
 		Spread *= FiringSpreadHipFirePenalty;
-	}
+	}*/
 
 	return Spread / FiringSpreadMax;
 }
@@ -476,13 +476,11 @@ void ABaseFirearm::SimulateWeaponFire()
 {
 	if (MuzzleFX)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, .0f, FColor::Cyan, FString("Muzzle fx emitted"));
 		MuzzlePSC = UGameplayStatics::SpawnEmitterAttached(MuzzleFX, Mesh, MuzzleAttachPoint, FVector(0, 0, 0), FRotator(0, 0, 0), EAttachLocation::SnapToTargetIncludingScale);
 	}
 
 	if (!bPlayingFireAnim)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, .0f, FColor::Cyan, FString("Playing fire anim"));
 		PlayWeaponAnimation(FireAnim);
 		bPlayingFireAnim = true;
 	}
@@ -496,7 +494,6 @@ void ABaseFirearm::StopSimulatingWeaponFire()
 	if (bPlayingFireAnim)
 	{
 		StopWeaponAnimation(FireAnim);
-		GEngine->AddOnScreenDebugMessage(-1, .0f, FColor::Cyan, FString("Stopping fire anim"));
 		bPlayingFireAnim = false;
 	}
 }
@@ -536,7 +533,7 @@ void ABaseFirearm::FireWeapon()
 {
 	// Calculate projectile direction
 	FTransform MainDir = CalculateMainProjectileDirection();
-	FTransform FinalDir = CalculateFinalProjectileDirection(MainDir);
+	FTransform FinalDir = CalculateFinalProjectileDirection(MainDir, GetCurrentSpread());
 
 
 	// Calculate projectile damage
@@ -553,7 +550,7 @@ void ABaseFirearm::FireWeapon()
 	UGameplayStatics::FinishSpawningActor(Cast<AActor>(ProjectileRef), FinalDir);
 
 
-	// Handle recoil
+	// Handle recoil + spread
 	float Pitch = -1.0 * UKismetMathLibrary::RandomFloatInRange(RecoilData.UpMin, RecoilData.UpMax);
 	float Yaw = UKismetMathLibrary::RandomFloatInRange(RecoilData.RightMin, RecoilData.RightMax);
 
@@ -604,15 +601,6 @@ void ABaseFirearm::OnBurstFinished()
 {
 	BurstCounter = 0;
 
-	// Lower weapon spread to default
-	const float MaxInterpSpeed = 0.5f;
-	const float MinInterpSpeed = 0.1f;
-
-	float InterpSpeed = UKismetMathLibrary::FClamp(MaxInterpSpeed * GetCurrentSpreadPercentage(), MinInterpSpeed, MaxInterpSpeed);
-
-	UKismetMathLibrary::FInterpTo(CurrentFiringSpread, 0.0f,
-		UGameplayStatics::GetWorldDeltaSeconds(GetWorld()), InterpSpeed);
-
 	// Stop effects
 	StopSimulatingWeaponFire();
 
@@ -621,6 +609,11 @@ void ABaseFirearm::OnBurstFinished()
 
 	bRefiring = false;
 	bBursting = false;
+}
+
+
+void ABaseFirearm::DecreaseSpread_Implementation()
+{
 }
 
 
@@ -667,11 +660,11 @@ FTransform ABaseFirearm::CalculateMainProjectileDirection()
 }
 
 
-FTransform ABaseFirearm::CalculateFinalProjectileDirection(const FTransform& MainDir)
+FTransform ABaseFirearm::CalculateFinalProjectileDirection(const FTransform& MainDir, const float Spread)
 {
-	float Roll = UKismetMathLibrary::RandomFloatInRange(CurrentFiringSpread * -1.0, CurrentFiringSpread);
-	float Pitch = UKismetMathLibrary::RandomFloatInRange(CurrentFiringSpread * -1.0, CurrentFiringSpread);
-	float Yaw = UKismetMathLibrary::RandomFloatInRange(CurrentFiringSpread * -1.0, CurrentFiringSpread);
+	float Roll = UKismetMathLibrary::RandomFloatInRange(Spread * -1.0, Spread);
+	float Pitch = UKismetMathLibrary::RandomFloatInRange(Spread * -1.0, Spread);
+	float Yaw = UKismetMathLibrary::RandomFloatInRange(Spread * -1.0, Spread);
 
 	return FTransform(UKismetMathLibrary::ComposeRotators(MainDir.Rotator(), FRotator(Pitch, Yaw, Roll)),
 		MainDir.GetLocation(), MainDir.GetScale3D());

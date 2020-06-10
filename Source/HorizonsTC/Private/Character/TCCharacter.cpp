@@ -122,7 +122,10 @@ void ATCCharacter::OnStartFire()
 void ATCCharacter::OnStopFire()
 {
 	if (bIsArmed && CurrentWeapon)
+	{
 		StopWeaponFire();
+		CurrentWeapon->DecreaseSpread();
+	}
 }
 
 
