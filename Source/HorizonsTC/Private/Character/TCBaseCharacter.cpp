@@ -1237,6 +1237,210 @@ void ATCBaseCharacter::GetControlForwardRightVector(FVector& Forward, FVector& R
 	Right = GetInputAxisValue("MoveRight/Left") * UKismetMathLibrary::GetRightVector(ControlRot);
 }
 
+void ATCBaseCharacter::SetCurrentHealth(float NewHealth)
+{
+	if (NewHealth > MaxHealth)
+		CurrentHealth = MaxHealth;
+	else if (NewHealth < 0)
+	{
+		Die(CurrentHealth, FDamageEvent(UDamageType::StaticClass()), nullptr, nullptr);
+	}
+	else
+		CurrentHealth = MaxHealth;
+}
+
+float ATCBaseCharacter::TakeDamage(float Dmg, const FDamageEvent& DmgEvent, AController* EventInstigator, AActor* DmgCauser)
+{
+	if (CurrentHealth <= 0.f)
+	{
+		return 0.f;
+	}
+
+	const float ActualDamage = Super::TakeDamage(Dmg, DmgEvent, EventInstigator, DmgCauser);
+	if (ActualDamage > 0.f)
+	{
+		CurrentHealth -= ActualDamage;
+		if (CurrentHealth <= 0)
+		{
+			Die(ActualDamage, DmgEvent, EventInstigator, DmgCauser);
+		}
+		else
+		{
+			PlayHit(ActualDamage, DmgEvent, EventInstigator ? EventInstigator->GetPawn() : NULL, DmgCauser);
+		}
+
+		MakeNoise(1.0f, EventInstigator ? EventInstigator->GetPawn() : this);
+	}
+
+	return ActualDamage;
+}
+
+void ATCBaseCharacter::KilledBy(APawn* EventInstigator)
+{
+	if (!bIsDying)
+	{
+		AController* Killer = nullptr;
+		if (EventInstigator)
+		{
+			Killer = EventInstigator->Controller;
+			LastHitBy = nullptr;
+		}
+
+		Die(CurrentHealth, FDamageEvent(UDamageType::StaticClass()), Killer, nullptr);
+	}
+}
+
+bool ATCBaseCharacter::CanDie()
+{
+	return !bIsDying;
+}
+
+bool ATCBaseCharacter::Die(float KillingDmg, const FDamageEvent& DmgEvent, AController* Killer, AActor* DmgCauser)
+{
+	if (!CanDie())
+	{
+		return false;
+	}
+
+	CurrentHealth = FMath::Min(0.0f, CurrentHealth);
+
+	// if this is an environmental death then designate last damage dealer as killer
+	UDamageType const* const DamageType = DmgEvent.DamageTypeClass ? DmgEvent.DamageTypeClass->GetDefaultObject<UDamageType>() : GetDefault<UDamageType>();
+	Killer = GetDamageInstigator(Killer, *DamageType);
+
+	OnDeath(KillingDmg, DmgEvent, Killer ? Killer->GetPawn() : NULL, DmgCauser);
+
+	return true;
+}
+
+void ATCBaseCharacter::PlayHit(float DmgTaken, const FDamageEvent& DmgEvent, APawn* EventInstigator, AActor* DmgCauser)
+{
+	//	// play the force feedback effect on the client player controller
+	//	AShooterPlayerController* PC = Cast<AShooterPlayerController>(Controller);
+	//	if (PC && DamageEvent.DamageTypeClass)
+	//	{
+	//		UShooterDamageType* DamageType = Cast<UShooterDamageType>(DamageEvent.DamageTypeClass->GetDefaultObject());
+	//		if (DamageType && DamageType->HitForceFeedback && PC->IsVibrationEnabled())
+	//		{
+	//			FForceFeedbackParameters FFParams;
+	//			FFParams.bLooping = false;
+	//			FFParams.bPlayWhilePaused = false;
+	//			FFParams.Tag = "Damage";
+	//			PC->ClientPlayForceFeedback(DamageType->HitForceFeedback, FFParams);
+	//		}
+	//	}
+	//}
+
+	if (DmgTaken > 0.f)
+	{
+		ApplyDamageMomentum(DmgTaken, DmgEvent, EventInstigator, DmgCauser);
+	}
+
+	// Notify HUD that we were just hit
+	/*ATCPlayerController* MyPC = Cast<ATCPlayerController>(Controller);
+	if (MyPC)
+	{
+		MyPC->OnHitTaken(DmgTaken, DmgEvent, EventInstigator);
+	}
+
+	// Notify HUD that we hit somebody
+	if (EventInstigator && EventInstigator != this)
+	{
+		ATCPlayerController* EventInstigatorPC = Cast<ATCPlayerController>(PawnEventInstigator->Controller);
+		if (EventInstigatorPC)
+		{
+			EventInstigatorPC->OnEnemyHit();
+		}
+	}*/
+}
+
+void ATCBaseCharacter::OnDeath(float KillingDmg, const FDamageEvent& DmgEvent, APawn* EventInstigator, AActor* DmgCauser)
+{
+	if (bIsDying)
+	{
+		return;
+	}
+
+	bIsDying = true;
+
+	// play the force feedback effect on the client player controller
+	/*ATCPlayerController* PC = Cast<ATCPlayerController>(Controller);
+	if (PC && DmgEvent.DamageTypeClass)
+	{
+		UShooterDamageType* DamageType = Cast<UShooterDamageType>(DamageEvent.DamageTypeClass->GetDefaultObject());
+		if (DamageType && DamageType->KilledForceFeedback && PC->IsVibrationEnabled())
+		{
+			FForceFeedbackParameters FFParams;
+			FFParams.bLooping = false;
+			FFParams.bPlayWhilePaused = false;
+			FFParams.Tag = "Damage";
+			PC->ClientPlayForceFeedback(DamageType->KilledForceFeedback, FFParams);
+		}
+	}*/
+
+
+	/*if (DeathSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, DeathSound, GetActorLocation());
+	}*/
+
+	// remove all weapons
+	//DestroyInventory();
+
+	// switch back to 3rd person view
+	if (ViewMode == EViewMode::FirstPerson)
+		SetViewMode(EViewMode::ThirdPerson);
+
+	DetachFromControllerPendingDestroy();
+	StopAllAnimMontages();
+
+	/*if (LowHealthWarningPlayer && LowHealthWarningPlayer->IsPlaying())
+	{
+		LowHealthWarningPlayer->Stop();
+	}*/
+
+	if (GetMesh())
+	{
+		static FName CollisionProfileName(TEXT("Ragdoll"));
+		GetMesh()->SetCollisionProfileName(CollisionProfileName);
+	}
+	SetActorEnableCollision(true);
+
+	// Death anim
+	float DeathAnimDuration = PlayAnimMontage(DeathAnim);
+
+	// Ragdoll
+	if (DeathAnimDuration > 0.f)
+	{
+		// Trigger ragdoll a little before the animation early so the character doesn't
+		// blend back to its normal position.
+		const float TriggerRagdollTime = DeathAnimDuration - 0.7f;
+
+		// Enable blend physics so the bones are properly blending against the montage.
+		GetMesh()->bBlendPhysics = true;
+
+		// Use a local timer handle as we don't need to store it for later but we don't need to look for something to clear
+		FTimerHandle TimerHandle;
+		GetWorldTimerManager().SetTimer(TimerHandle, this, &ATCBaseCharacter::RagdollPressedAction, FMath::Max(0.1f, TriggerRagdollTime), false);
+	}
+	else
+	{
+		RagdollPressedAction();
+	}
+
+	// disable collisions on capsule
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECR_Ignore);
+}
+
+void ATCBaseCharacter::StopAllAnimMontages()
+{
+	if (MainAnimInstance)
+	{
+		MainAnimInstance->Montage_Stop(0.0f);
+	}
+}
+
 FVector ATCBaseCharacter::GetPlayerMovementInput()
 {
 	FVector Forward;

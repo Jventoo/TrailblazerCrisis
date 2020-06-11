@@ -40,7 +40,10 @@ public:
 
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
-	/** Ragdoll System */
+
+	/************************************************************************/
+	/* Ragdoll System														*/
+	/************************************************************************/
 
 	/** Implement on BP to get required get up animation according to character's state */
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "Ragdoll System")
@@ -52,7 +55,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Ragdoll System")
 	virtual void RagdollEnd();
 
-	/** Character States */
+
+	/************************************************************************/
+	/* Character States														*/
+	/************************************************************************/
 
 	UFUNCTION(BlueprintCallable, Category = "Character States")
 	void SetMovementState(EMovementState NewState);
@@ -102,7 +108,10 @@ public:
 	UFUNCTION(BlueprintGetter, Category = "Character States")
 	EOverlayState SwitchRight() { return OverlayState; }
 
-	/** Input */
+
+	/************************************************************************/
+	/* Input																*/
+	/************************************************************************/
 
 	UFUNCTION(BlueprintGetter, Category = "Input")
 	EStance GetDesiredStance() { return DesiredStance; }
@@ -125,12 +134,18 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Input")
 	FVector GetPlayerMovementInput();
 
-	/** Rotation System */
+
+	/************************************************************************/
+	/* Rotation System														*/
+	/************************************************************************/
 
 	UFUNCTION(BlueprintCallable, Category = "Rotation System")
 	void SetActorLocationAndTargetRotation(FVector NewLocation, FRotator NewRotation);
 
-	/** Mantle System */
+
+	/************************************************************************/
+	/* Mantle																*/
+	/************************************************************************/
 
 	/** Implement on BP to get correct mantle parameter set according to character state */
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Mantle System")
@@ -142,7 +157,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Mantle System")
 	virtual bool MantleCheckFalling();
 
-	/** Movement System */
+	
+	/************************************************************************/
+	/* Movement System														*/
+	/************************************************************************/
 
 	UFUNCTION(BlueprintGetter, Category = "Movement System")
 	bool HasMovementInput() { return bHasMovementInput; }
@@ -176,7 +194,10 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "Movement System")
 	UAnimMontage* GetRollAnimation();
 
-	/** Utility */
+	
+	/************************************************************************/
+	/* Utility																*/
+	/************************************************************************/
 
 	UFUNCTION(BlueprintCallable, Category = "Utility")
 	float GetAnimCurveValue(FName CurveName);
@@ -188,7 +209,10 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Utility")
 		ATCPlayerController* GetPlayerController() const;
 
-	/** Camera System */
+
+	/************************************************************************/
+	/* Camera																*/
+	/************************************************************************/
 
 	UFUNCTION(BlueprintGetter, Category = "Camera System")
 	bool IsRightShoulder() { return bRightShoulder; }
@@ -208,48 +232,90 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Camera System")
 	void GetCameraParameters(float& TPFOVOut, float& FPFOVOut, bool& bRightShoulderOut);
 
-	/** Essential Information Getters/Setters */
+
+	/************************************************************************/
+	/* Essentials															*/
+	/************************************************************************/
 
 	UFUNCTION(BlueprintGetter, Category = "Essential Information")
-	FVector GetAcceleration() { return Acceleration; }
+		FVector GetAcceleration() { return Acceleration; }
 
 	UFUNCTION(BlueprintCallable, Category = "Essential Information")
-	void SetAcceleration(const FVector& NewAcceleration);
+		void SetAcceleration(const FVector& NewAcceleration);
 
 	UFUNCTION(BlueprintGetter, Category = "Essential Information")
-	bool IsMoving() { return bIsMoving; }
+		bool IsMoving() { return bIsMoving; }
 
 	UFUNCTION(BlueprintCallable, Category = "Essential Information")
-	void SetIsMoving(bool bNewIsMoving);
+		void SetIsMoving(bool bNewIsMoving);
 
 	UFUNCTION(BlueprintCallable, Category = "Essential Information")
-	FVector GetMovementInput();
+		FVector GetMovementInput();
 
 	UFUNCTION(BlueprintGetter, Category = "Essential Information")
-	float GetMovementInputAmount() { return MovementInputAmount; }
+		float GetMovementInputAmount() { return MovementInputAmount; }
 
 	UFUNCTION(BlueprintCallable, Category = "Essential Information")
-	void SetMovementInputAmount(float NewMovementInputAmount);
+		void SetMovementInputAmount(float NewMovementInputAmount);
 
 	UFUNCTION(BlueprintGetter, Category = "Essential Information")
-	float GetSpeed() { return Speed; }
+		float GetSpeed() { return Speed; }
 
 	UFUNCTION(BlueprintCallable, Category = "Essential Information")
-	void SetSpeed(float NewSpeed);
+		void SetSpeed(float NewSpeed);
 
 	UFUNCTION(BlueprintCallable, Category = "Essential Information")
-	FRotator GetAimingRotation() { return GetControlRotation(); }
+		FRotator GetAimingRotation() { return GetControlRotation(); }
 
 	UFUNCTION(BlueprintGetter, Category = "Essential Information")
-	float GetAimYawRate() { return AimYawRate; }
+		float GetAimYawRate() { return AimYawRate; }
 
 	UFUNCTION(BlueprintCallable, Category = "Essential Information")
-	void SetAimYawRate(float NewAimYawRate);
+		void SetAimYawRate(float NewAimYawRate);
 
 	UFUNCTION(BlueprintCallable, Category = "Essential Information")
-	void GetControlForwardRightVector(FVector& Forward, FVector& Right);
+		void GetControlForwardRightVector(FVector& Forward, FVector& Right);
+
+
+	/************************************************************************/
+	/* Health & Damage														*/
+	/************************************************************************/
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Health")
+		uint32 bIsDying : 1;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Health")
+		float MaxHealth = 100.0f;
+
+	UPROPERTY(BlueprintReadWrite, Category = "Health")
+		float CurrentHealth = 100.0f;
+
+
+	UFUNCTION(BlueprintCallable, Category = "Health")
+		void SetCurrentHealth(float NewHealth);
+
+	virtual float TakeDamage(float Dmg, const FDamageEvent& DmgEvent, AController* EventInstigator, AActor* DmgCauser) override;
+
+	UFUNCTION(BlueprintCallable, Category = "Health")
+		void KilledBy(APawn* EventInstigator);
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Health")
+		bool CanDie();
+
+	UFUNCTION(BlueprintCallable, Category = "Health")
+		bool Die(float KillingDmg, const FDamageEvent& DmgEvent, AController* Killer, AActor* DmgCauser);
 
 protected:
+
+	UPROPERTY(EditDefaultsOnly, Category = "Health")
+		UAnimMontage* DeathAnim;
+
+	virtual void PlayHit(float DmgTaken, const FDamageEvent& DmgEvent, APawn* EventInstigator, AActor* DmgCauser);
+
+	virtual void OnDeath(float KillingDmg, const FDamageEvent& DmgEvent, APawn* EventInstigator, AActor* DmgCauser);
+
+	void StopAllAnimMontages();
+
 	/** Ragdoll System */
 
 	void RagdollUpdate();
@@ -461,28 +527,28 @@ protected:
 	/** Essential Information */
 
 	UPROPERTY(BlueprintReadOnly, Category = "Essential Information")
-	FVector Acceleration;
+		FVector Acceleration;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Essential Information")
-	bool bIsMoving = false;
+		bool bIsMoving = false;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Essential Information")
-	bool bHasMovementInput = false;
+		bool bHasMovementInput = false;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Essential Information")
-	FRotator LastVelocityRotation;
+		FRotator LastVelocityRotation;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Essential Information")
-	FRotator LastMovementInputRotation;
+		FRotator LastMovementInputRotation;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Essential Information")
-	float Speed = 0.0f;
+		float Speed = 0.0f;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Essential Information")
-	float MovementInputAmount = 0.0f;
+		float MovementInputAmount = 0.0f;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Essential Information")
-	float AimYawRate = 0.0f;
+		float AimYawRate = 0.0f;
 
 	/** State Values */
 
