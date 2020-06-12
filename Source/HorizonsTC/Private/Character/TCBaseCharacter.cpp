@@ -217,6 +217,22 @@ void ATCBaseCharacter::RagdollEnd()
 	GetMesh()->SetAllBodiesSimulatePhysics(false);
 }
 
+void ATCBaseCharacter::RagdollOnDeath(bool Retrigger)
+{
+	RagdollPressedAction();
+
+	/*if (Retrigger)
+	{
+		FTimerHandle TimerHandle;
+		GetWorldTimerManager().SetTimer(TimerHandle, this, &ATCBaseCharacter::DisablePhysicsSim, 1.0f, false);
+	}*/
+}
+
+void ATCBaseCharacter::DisablePhysicsSim()
+{
+	GetMesh()->SetAllBodiesSimulatePhysics(false);
+}
+
 void ATCBaseCharacter::SetMovementState(const EMovementState NewState)
 {
 	if (MovementState != NewState)
@@ -1414,14 +1430,15 @@ void ATCBaseCharacter::OnDeath(float KillingDmg, const FDamageEvent& DmgEvent, A
 	{
 		// Trigger ragdoll a little before the animation early so the character doesn't
 		// blend back to its normal position.
-		const float TriggerRagdollTime = DeathAnimDuration - 0.7f;
+		const float TriggerRagdollTime = DeathAnimDuration - 1.0f;
 
 		// Enable blend physics so the bones are properly blending against the montage.
 		GetMesh()->bBlendPhysics = true;
 
 		// Use a local timer handle as we don't need to store it for later but we don't need to look for something to clear
 		FTimerHandle TimerHandle;
-		GetWorldTimerManager().SetTimer(TimerHandle, this, &ATCBaseCharacter::RagdollPressedAction, FMath::Max(0.1f, TriggerRagdollTime), false);
+		FTimerDelegate RagdollDelegate = FTimerDelegate::CreateUObject(this, &ATCBaseCharacter::RagdollOnDeath, true);
+		GetWorldTimerManager().SetTimer(TimerHandle, RagdollDelegate, FMath::Max(0.1f, TriggerRagdollTime), false);
 	}
 	else
 	{

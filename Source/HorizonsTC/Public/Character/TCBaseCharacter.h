@@ -47,19 +47,26 @@ public:
 
 	/** Implement on BP to get required get up animation according to character's state */
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "Ragdoll System")
-	UAnimMontage* GetGetUpAnimation(bool bRagdollFaceUpState);
+		UAnimMontage* GetGetUpAnimation(bool bRagdollFaceUpState);
 
 	UFUNCTION(BlueprintCallable, Category = "Ragdoll System")
-	virtual void RagdollStart();
+		virtual void RagdollStart();
 
 	UFUNCTION(BlueprintCallable, Category = "Ragdoll System")
-	virtual void RagdollEnd();
+		virtual void RagdollEnd();
+
+	UFUNCTION(BlueprintCallable, Category = "Ragdoll System")
+		void RagdollOnDeath(bool Retrigger = true);
+
+private:
+	void DisablePhysicsSim();
 
 
 	/************************************************************************/
 	/* Character States														*/
 	/************************************************************************/
 
+public:
 	UFUNCTION(BlueprintCallable, Category = "Character States")
 	void SetMovementState(EMovementState NewState);
 
