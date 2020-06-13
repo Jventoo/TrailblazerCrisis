@@ -119,6 +119,9 @@ void ATCBaseCharacter::BeginPlay()
 	TargetRotation = GetActorRotation();
 	LastVelocityRotation = TargetRotation;
 	LastMovementInputRotation = TargetRotation;
+
+	// Set jump jet states
+	bJumpJetsEnabled = bHasJumpJets;
 }
 
 void ATCBaseCharacter::PreInitializeComponents()
@@ -560,6 +563,12 @@ void ATCBaseCharacter::OnMovementModeChanged(EMovementMode PrevMovementMode, uin
 
 void ATCBaseCharacter::OnMovementStateChanged(const EMovementState PreviousState)
 {
+	// Re-enable jump jets on landing
+	if (bHasJumpJets && PreviousState == EMovementState::InAir)
+	{
+		bJumpJetsEnabled = true;
+	}
+
 	if (MovementState == EMovementState::InAir)
 	{
 		if (MovementAction == EMovementAction::None)
@@ -673,14 +682,15 @@ void ATCBaseCharacter::Landed(const FHitResult& Hit)
 
 	const float VelZ = FMath::Abs(GetCharacterMovement()->Velocity.Z);
 
-	if (bHasMovementInput && VelZ >= 600.0f && VelZ <= 1000.0f)
+	if (bHasMovementInput && VelZ >= 600.0f)// && VelZ <= 1000.0f)
 	{
 		OnBreakfall();
 	}
-	else if (VelZ > 1000.0f)
-	{
-		RagdollStart();
-	}
+	//else if (VelZ > 1000.0f)
+	//{
+	//	// Damage the player
+	//	//RagdollStart();
+	//}
 	else
 	{
 		GetCharacterMovement()->BrakingFrictionFactor = bHasMovementInput ? 0.5f : 3.0f;
@@ -1512,7 +1522,7 @@ void ATCBaseCharacter::PlayerCameraRightInput(float Value)
 void ATCBaseCharacter::JumpPressedAction()
 {
 	// Jump Action: Press "Jump Action" to end the ragdoll if ragdolling, check for a mantle if grounded or in air,
-	// stand up if crouching, or jump if standing.
+	// stand up if crouching, jump if standing, or jump jet if in air.
 
 	if (MovementAction == EMovementAction::None)
 	{
@@ -1536,7 +1546,14 @@ void ATCBaseCharacter::JumpPressedAction()
 		}
 		else if (MovementState == EMovementState::InAir)
 		{
-			MantleCheckFalling();
+			// If we can't mantle, then jump jet
+
+			if (!MantleCheckFalling() && bJumpJetsEnabled)
+			{
+				JumpJets();
+
+				bJumpJetsEnabled = false;
+			}
 		}
 		else if (MovementState == EMovementState::Ragdoll)
 		{

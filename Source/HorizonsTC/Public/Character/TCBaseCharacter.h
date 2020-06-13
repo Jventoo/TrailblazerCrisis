@@ -68,52 +68,52 @@ private:
 
 public:
 	UFUNCTION(BlueprintCallable, Category = "Character States")
-	void SetMovementState(EMovementState NewState);
+		void SetMovementState(EMovementState NewState);
 
 	UFUNCTION(BlueprintGetter, Category = "Character States")
-	EMovementState GetMovementState() { return MovementState; }
+		EMovementState GetMovementState() { return MovementState; }
 
 	UFUNCTION(BlueprintGetter, Category = "Character States")
-	EMovementState GetPrevMovementState() { return PrevMovementState; }
+		EMovementState GetPrevMovementState() { return PrevMovementState; }
 
 	UFUNCTION(BlueprintCallable, Category = "Character States")
-	void SetMovementAction(EMovementAction NewAction);
+		void SetMovementAction(EMovementAction NewAction);
 
 	UFUNCTION(BlueprintGetter, Category = "Character States")
-	EMovementAction GetMovementAction() { return MovementAction; }
+		EMovementAction GetMovementAction() { return MovementAction; }
 
 	UFUNCTION(BlueprintCallable, Category = "Character States")
-	void SetStance(EStance NewStance);
+		void SetStance(EStance NewStance);
 
 	UFUNCTION(BlueprintGetter, Category = "Character States")
-	EStance GetStance() { return Stance; }
+		EStance GetStance() { return Stance; }
 
 	UFUNCTION(BlueprintCallable, Category = "Character States")
-	void SetRotationMode(ERotationMode NewRotationMode);
+		void SetRotationMode(ERotationMode NewRotationMode);
 
 	UFUNCTION(BlueprintGetter, Category = "Character States")
-	ERotationMode GetRotationMode() { return RotationMode; }
+		ERotationMode GetRotationMode() { return RotationMode; }
 
 	UFUNCTION(BlueprintCallable, Category = "Character States")
-	void SetGait(EGait NewGait);
+		void SetGait(EGait NewGait);
 
 	UFUNCTION(BlueprintGetter, Category = "Character States")
-	EGait GetGait() { return Gait; }
+		EGait GetGait() { return Gait; }
 
 	UFUNCTION(BlueprintCallable, Category = "Character States")
-	void SetViewMode(EViewMode NewViewMode);
+		void SetViewMode(EViewMode NewViewMode);
 
 	UFUNCTION(BlueprintGetter, Category = "Character States")
-	EViewMode GetViewMode() { return ViewMode; }
+		EViewMode GetViewMode() { return ViewMode; }
 
 	UFUNCTION(BlueprintCallable, Category = "Character States")
-	void SetOverlayState(EOverlayState NewState);
+		void SetOverlayState(EOverlayState NewState);
 
 	UFUNCTION(BlueprintGetter, Category = "Character States")
-	EOverlayState GetOverlayState() { return OverlayState; }
+		EOverlayState GetOverlayState() { return OverlayState; }
 
 	UFUNCTION(BlueprintGetter, Category = "Character States")
-	EOverlayState SwitchRight() { return OverlayState; }
+		EOverlayState SwitchRight() { return OverlayState; }
 
 
 	/************************************************************************/
@@ -121,25 +121,28 @@ public:
 	/************************************************************************/
 
 	UFUNCTION(BlueprintGetter, Category = "Input")
-	EStance GetDesiredStance() { return DesiredStance; }
+		EStance GetDesiredStance() { return DesiredStance; }
 
 	UFUNCTION(BlueprintSetter, Category = "Input")
-	void SetDesiredStance(EStance NewStance) { DesiredStance = NewStance; }
+		void SetDesiredStance(EStance NewStance) { DesiredStance = NewStance; }
 
 	UFUNCTION(BlueprintGetter, Category = "Input")
-	EGait GetDesiredGait() { return DesiredGait; }
+		EGait GetDesiredGait() { return DesiredGait; }
 
 	UFUNCTION(BlueprintSetter, Category = "Input")
-	void SetDesiredGait(EGait NewGait) { DesiredGait = NewGait; }
+		void SetDesiredGait(EGait NewGait) { DesiredGait = NewGait; }
 
 	UFUNCTION(BlueprintGetter, Category = "Input")
-	ERotationMode GetDesiredRotationMode() { return DesiredRotationMode; }
+		ERotationMode GetDesiredRotationMode() { return DesiredRotationMode; }
 
 	UFUNCTION(BlueprintSetter, Category = "Input")
-	void SetDesiredRotationMode(ERotationMode NewRotMode) { DesiredRotationMode = NewRotMode; }
+		void SetDesiredRotationMode(ERotationMode NewRotMode) { DesiredRotationMode = NewRotMode; }
 
 	UFUNCTION(BlueprintCallable, Category = "Input")
-	FVector GetPlayerMovementInput();
+		FVector GetPlayerMovementInput();
+
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Input")
+		void JumpJets();
 
 
 	/************************************************************************/
@@ -147,7 +150,7 @@ public:
 	/************************************************************************/
 
 	UFUNCTION(BlueprintCallable, Category = "Rotation System")
-	void SetActorLocationAndTargetRotation(FVector NewLocation, FRotator NewRotation);
+		void SetActorLocationAndTargetRotation(FVector NewLocation, FRotator NewRotation);
 
 
 	/************************************************************************/
@@ -156,13 +159,13 @@ public:
 
 	/** Implement on BP to get correct mantle parameter set according to character state */
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Mantle System")
-	FMantleAsset GetMantleAsset(EMantleType MantleType);
+		FMantleAsset GetMantleAsset(EMantleType MantleType);
 
 	UFUNCTION(BlueprintCallable, Category = "Mantle System")
-	virtual bool MantleCheckGrounded();
+		virtual bool MantleCheckGrounded();
 
 	UFUNCTION(BlueprintCallable, Category = "Mantle System")
-	virtual bool MantleCheckFalling();
+		virtual bool MantleCheckFalling();
 
 	
 	/************************************************************************/
@@ -456,37 +459,44 @@ protected:
 	/** Input */
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Input")
-	ERotationMode DesiredRotationMode = ERotationMode::LookingDirection;
+		ERotationMode DesiredRotationMode = ERotationMode::LookingDirection;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Input")
-	EGait DesiredGait = EGait::Running;
+		EGait DesiredGait = EGait::Running;
 
 	UPROPERTY(BlueprintReadWrite, Category = "Input")
-	EStance DesiredStance = EStance::Standing;
+		EStance DesiredStance = EStance::Standing;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Input", BlueprintReadOnly)
-	float LookUpDownRate = 1.25f;
+		float LookUpDownRate = 1.25f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Input", BlueprintReadOnly)
-	float LookLeftRightRate = 1.25f;
+		float LookLeftRightRate = 1.25f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Input", BlueprintReadOnly)
-	float RollDoubleTapTimeout = 0.3f;
+		float RollDoubleTapTimeout = 0.3f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Input", BlueprintReadOnly)
-	float ViewModeSwitchHoldTime = 0.2f;
+		float ViewModeSwitchHoldTime = 0.2f;
 
 	UPROPERTY(Category = "Input", BlueprintReadOnly)
-	int32 TimesPressedStance = 0;
+		int32 TimesPressedStance = 0;
 
 	UPROPERTY(Category = "Input", BlueprintReadOnly)
-	bool bBreakFall = false;
+		bool bBreakFall = false;
 
 	UPROPERTY(Category = "Input", BlueprintReadOnly)
-	bool bSprintHeld = false;
+		bool bSprintHeld = false;
 
 	UPROPERTY(Category = "Input", BlueprintReadOnly)
 		bool bIsArmed = false;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Input", BlueprintReadOnly)
+		bool bHasJumpJets = false;
+
+	UPROPERTY(Category = "Input", BlueprintReadWrite)
+		bool bJumpJetsEnabled;
+
 
 	/** Camera System */
 
