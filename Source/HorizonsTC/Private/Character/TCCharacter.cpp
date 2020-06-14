@@ -82,7 +82,7 @@ bool ATCCharacter::CanReload() const
 
 bool ATCCharacter::CanFire() const
 {
-	bool IsInCorrectState = RotationMode == ERotationMode::Aiming && MovementState == EMovementState::Grounded
+	bool IsInCorrectState = RotationMode == ERotationMode::Aiming && (MovementState == EMovementState::Grounded || MovementState == EMovementState::InAir)
 		&& MovementAction == EMovementAction::None && Gait != EGait::Sprinting;
 
 	return HasWeaponEquipped() && IsInCorrectState;

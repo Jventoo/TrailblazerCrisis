@@ -532,13 +532,14 @@ EWeaponState ABaseFirearm::GetCurrentState() const
 void ABaseFirearm::FireWeapon()
 {
 	// Calculate projectile direction
-	FTransform MainDir = CalculateMainProjectileDirection();
+	FName Bone("null");
+	FTransform MainDir = CalculateMainProjectileDirection(Bone);
 	FTransform FinalDir = CalculateFinalProjectileDirection(MainDir, GetCurrentSpread());
 
 
 	// Calculate projectile damage
 	float DamageToDeal = 0;
-	bool CritHit = CalculateDamage(DamageToDeal);
+	bool CritHit = CalculateDamage(Bone, DamageToDeal);
 
 
 	// Begin spawning the projectile, initalize it, finish spawning
@@ -617,7 +618,7 @@ void ABaseFirearm::DecreaseSpread_Implementation()
 }
 
 
-FTransform ABaseFirearm::CalculateMainProjectileDirection()
+FTransform ABaseFirearm::CalculateMainProjectileDirection(FName& BoneName)
 {
 	auto SocketTransform = Mesh->GetSocketTransform(FName("Muzzle"));
 	auto MuzzlePos = SocketTransform.GetLocation()
@@ -647,6 +648,7 @@ FTransform ABaseFirearm::CalculateMainProjectileDirection()
 	if (GetWorld()->LineTraceSingleByChannel(Hit, StartPt, EndPt, ECollisionChannel::ECC_Visibility, TraceParams))
 	{
 		HitPoint = Hit.ImpactPoint;
+		BoneName = Hit.BoneName;
 	}
 
 	DrawDebugLine(GetWorld(), StartPt, EndPt, FColor::Green, false, 1, 0, 1);
@@ -671,13 +673,13 @@ FTransform ABaseFirearm::CalculateFinalProjectileDirection(const FTransform& Mai
 }
 
 
-bool ABaseFirearm::CalculateDamage(float& DamageOut)
+bool ABaseFirearm::CalculateDamage(const FName& BoneName, float& DamageOut)
 {
 	DamageOut = UKismetMathLibrary::RandomFloatInRange(DamageData.MinDamage, DamageData.MaxDamage);
-	bool IsCrit = (DamageData.CritChance > UKismetMathLibrary::RandomFloatInRange(0.0, 1.0));
+	bool IsCrit = BoneName == TEXT("head");
 
 	// If we landed a crit, multiple our initial damage by our multiplier. Else, return our randomized damage
-	DamageOut = IsCrit ? (DamageOut * DamageData.CritDamageMultiplier) : DamageOut;
+	DamageOut = IsCrit ? (DamageOut * DamageData.HeadshotDamageMultiplier) : DamageOut;
 
 	return IsCrit;
 }

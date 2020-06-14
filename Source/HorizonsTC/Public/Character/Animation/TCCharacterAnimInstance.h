@@ -348,7 +348,7 @@ public:
 	bool bJumped = false;
 
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Read Only Data|Anim Graph - In Air")
-	float JumpPlayRate = 1.2f;
+	float JumpPlayRate = 0.5f;
 
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Read Only Data|Anim Graph - In Air")
 	float FallSpeed = 0.0f;

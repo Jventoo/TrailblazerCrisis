@@ -56,7 +56,7 @@ struct FFirearmDamageInfo
 
 	FFirearmDamageInfo()
 	{
-		MinDamage = MaxDamage = CritChance = CritDamageMultiplier = 0;
+		MinDamage = MaxDamage = HeadshotDamageMultiplier = 0;
 	}
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
@@ -66,10 +66,7 @@ struct FFirearmDamageInfo
 		float MaxDamage;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
-		float CritChance;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
-		float CritDamageMultiplier;
+		float HeadshotDamageMultiplier;
 };
 
 UCLASS()
@@ -210,11 +207,11 @@ private:
 
 	void OnBurstFinished();
 
-	FTransform CalculateMainProjectileDirection();
+	FTransform CalculateMainProjectileDirection(FName& BoneName);
 
 	FTransform CalculateFinalProjectileDirection(const FTransform& MainDir, const float Spread);
 
-	bool CalculateDamage(float& DamageOut);
+	bool CalculateDamage(const FName& BoneName, float& DamageOut);
 
 	bool bWantsToFire;
 

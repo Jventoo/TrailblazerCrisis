@@ -428,6 +428,8 @@ protected:
 
 	void StancePressedAction();
 
+	void RollPressedAction();
+
 	void WalkPressedAction();
 
 	void RagdollPressedAction();
@@ -472,9 +474,6 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Input", BlueprintReadOnly)
 		float LookLeftRightRate = 1.25f;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Input", BlueprintReadOnly)
-		float RollDoubleTapTimeout = 0.3f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Input", BlueprintReadOnly)
 		float ViewModeSwitchHoldTime = 0.2f;
@@ -641,9 +640,6 @@ protected:
 	float PreviousAimYaw = 0.0f;
 
 	UTCCharacterAnimInstance* MainAnimInstance = nullptr;
-
-	/** Last time the 'first' crouch/roll button is pressed */
-	float LastStanceInputTime = 0.0f;
 
 	/** Last time the camera action button is pressed */
 	float CameraActionPressedTime = 0.0f;

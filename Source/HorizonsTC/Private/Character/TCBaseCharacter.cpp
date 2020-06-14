@@ -46,6 +46,7 @@ void ATCBaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	PlayerInputComponent->BindAction("JumpAction", IE_Released, this, &ATCBaseCharacter::JumpReleasedAction);
 
 	PlayerInputComponent->BindAction("StanceAction", IE_Pressed, this, &ATCBaseCharacter::StancePressedAction);
+	PlayerInputComponent->BindAction("RollAction", IE_Pressed, this, &ATCBaseCharacter::RollPressedAction);
 	PlayerInputComponent->BindAction("WalkAction", IE_Pressed, this, &ATCBaseCharacter::WalkPressedAction);
 	PlayerInputComponent->BindAction("RagdollAction", IE_Pressed, this, &ATCBaseCharacter::RagdollPressedAction);
 
@@ -580,11 +581,11 @@ void ATCBaseCharacter::OnMovementStateChanged(const EMovementState PreviousState
 				UnCrouch();
 			}
 		}
-		else if (MovementAction == EMovementAction::Rolling)
-		{
-			// If the character is currently rolling, enable the ragdoll.
-			RagdollStart();
-		}
+		//else if (MovementAction == EMovementAction::Rolling)
+		//{
+		//	// If the character is currently rolling, enable the ragdoll.
+		//	RagdollStart();
+		//}
 	}
 	else if (MovementState == EMovementState::Ragdoll && PreviousState == EMovementState::Mantling)
 	{
@@ -1643,8 +1644,6 @@ void ATCBaseCharacter::OnSwitchCameraMode()
 
 void ATCBaseCharacter::StancePressedAction()
 {
-	// Stance Action: Press "Stance Action" to toggle Standing / Crouching, double tap to Roll.
-
 	if (MovementAction != EMovementAction::None)
 	{
 		return;
@@ -1652,25 +1651,6 @@ void ATCBaseCharacter::StancePressedAction()
 
 	UWorld* World = GetWorld();
 	check(World);
-
-	const float PrevStanceInputTime = LastStanceInputTime;
-	LastStanceInputTime = World->GetTimeSeconds();
-
-	if (LastStanceInputTime - PrevStanceInputTime <= RollDoubleTapTimeout)
-	{
-		// Roll
-		OnRoll();
-
-		if (Stance == EStance::Standing)
-		{
-			SetDesiredStance(EStance::Crouching);
-		}
-		else if (Stance == EStance::Crouching)
-		{
-			SetDesiredStance(EStance::Standing);
-		}
-		return;
-	}
 	
 	if (MovementState == EMovementState::Grounded)
 	{
@@ -1685,8 +1665,19 @@ void ATCBaseCharacter::StancePressedAction()
 			UnCrouch();
 		}
 	}
+}
 
-	// Notice: MovementState == EMovementState::InAir case is removed
+void ATCBaseCharacter::RollPressedAction()
+{
+	if (MovementAction != EMovementAction::None)
+	{
+		return;
+	}
+
+	UWorld* World = GetWorld();
+	check(World);
+
+	OnRoll();
 }
 
 void ATCBaseCharacter::WalkPressedAction()
