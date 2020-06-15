@@ -27,7 +27,7 @@ public:
 		void ClearHeldObject();
 
 	UFUNCTION(BlueprintCallable, Category = "HeldObject")
-		void AttachToHand(UStaticMesh* NewStaticMesh, USkeletalMesh* NewSkeletalMesh,
+		void AttachToHand(UStaticMeshComponent* NewStaticMesh, USkeletalMeshComponent* NewSkeletalMesh,
 						class UClass* NewAnimClass, bool bLeftHand, FVector Offset);
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "HeldObject")
@@ -56,18 +56,12 @@ protected:
 	virtual void MantleEnd() override;
 
 	/** Implement on BP to update animation states of held objects */
-	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HeldObject")
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Equipment")
 		void UpdateHeldObjectAnimations();
 
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		USceneComponent* HeldObjectRoot = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		USkeletalMeshComponent* SkeletalMesh = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		UStaticMeshComponent* StaticMesh = nullptr;
+	UPROPERTY(BlueprintReadWrite, Category = "Equipment")
+		UMeshComponent* CurrentHeldObject;
 
 	/************************************************************************/
 	/* Weapon Handling														*/

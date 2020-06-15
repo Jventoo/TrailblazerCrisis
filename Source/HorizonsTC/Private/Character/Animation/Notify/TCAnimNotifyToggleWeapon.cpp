@@ -26,7 +26,9 @@ void UTCAnimNotifyToggleWeapon::Notify(USkeletalMeshComponent* MeshComp, UAnimSe
 			Weapon->DetachMeshFromPawn();
 
 			// Attach to hand
-			Player->AttachToHand(nullptr, Weapon->GetWeaponMesh()->SkeletalMesh, nullptr, false, FVector::ZeroVector);
+			Weapon->AttachMeshToPawn(TEXT("RifleSocket"));
+			
+			//Player->AttachToHand(nullptr, Weapon->GetWeaponMesh(), nullptr, false, FVector::ZeroVector);
 		}
 		else
 		{

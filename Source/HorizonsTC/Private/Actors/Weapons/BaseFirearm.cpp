@@ -115,8 +115,10 @@ void ABaseFirearm::AttachMeshToPawn(FName Socket, bool Detach)
 
 void ABaseFirearm::DetachMeshFromPawn()
 {
-	Mesh->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
-	Mesh->SetHiddenInGame(true);
+	/*Mesh->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+	Mesh->SetHiddenInGame(true);*/
+
+	Pawn->ClearHeldObject();
 
 	bIsHolstered = false;
 }
@@ -220,7 +222,7 @@ void ABaseFirearm::OnEquip(bool bPlayAnimation)
 			Duration = NoEquipAnimDuration;
 
 			DetachMeshFromPawn();
-			Pawn->AttachToHand(nullptr, Mesh->SkeletalMesh, nullptr, false, FVector::ZeroVector);
+			Pawn->AttachToHand(nullptr, Mesh, nullptr, false, FVector::ZeroVector);
 		}
 		EquipStartedTime = GetWorld()->TimeSeconds;
 		EquipDuration = Duration;
@@ -231,7 +233,7 @@ void ABaseFirearm::OnEquip(bool bPlayAnimation)
 	{
 		// Move the gun into our hand from our holster
 		DetachMeshFromPawn();
-		Pawn->AttachToHand(nullptr, Mesh->SkeletalMesh, nullptr, false, FVector::ZeroVector);
+		Pawn->AttachToHand(nullptr, Mesh, nullptr, false, FVector::ZeroVector);
 
 		/* Immediately finish equipping */
 		OnEquipFinished();
@@ -285,21 +287,17 @@ void ABaseFirearm::OnUnEquip(bool ReturnToHolster)
 
 void ABaseFirearm::OnEquipFinished()
 {
+	Pawn->AttachToHand(nullptr, Mesh, nullptr, false, FVector::ZeroVector);
+
 	bIsEquipped = true;
 	bPendingEquip = false;
 
 	DetermineWeaponState();
 
-	if (Pawn)
+	// Try to reload empty clip
+	if (CurrentAmmoInClip <= 0 && CanReload())
 	{
-		// TODO: Dynamically set overlay based on weapon type, assuming other types are eventually added
-		Pawn->SetOverlayState(EOverlayState::Rifle);
-
-		// Try to reload empty clip
-		if (CurrentAmmoInClip <= 0 && CanReload())
-		{
-			StartReload();
-		}
+		StartReload();
 	}
 }
 

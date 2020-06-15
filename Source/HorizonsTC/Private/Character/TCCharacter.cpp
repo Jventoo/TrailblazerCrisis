@@ -7,14 +7,6 @@
 
 ATCCharacter::ATCCharacter()
 {
-	HeldObjectRoot = CreateDefaultSubobject<USceneComponent>(TEXT("HeldObjectRoot"));
-	HeldObjectRoot->SetupAttachment(GetMesh());
-
-	SkeletalMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("SkeletalMesh"));
-	SkeletalMesh->SetupAttachment(HeldObjectRoot);
-
-	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
-	StaticMesh->SetupAttachment(HeldObjectRoot);
 }
 
 void ATCCharacter::BeginPlay()
@@ -90,9 +82,12 @@ bool ATCCharacter::CanFire() const
 
 void ATCCharacter::ClearHeldObject()
 {
-	StaticMesh->SetStaticMesh(nullptr);
-	SkeletalMesh->SetSkeletalMesh(nullptr);
-	SkeletalMesh->SetAnimInstanceClass(nullptr);
+	if (CurrentHeldObject)
+	{
+		CurrentHeldObject->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+		CurrentHeldObject->SetHiddenInGame(true, true);
+		CurrentHeldObject = nullptr;
+	}
 }
 
 
@@ -196,22 +191,9 @@ void ATCCharacter::ToggleEquip()
 	}
 }
 
-void ATCCharacter::AttachToHand(UStaticMesh* NewStaticMesh, USkeletalMesh* NewSkeletalMesh, UClass* NewAnimClass, bool bLeftHand, FVector Offset)
+void ATCCharacter::AttachToHand(UStaticMeshComponent* NewStaticMesh, USkeletalMeshComponent* NewSkeletalMesh, UClass* NewAnimClass, bool bLeftHand, FVector Offset)
 {
 	ClearHeldObject();
-
-	/*if (IsValid(NewStaticMesh))
-	{
-		StaticMesh->SetStaticMesh(NewStaticMesh);
-	}
-	else if (IsValid(NewSkeletalMesh))
-	{
-		SkeletalMesh->SetSkeletalMesh(NewSkeletalMesh);
-		if (IsValid(NewAnimClass))
-		{
-			SkeletalMesh->SetAnimInstanceClass(NewAnimClass);
-		}
-	}*/
 
 	FName AttachBone;
 	if (bLeftHand)
@@ -223,21 +205,34 @@ void ATCCharacter::AttachToHand(UStaticMesh* NewStaticMesh, USkeletalMesh* NewSk
 		AttachBone = TEXT("VB RHS_ik_hand_gun");
 	}
 
-	CurrentWeapon->GetWeaponMesh()->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, AttachBone);
-	CurrentWeapon->GetWeaponMesh()->SetHiddenInGame(false);
-	//HeldObjectRoot->SetRelativeLocation(Offset);
+	if (NewStaticMesh)
+	{
+		CurrentHeldObject = NewStaticMesh;
+
+		NewStaticMesh->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, AttachBone);
+		NewStaticMesh->SetHiddenInGame(false);
+		NewStaticMesh->SetRelativeLocation(Offset);
+	}
+	else
+	{
+		CurrentHeldObject = NewSkeletalMesh;
+
+		NewSkeletalMesh->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, AttachBone);
+		NewSkeletalMesh->SetHiddenInGame(false);
+		NewSkeletalMesh->SetRelativeLocation(Offset);
+	}
 }
 
 void ATCCharacter::RagdollStart()
 {
-	ClearHeldObject();
+	//ClearHeldObject();
 	Super::RagdollStart();
 }
 
 void ATCCharacter::RagdollEnd()
 {
 	Super::RagdollEnd();
-	UpdateHeldObject();
+	//UpdateHeldObject();
 }
 
 ECollisionChannel ATCCharacter::GetThirdPersonTraceParams(FVector& TraceOrigin, float& TraceRadius)
@@ -271,7 +266,7 @@ FVector ATCCharacter::GetFirstPersonCameraTarget()
 void ATCCharacter::OnOverlayStateChanged(EOverlayState PreviousState)
 {
 	Super::OnOverlayStateChanged(PreviousState);
-	UpdateHeldObject();
+	//UpdateHeldObject();
 }
 
 void ATCCharacter::MantleStart(float MantleHeight, const FComponentAndTransform& MantleLedgeWS, EMantleType MantleType)
@@ -280,12 +275,12 @@ void ATCCharacter::MantleStart(float MantleHeight, const FComponentAndTransform&
 	if (MantleType != EMantleType::LowMantle)
 	{
 		// If we're not doing low mantle, clear held object
-		ClearHeldObject();
+		//ClearHeldObject();
 	}
 }
 
 void ATCCharacter::MantleEnd()
 {
 	Super::MantleEnd();
-	UpdateHeldObject();
+	//UpdateHeldObject();
 }

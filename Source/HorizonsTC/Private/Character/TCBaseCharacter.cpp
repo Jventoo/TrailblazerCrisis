@@ -1426,12 +1426,12 @@ void ATCBaseCharacter::OnDeath(float KillingDmg, const FDamageEvent& DmgEvent, A
 		LowHealthWarningPlayer->Stop();
 	}*/
 
-	if (GetMesh())
+	/*if (GetMesh())
 	{
 		static FName CollisionProfileName(TEXT("Ragdoll"));
 		GetMesh()->SetCollisionProfileName(CollisionProfileName);
 	}
-	SetActorEnableCollision(true);
+	SetActorEnableCollision(true);*/
 
 	// Death anim
 	float DeathAnimDuration = PlayAnimMontage(DeathAnim);
@@ -1441,15 +1441,15 @@ void ATCBaseCharacter::OnDeath(float KillingDmg, const FDamageEvent& DmgEvent, A
 	{
 		// Trigger ragdoll a little before the animation early so the character doesn't
 		// blend back to its normal position.
-		const float TriggerRagdollTime = DeathAnimDuration - 1.0f;
+		const float TriggerRagdollTime = DeathAnimDuration - 0.3f;
 
 		// Enable blend physics so the bones are properly blending against the montage.
-		GetMesh()->bBlendPhysics = true;
+		//GetMesh()->bBlendPhysics = true;
 
 		// Use a local timer handle as we don't need to store it for later but we don't need to look for something to clear
-		FTimerHandle TimerHandle;
-		FTimerDelegate RagdollDelegate = FTimerDelegate::CreateUObject(this, &ATCBaseCharacter::RagdollOnDeath, true);
-		GetWorldTimerManager().SetTimer(TimerHandle, RagdollDelegate, FMath::Max(0.1f, TriggerRagdollTime), false);
+		//FTimerHandle TimerHandle;
+		//FTimerDelegate RagdollDelegate = FTimerDelegate::CreateUObject(this, &ATCBaseCharacter::RagdollOnDeath, true);
+		//GetWorldTimerManager().SetTimer(TimerHandle, RagdollDelegate, FMath::Max(0.1f, TriggerRagdollTime), false);
 	}
 	else
 	{
