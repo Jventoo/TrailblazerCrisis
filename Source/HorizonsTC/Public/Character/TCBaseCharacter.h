@@ -18,6 +18,7 @@ class UTimelineComponent;
 class UAnimInstance;
 class UAnimMontage;
 class UTCCharacterAnimInstance;
+class USoundCue;
 
 /*
  * Base character class
@@ -319,6 +320,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Health")
 		UAnimMontage* DeathAnim;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Health")
+		USoundCue* DeathSound;
 
 	virtual void PlayHit(float DmgTaken, const FDamageEvent& DmgEvent, APawn* EventInstigator, AActor* DmgCauser);
 
