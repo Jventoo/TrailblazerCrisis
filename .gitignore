@@ -78,4 +78,5 @@ DerivedDataCache/*
 *.zip
 Content/*/*
 !Content/HorizonsTC/*
+!Content/CustomUI/*
 *.fbx
