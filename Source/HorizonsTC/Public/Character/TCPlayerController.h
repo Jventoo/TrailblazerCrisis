@@ -120,6 +120,12 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = UI)
 		FName MainMenuLevel;
 
+	UFUNCTION(BlueprintCallable, Category = Utility)
+		void SetLimitedInputMode(bool LimitedInput, bool SetFirstPerson = true, bool HideHUD = false, bool HideWeapon = false);
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Utility)
+		bool IsInLimitedInputMode() const;
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -132,4 +138,6 @@ private:
 	/** Communication w quest manager and updates objective progress */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Interactions, meta = (AllowPrivateAccess = "true"))
 		class UObjectiveComponent* ObjectiveComp;
+
+	bool bLimitedInputMode = false;
 };

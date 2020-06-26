@@ -15,7 +15,7 @@
 #include "Blueprint/UserWidget.h"
 #include "Kismet/GameplayStatics.h"
 #include "Actors/Components/ObjectiveComponent.h"
-
+#include "Actors/Weapons/BaseFirearm.h"
 
 ATCPlayerController::ATCPlayerController()
 {
@@ -283,4 +283,43 @@ void ATCPlayerController::OnRestartPawn(APawn* NewPawn)
 	{
 		CastedMgr->OnPossess(PossessedCharacter);
 	}
+}
+
+void ATCPlayerController::SetLimitedInputMode(bool LimitedInput, bool SetFirstPerson, bool HideHUD, bool HideWeapon)
+{
+	// Optionally hide the HUD
+	if (HideHUD && HUDRef)
+	{
+		HUDRef->SetVisibility(ESlateVisibility::Collapsed);
+		bHUDOpen = false;
+	}
+
+	auto PlayerChar = Cast<ATCCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+
+	if (PlayerChar)
+	{
+		// Set view mode based on param
+		PlayerChar->SetViewMode(SetFirstPerson ? EViewMode::FirstPerson : EViewMode::ThirdPerson);
+		
+		// Set jump jets enabled
+		PlayerChar->SetJumpJetsEnabled(!LimitedInput);
+
+		// Optionally unequip current firearm
+		if (HideWeapon)
+		{
+			auto CurrWep = PlayerChar->GetCurrentWeapon(); 
+			
+			if (CurrWep && CurrWep->IsEquipped())
+				PlayerChar->ToggleEquip();
+		}
+
+		PlayerChar->SetSprintDisabled(LimitedInput);
+	}
+
+	bLimitedInputMode = LimitedInput;
+}
+
+bool ATCPlayerController::IsInLimitedInputMode() const
+{
+	return bLimitedInputMode;
 }

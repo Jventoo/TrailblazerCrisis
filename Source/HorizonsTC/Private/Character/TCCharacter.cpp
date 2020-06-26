@@ -4,6 +4,7 @@
 #include "Character/TCCharacter.h"
 #include "Actors/Weapons/BaseFirearm.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Kismet/GameplayStatics.h"
 
 ATCCharacter::ATCCharacter()
 {
@@ -178,15 +179,20 @@ void ATCCharacter::NextFireMode()
 
 void ATCCharacter::ToggleEquip()
 {
+	// If we have a weapon in our inventory and the pointer to it is valid...
 	if (bIsArmed && CurrentWeapon)
 	{
-		if (!CurrentWeapon->IsEquipped())
+		// ...And we are not in limited input mode, then try to equip/unequip
+		if (!Cast<ATCPlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0))->IsInLimitedInputMode())
 		{
-			CurrentWeapon->BeginEquip();
-		}
-		else
-		{
-			CurrentWeapon->BeginUnequip();
+			if (!CurrentWeapon->IsEquipped())
+			{
+				CurrentWeapon->BeginEquip();
+			}
+			else
+			{
+				CurrentWeapon->BeginUnequip();
+			}
 		}
 	}
 }

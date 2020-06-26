@@ -62,6 +62,8 @@ public:
 private:
 	void DisablePhysicsSim();
 
+	bool bSprintDisabled = false;
+
 
 	/************************************************************************/
 	/* Character States														*/
@@ -116,6 +118,14 @@ public:
 	UFUNCTION(BlueprintGetter, Category = "Character States")
 		EOverlayState SwitchRight() { return OverlayState; }
 
+	UFUNCTION(BlueprintGetter, Category = "Character States")
+		bool GetJumpJetsEnabled() { return bJumpJetsEnabled; }
+
+	UFUNCTION(BlueprintCallable, Category = "Character States")
+		void SetJumpJetsEnabled(bool Enabled);
+
+	UFUNCTION(BlueprintCallable, Category = "Character States")
+		void SetSprintDisabled(bool Disabled);
 
 	/************************************************************************/
 	/* Input																*/
@@ -174,36 +184,39 @@ public:
 	/************************************************************************/
 
 	UFUNCTION(BlueprintGetter, Category = "Movement System")
-	bool HasMovementInput() { return bHasMovementInput; }
+		bool HasMovementInput() { return bHasMovementInput; }
 
 	UFUNCTION(BlueprintCallable, Category = "Movement System")
-	void SetHasMovementInput(bool bNewHasMovementInput);
+		void SetHasMovementInput(bool bNewHasMovementInput);
 
 	UFUNCTION(BlueprintCallable, Category = "Movement System")
-	FMovementSettings GetTargetMovementSettings();
+		FMovementSettings GetTargetMovementSettings();
 
 	UFUNCTION(BlueprintCallable, Category = "Movement System")
-	EGait GetAllowedGait();
+		EGait GetAllowedGait();
 
 	UFUNCTION(BlueprintCallable, Category = "Movement States")
-	EGait GetActualGait(EGait AllowedGait);
+		EGait GetActualGait(EGait AllowedGait);
 
 	UFUNCTION(BlueprintCallable, Category = "Movement System")
-	bool CanSprint();
+		bool CanSprint();
+
+	UFUNCTION(BlueprintCallable, Category = "Movement System")
+		bool CanPlayerJump();
 
 	/** BP implementable function that called when Breakfall starts */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Movement System")
-	void OnBreakfall();
-	virtual void OnBreakfall_Implementation();
+		void OnBreakfall();
+		virtual void OnBreakfall_Implementation();
 
 	/** BP implementable function that called when Roll starts */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Movement System")
-	void OnRoll();
-	virtual void OnRoll_Implementation();
+		void OnRoll();
+		virtual void OnRoll_Implementation();
 
 	/** Implement on BP to get required roll animation according to character's state */
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "Movement System")
-	UAnimMontage* GetRollAnimation();
+		UAnimMontage* GetRollAnimation();
 
 	
 	/************************************************************************/
@@ -211,11 +224,11 @@ public:
 	/************************************************************************/
 
 	UFUNCTION(BlueprintCallable, Category = "Utility")
-	float GetAnimCurveValue(FName CurveName);
+		float GetAnimCurveValue(FName CurveName);
 
 	/** Implement on BP to draw debug spheres */
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "Debug")
-	void DrawDebugSpheres();
+		void DrawDebugSpheres();
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Utility")
 		ATCPlayerController* GetPlayerController() const;
@@ -499,6 +512,9 @@ protected:
 
 	UPROPERTY(Category = "Input", BlueprintReadWrite)
 		bool bJumpJetsEnabled;
+
+	UPROPERTY(Category = "Input", BlueprintReadWrite)
+		bool bJumpJetsOnCooldown = false;
 
 
 	/** Camera System */

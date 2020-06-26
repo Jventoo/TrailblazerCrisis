@@ -316,6 +316,19 @@ void ATCBaseCharacter::SetOverlayState(const EOverlayState NewState)
 	}
 }
 
+void ATCBaseCharacter::SetJumpJetsEnabled(bool Enabled)
+{
+	bJumpJetsEnabled = Enabled;
+}
+
+void ATCBaseCharacter::SetSprintDisabled(bool Disabled)
+{
+	bSprintDisabled = Disabled;
+
+	if (Gait == EGait::Sprinting)
+		SetDesiredGait(EGait::Running);
+}
+
 void ATCBaseCharacter::SetActorLocationAndTargetRotation(FVector NewLocation, FRotator NewRotation)
 {
 	SetActorLocationAndRotation(NewLocation, NewRotation);
@@ -389,21 +402,21 @@ FMovementSettings ATCBaseCharacter::GetTargetMovementSettings()
 
 bool ATCBaseCharacter::CanSprint()
 {
+	// Immediately return false if sprint isn't enabled for whatever reason (ex: limited input mode on)
+	if (bSprintDisabled)
+		return false;
+
 	// Determine if the character is currently able to sprint based on the Rotation mode and current acceleration
 	// (input) rotation. If the character is in the Looking Rotation mode, only allow sprinting if there is full
 	// movement input and it is faced forward relative to the camera + or - 50 degrees.
 
 	if (!bHasMovementInput || RotationMode == ERotationMode::Aiming)
-	{
 		return false;
-	}
 
 	const bool bValidInputAmount = MovementInputAmount > 0.9f;
 
 	if (RotationMode == ERotationMode::VelocityDirection)
-	{
 		return bValidInputAmount;
-	}
 
 	if (RotationMode == ERotationMode::LookingDirection)
 	{
@@ -415,6 +428,13 @@ bool ATCBaseCharacter::CanSprint()
 	}
 
 	return false;
+}
+
+bool ATCBaseCharacter::CanPlayerJump()
+{
+	// Return 'true' if we are not currently performing an action, nor are in Limited Input mode
+
+	return MovementAction == EMovementAction::None && !(Cast<ATCPlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0))->IsInLimitedInputMode());
 }
 
 void ATCBaseCharacter::SetIsMoving(bool bNewIsMoving)
@@ -568,7 +588,7 @@ void ATCBaseCharacter::OnMovementStateChanged(const EMovementState PreviousState
 	// Re-enable jump jets on landing
 	if (bHasJumpJets && PreviousState == EMovementState::InAir)
 	{
-		bJumpJetsEnabled = true;
+		bJumpJetsOnCooldown = false;
 	}
 
 	if (MovementState == EMovementState::InAir)
@@ -1526,7 +1546,7 @@ void ATCBaseCharacter::JumpPressedAction()
 	// Jump Action: Press "Jump Action" to end the ragdoll if ragdolling, check for a mantle if grounded or in air,
 	// stand up if crouching, jump if standing, or jump jet if in air.
 
-	if (MovementAction == EMovementAction::None)
+	if (CanPlayerJump())
 	{
 		if (MovementState == EMovementState::Grounded)
 		{
@@ -1550,11 +1570,11 @@ void ATCBaseCharacter::JumpPressedAction()
 		{
 			// If we can't mantle, then jump jet
 
-			if (!MantleCheckFalling() && bJumpJetsEnabled)
+			if (!MantleCheckFalling() && bJumpJetsEnabled && !bJumpJetsOnCooldown)
 			{
 				JumpJets();
 
-				bJumpJetsEnabled = false;
+				bJumpJetsOnCooldown = true;
 			}
 		}
 		else if (MovementState == EMovementState::Ragdoll)
@@ -1606,9 +1626,14 @@ void ATCBaseCharacter::CameraPressedAction()
 {
 	UWorld* World = GetWorld();
 	check(World);
-	CameraActionPressedTime = World->GetTimeSeconds();
-	GetWorldTimerManager().SetTimer(OnCameraModeSwapTimer, this,
-	                                &ATCBaseCharacter::OnSwitchCameraMode, ViewModeSwitchHoldTime, false);
+
+	// If we are not in limited input mode, allow camera switching
+	if (!(Cast<ATCPlayerController>(UGameplayStatics::GetPlayerController(World, 0))->IsInLimitedInputMode()))
+	{
+		CameraActionPressedTime = World->GetTimeSeconds();
+		GetWorldTimerManager().SetTimer(OnCameraModeSwapTimer, this,
+			&ATCBaseCharacter::OnSwitchCameraMode, ViewModeSwitchHoldTime, false);
+	}
 }
 
 void ATCBaseCharacter::CameraReleasedAction()
@@ -1621,7 +1646,10 @@ void ATCBaseCharacter::CameraReleasedAction()
 
 	UWorld* World = GetWorld();
 	check(World);
-	if (World->GetTimeSeconds() - CameraActionPressedTime < ViewModeSwitchHoldTime)
+
+	// Check for button held time if not in limited mode. If in limited mode, always only change shoulders. No camera switching
+	if (Cast<ATCPlayerController>(UGameplayStatics::GetPlayerController(World, 0))->IsInLimitedInputMode()
+		|| World->GetTimeSeconds() - CameraActionPressedTime < ViewModeSwitchHoldTime)
 	{
 		// Switch shoulders
 		SetRightShoulder(!bRightShoulder);
@@ -1670,7 +1698,7 @@ void ATCBaseCharacter::StancePressedAction()
 
 void ATCBaseCharacter::RollPressedAction()
 {
-	if (MovementAction != EMovementAction::None)
+	if (MovementAction != EMovementAction::None || Cast<ATCPlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0))->IsInLimitedInputMode())
 	{
 		return;
 	}
@@ -1697,7 +1725,7 @@ void ATCBaseCharacter::RagdollPressedAction()
 {
 	// Ragdoll Action: Press "Ragdoll Action" to toggle the ragdoll state on or off.
 
-	if (GetMovementState() == EMovementState::Ragdoll)
+	if (GetMovementState() == EMovementState::Ragdoll || Cast<ATCPlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0))->IsInLimitedInputMode())
 	{
 		RagdollEnd();
 	}
