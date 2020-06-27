@@ -4,11 +4,6 @@
 #include "UI/HUDWidget.h"
 #include "Components/TextBlock.h"
 
-void UHUDWidget::UpdateQuestText(const FText& Text)
-{
-	ObjTextBlock->SetText(Text);
-}
-
 void UHUDWidget::SetCrosshairEnabled(bool bEnabled)
 {
 	if (bEnabled)

@@ -246,7 +246,7 @@ void ATCPlayerController::UpdateQuestHUD(int32 QuestID)
 		if (QuestID != UTCStatics::DEFAULT_QUEST_ID)
 		{
 			const auto& Quest = QuestManagerRef->ActiveQuests[CurrentQuestID];
-			const auto& Text = Quest->Objectives[Quest->QuestInfo.CurrentObjective].Description;
+			const auto& Text = Quest->Objectives[Quest->QuestInfo.CurrentObjective].Title;
 
 			HUD->UpdateQuestText(Text);
 		}

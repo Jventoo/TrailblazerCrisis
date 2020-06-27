@@ -17,7 +17,7 @@ class HORIZONSTC_API UHUDWidget : public UUserWidget
 
 public:
 
-	UFUNCTION(BlueprintCallable, Category = HUD)
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = HUD)
 		void UpdateQuestText(const FText& Text);
 
 	UFUNCTION(BlueprintCallable, Category = HUD)
