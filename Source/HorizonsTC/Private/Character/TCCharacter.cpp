@@ -180,7 +180,7 @@ void ATCCharacter::NextFireMode()
 void ATCCharacter::ToggleEquip()
 {
 	// If we have a weapon in our inventory and the pointer to it is valid...
-	if (bIsArmed && CurrentWeapon)
+	if (bIsArmed && CurrentWeapon && MovementState == EMovementState::Grounded)
 	{
 		// ...And we are not in limited input mode, then try to equip/unequip
 		if (!Cast<ATCPlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0))->IsInLimitedInputMode())

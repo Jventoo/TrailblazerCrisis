@@ -1546,6 +1546,8 @@ void ATCBaseCharacter::JumpPressedAction()
 	// Jump Action: Press "Jump Action" to end the ragdoll if ragdolling, check for a mantle if grounded or in air,
 	// stand up if crouching, jump if standing, or jump jet if in air.
 
+	AimReleasedAction();
+
 	if (CanPlayerJump())
 	{
 		if (MovementState == EMovementState::Grounded)
@@ -1602,10 +1604,13 @@ void ATCBaseCharacter::SprintReleasedAction()
 void ATCBaseCharacter::AimPressedAction()
 {
 	// AimAction: Hold "AimAction" to enter the aiming mode, release to revert back the desired rotation mode.
-	SetRotationMode(ERotationMode::Aiming);
+	if (MovementState == EMovementState::Grounded)
+	{
+		SetRotationMode(ERotationMode::Aiming);
 
-	if (HasWeaponEquipped())
-		GetPlayerController()->ToggleCrosshair(true);
+		if (HasWeaponEquipped())
+			GetPlayerController()->ToggleCrosshair(true);
+	}
 }
 
 void ATCBaseCharacter::AimReleasedAction()
