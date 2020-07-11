@@ -88,13 +88,17 @@ protected:
 
 	void OnReload();
 
-	void OnStartFire();
+	UFUNCTION(BlueprintCallable, Category = Combat)
+		void OnStartFire();
 
-	void OnStopFire();
+	UFUNCTION(BlueprintCallable, Category = Combat)
+		void OnStopFire();
 
 	void StartWeaponFire();
 
-	virtual void StopWeaponFire() override; public:
+	virtual void StopWeaponFire() override;
+
+public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
 		FName WeaponEquipSocket;
