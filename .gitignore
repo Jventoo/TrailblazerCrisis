@@ -74,9 +74,5 @@ Plugins/*/Intermediate/*
 DerivedDataCache/*
 
 # Assets
-#*.uasset
 *.zip
-Content/*/*
-!Content/HorizonsTC/*
-!Content/CustomUI/*
 *.fbx
