@@ -12,7 +12,7 @@ void UTCAnimNotifyCameraShake::Notify(USkeletalMeshComponent* MeshComp, UAnimSeq
 		APlayerController* OwnerController = Cast<APlayerController>(OwnerPawn->GetController());
 		if (OwnerController)
 		{
-			OwnerController->ClientPlayCameraShake(ShakeClass, Scale);
+			OwnerController->ClientStartCameraShake(ShakeClass, Scale);
 		}
 	}
 }

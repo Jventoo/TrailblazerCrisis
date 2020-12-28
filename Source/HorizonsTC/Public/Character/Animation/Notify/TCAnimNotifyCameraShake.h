@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Animation/AnimNotifies/AnimNotify.h"
+#include "Camera/CameraShakeBase.h"
 #include "TCAnimNotifyCameraShake.generated.h"
 
 /**
@@ -18,7 +19,7 @@ class HORIZONSTC_API UTCAnimNotifyCameraShake : public UAnimNotify
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AnimNotify)
-	TSubclassOf<UCameraShake> ShakeClass;
+	TSubclassOf<UCameraShakeBase> ShakeClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AnimNotify)
 	float Scale = 1.0f;
