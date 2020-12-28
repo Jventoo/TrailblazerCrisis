@@ -7,7 +7,7 @@
 #include "TCCharacter.generated.h"
 
 /**
- * Specialized character class, with additional features like held object etc.
+ * Specialized character class meant primarily to be used for the player and other complicated combat characters.
  */
 UCLASS(Blueprintable, BlueprintType)
 class HORIZONSTC_API ATCCharacter : public ATCBaseCharacter
@@ -18,6 +18,10 @@ class HORIZONSTC_API ATCCharacter : public ATCBaseCharacter
 
 public:
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
+
+	/************************************************************************/
+	/*					BEGIN MOVE TO TCBASECHARACTER						*/
+	/************************************************************************/
 
 	/** Implement on BP to update held objects */
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HeldObject")
@@ -37,6 +41,10 @@ public:
 
 	virtual void RagdollEnd() override;
 
+	/************************************************************************/
+	/*					END MOVE TO TCBASECHARACTER							*/
+	/************************************************************************/
+
 	virtual ECollisionChannel GetThirdPersonTraceParams(FVector& TraceOrigin, float& TraceRadius) override;
 
 	virtual FTransform GetThirdPersonPivotTarget() override;
@@ -49,6 +57,10 @@ protected:
 	virtual void BeginPlay() override;
 
 	virtual void OnOverlayStateChanged(EOverlayState PreviousState) override;
+
+	/************************************************************************/
+	/*					BEGIN MOVE TO TCBASECHARACTER						*/
+	/************************************************************************/
 
 	virtual void MantleStart(
 		float MantleHeight, const FComponentAndTransform& MantleLedgeWS, EMantleType MantleType) override;
@@ -64,7 +76,11 @@ public:
 		UMeshComponent* CurrentHeldObject;
 
 	/************************************************************************/
-	/* Weapon Handling														*/
+	/*					END MOVE TO TCBASECHARACTER							*/
+	/************************************************************************/
+
+	/************************************************************************/
+	/* Weapon Handling (MOVE MOST TO WEAPONCOMP)							*/
 	/************************************************************************/
 
 	void AddRecoil(float Pitch, float Yaw);

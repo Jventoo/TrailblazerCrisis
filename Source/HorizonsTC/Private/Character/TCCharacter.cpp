@@ -35,6 +35,8 @@ void ATCCharacter::BeginPlay()
 void ATCCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	// Moving to basechar:
 	UpdateHeldObjectAnimations();
 }
 

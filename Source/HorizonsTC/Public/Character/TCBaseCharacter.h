@@ -21,7 +21,7 @@ class UTCCharacterAnimInstance;
 class USoundCue;
 
 /*
- * Base character class
+ * Base character class featuring advanced locomotion.
  */
 UCLASS(BlueprintType)
 class HORIZONSTC_API ATCBaseCharacter : public ACharacter
@@ -126,6 +126,7 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Character States")
 		void SetSprintDisabled(bool Disabled);
+
 
 	/************************************************************************/
 	/* Input																*/
