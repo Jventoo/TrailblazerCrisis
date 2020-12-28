@@ -1,4 +1,4 @@
-// Copyright 2020 Cross Coast Games, LLC. All Rights Reserved.
+// Copyright 2020 Jack Vento. All Rights Reserved.
 
 
 #include "Character/Animation/Notify/TCAnimNotifyGroundedEntryState.h"

@@ -1,9 +1,10 @@
-// Copyright 2020 Cross Coast Games, LLC. All Rights Reserved.
+// Copyright 2020 Jack Vento. All Rights Reserved.
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "Character/TCBaseCharacter.h"
+#include "Character/Components/WeaponComponent.h"
 #include "TCCharacter.generated.h"
 
 /**
