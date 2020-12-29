@@ -21,7 +21,7 @@ enum class EObjectiveTypes : uint8
 USTRUCT(BlueprintType)
 struct FObjectiveData
 {
-	GENERATED_USTRUCT_BODY()
+	GENERATED_BODY()
 
 		FObjectiveData()
 	{
@@ -72,7 +72,7 @@ struct FObjectiveData
 USTRUCT(BlueprintType)
 struct FQuestStruct
 {
-	GENERATED_USTRUCT_BODY()
+	GENERATED_BODY()
 
 		FQuestStruct()
 	{

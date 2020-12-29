@@ -4,6 +4,7 @@
 #include "Actors/Weapons/BaseFirearm.h"
 #include "Character/TCPlayerController.h"
 #include "Actors/Weapons/BaseProjectile.h"
+#include "Character/TCCharacter.h"
 
 #include "Camera/CameraComponent.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -127,27 +128,6 @@ void ABaseFirearm::DetachMeshFromPawn()
 EFireModes ABaseFirearm::GetFireMode() const
 {
 	return CurrentFireMode;
-}
-
-
-void ABaseFirearm::SwitchToNextFireMode()
-{
-	switch (CurrentFireMode)
-	{
-
-	case EFireModes::Single:
-		SetFireMode(EFireModes::Burst);
-		break;
-
-	case EFireModes::Burst:
-		SetFireMode(EFireModes::Auto);
-		break;
-
-	case EFireModes::Auto:
-		SetFireMode(EFireModes::Single);
-		break;
-
-	}
 }
 
 

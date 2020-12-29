@@ -42,4 +42,10 @@ public:
 	static int32 DEFAULT_FOOTSTEP_INDEX;
 
 	static FName FOOTSTEPS_CURVE_NAME;
+
+	/************************************************************************/
+	/* Asset Paths															*/
+	/************************************************************************/
+
+	static FString WEAPON_DB_PATH;
 };

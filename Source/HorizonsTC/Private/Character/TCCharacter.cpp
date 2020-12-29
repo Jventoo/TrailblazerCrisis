@@ -13,31 +13,11 @@ ATCCharacter::ATCCharacter()
 void ATCCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-
-	// Spawn our weapon
-	if (bSpawnWeapon && WeaponClass)
-	{
-		FActorSpawnParameters SpawnParams;
-		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
-		CurrentWeapon = GetWorld()->SpawnActor<ABaseFirearm>(WeaponClass, SpawnParams);
-
-		// Attach our weapon to our character's back
-		if (CurrentWeapon)
-		{
-			CurrentWeapon->SetOwningPawn(this);
-			CurrentWeapon->AttachMeshToPawn(WeaponUnequipSocket);
-			
-			bIsArmed = true;
-		}
-	}
 }
 
 void ATCCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
-	// Moving to basechar:
-	UpdateHeldObjectAnimations();
 }
 
 void ATCCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
@@ -60,12 +40,6 @@ void ATCCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputC
 }
 
 
-bool ATCCharacter::IsFiring() const
-{
-	return bIsArmed && CurrentWeapon && CurrentWeapon->GetCurrentState() == EWeaponState::Firing;
-}
-
-
 bool ATCCharacter::CanReload() const
 {
 	bool IsInCorrectState = MovementState == EMovementState::Grounded 
@@ -81,16 +55,6 @@ bool ATCCharacter::CanFire() const
 		&& MovementAction == EMovementAction::None && Gait != EGait::Sprinting;
 
 	return HasWeaponEquipped() && IsInCorrectState;
-}
-
-void ATCCharacter::ClearHeldObject()
-{
-	if (CurrentHeldObject)
-	{
-		CurrentHeldObject->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
-		CurrentHeldObject->SetHiddenInGame(true, true);
-		CurrentHeldObject = nullptr;
-	}
 }
 
 
@@ -175,8 +139,6 @@ void ATCCharacter::AddRecoil(float Pitch, float Yaw)
 
 void ATCCharacter::NextFireMode()
 {
-	if (bIsArmed)
-		CurrentWeapon->SwitchToNextFireMode();
 }
 
 void ATCCharacter::ToggleEquip()
@@ -197,50 +159,6 @@ void ATCCharacter::ToggleEquip()
 			}
 		}
 	}
-}
-
-void ATCCharacter::AttachToHand(UStaticMeshComponent* NewStaticMesh, USkeletalMeshComponent* NewSkeletalMesh, UClass* NewAnimClass, bool bLeftHand, FVector Offset)
-{
-	ClearHeldObject();
-
-	FName AttachBone;
-	if (bLeftHand)
-	{
-		AttachBone = TEXT("VB LHS_ik_hand_gun");
-	}
-	else
-	{
-		AttachBone = TEXT("VB RHS_ik_hand_gun");
-	}
-
-	if (NewStaticMesh)
-	{
-		CurrentHeldObject = NewStaticMesh;
-
-		NewStaticMesh->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, AttachBone);
-		NewStaticMesh->SetHiddenInGame(false);
-		NewStaticMesh->SetRelativeLocation(Offset);
-	}
-	else
-	{
-		CurrentHeldObject = NewSkeletalMesh;
-
-		NewSkeletalMesh->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, AttachBone);
-		NewSkeletalMesh->SetHiddenInGame(false);
-		NewSkeletalMesh->SetRelativeLocation(Offset);
-	}
-}
-
-void ATCCharacter::RagdollStart()
-{
-	//ClearHeldObject();
-	Super::RagdollStart();
-}
-
-void ATCCharacter::RagdollEnd()
-{
-	Super::RagdollEnd();
-	//UpdateHeldObject();
 }
 
 ECollisionChannel ATCCharacter::GetThirdPersonTraceParams(FVector& TraceOrigin, float& TraceRadius)
@@ -269,26 +187,4 @@ FTransform ATCCharacter::GetThirdPersonPivotTarget()
 FVector ATCCharacter::GetFirstPersonCameraTarget()
 {
 	return GetMesh()->GetSocketLocation(TEXT("FP_Camera"));
-}
-
-void ATCCharacter::OnOverlayStateChanged(EOverlayState PreviousState)
-{
-	Super::OnOverlayStateChanged(PreviousState);
-	//UpdateHeldObject();
-}
-
-void ATCCharacter::MantleStart(float MantleHeight, const FComponentAndTransform& MantleLedgeWS, EMantleType MantleType)
-{
-	Super::MantleStart(MantleHeight, MantleLedgeWS, MantleType);
-	if (MantleType != EMantleType::LowMantle)
-	{
-		// If we're not doing low mantle, clear held object
-		//ClearHeldObject();
-	}
-}
-
-void ATCCharacter::MantleEnd()
-{
-	Super::MantleEnd();
-	//UpdateHeldObject();
 }

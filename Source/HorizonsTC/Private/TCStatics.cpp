@@ -21,3 +21,6 @@ FName UTCStatics::FOOTSTEPS_TYPE_PARAM = TEXT("FootstepsType");
 int32 UTCStatics::DEFAULT_FOOTSTEP_INDEX = 1; // 1 = Concrete
 
 FName UTCStatics::FOOTSTEPS_CURVE_NAME = TEXT("Mask_FootstepSound");
+
+// Paths
+FString UTCStatics::WEAPON_DB_PATH = TEXT("");

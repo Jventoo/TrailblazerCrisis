@@ -227,9 +227,23 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Utility")
 		float GetAnimCurveValue(FName CurveName);
 
-	/** Implement on BP to draw debug spheres */
-	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "Debug")
-		void DrawDebugSpheres();
+	UPROPERTY(BlueprintReadWrite, Category = "Equipment")
+		UMeshComponent* CurrentHeldObject;
+
+	/** Implement on BP to update held objects */
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HeldObject")
+		void UpdateHeldObject();
+
+	UFUNCTION(BlueprintCallable, Category = "HeldObject")
+		void ClearHeldObject();
+
+	UFUNCTION(BlueprintCallable, Category = "HeldObject")
+		void AttachToHand(UStaticMeshComponent* NewStaticMesh, USkeletalMeshComponent* NewSkeletalMesh,
+			class UClass* NewAnimClass, bool bLeftHand, FVector Offset);
+
+	/** Implement on BP to update animation states of held objects */
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Equipment")
+		void UpdateHeldObjectAnimations();
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Utility")
 		ATCPlayerController* GetPlayerController() const;
@@ -458,12 +472,17 @@ protected:
 
 	virtual void StopWeaponFire();
 
+public:
+	UFUNCTION(BlueprintCallable, Category = Combat)
+		void SetIsArmed(bool NewArmed);
+
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Combat)
-		bool GetIsArmed() const;
+		bool IsArmed() const;
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Combat)
 		bool HasWeaponEquipped() const;
 
+protected:
 
 	/************************************************************************/
 	/* Footsteps															*/
@@ -475,7 +494,6 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Footsteps")
 		float FootstepsVolume;
 
-protected:
 	/** Input */
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Input")

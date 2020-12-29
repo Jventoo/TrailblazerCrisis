@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Character/TCCharacter.h"
 #include "Sound/SoundCue.h"
 #include "BaseFirearm.generated.h"
 
@@ -26,10 +25,60 @@ enum class EFireModes : uint8
 	Auto
 };
 
+UENUM(BlueprintType)
+enum class EWeaponType : uint8
+{
+	Pistol,
+	Rifle,
+	Shotgun,
+	Sniper,
+	Special
+};
+
+UENUM(BlueprintType)
+enum class EAmmoType : uint8
+{
+	Pistol,
+	Rifle,
+	Shotgun,
+	Sniper,
+	Rocket,
+	Energy
+};
+
+USTRUCT(BlueprintType)
+struct FInventoryWeapon
+{
+	GENERATED_BODY()
+
+	FInventoryWeapon()
+	{
+		WeaponID = TEXT("None");
+		CurrMagAmmo = CurrReserveAmmo = 0;
+		CurrFireMode = EFireModes::Single;
+		CurrWeaponState = EWeaponState::Idle;
+	}
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+		FName WeaponID;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+		int32 CurrMagAmmo;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+		int32 CurrReserveAmmo;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+		EFireModes CurrFireMode;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+		EWeaponState CurrWeaponState;
+};
+
 USTRUCT(BlueprintType)
 struct FRecoilInfo
 {
-	GENERATED_USTRUCT_BODY()
+	GENERATED_BODY()
 
 	FRecoilInfo()
 	{
@@ -52,12 +101,7 @@ struct FRecoilInfo
 USTRUCT(BlueprintType)
 struct FFirearmDamageInfo
 {
-	GENERATED_USTRUCT_BODY()
-
-	FFirearmDamageInfo()
-	{
-		MinDamage = MaxDamage = HeadshotDamageMultiplier = 0;
-	}
+	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
 		float MinDamage;
@@ -67,6 +111,103 @@ struct FFirearmDamageInfo
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
 		float HeadshotDamageMultiplier;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
+		float ProjSpeed;
+};
+
+USTRUCT(BlueprintType)
+struct FWeaponData
+{
+	GENERATED_BODY()
+
+	FWeaponData()
+	{
+		WeaponType = EWeaponType::Rifle;
+		WeaponDamage = FFirearmDamageInfo();
+		RecoilStats = FRecoilInfo();
+	}
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+		FText WeaponName;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+		EWeaponType WeaponType;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+		UTexture2D* WeaponImage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+		USkeletalMeshComponent* WeaponMesh;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+		float RateOfFire;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+		int32 MaxMagAmmo;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+		int32 MaxReserveAmmo;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+		int32 RoundsInBurst;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+		bool SingleShot;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+		bool BurstShot;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+		bool AutoShot;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+		float WeaponSpread;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+		FFirearmDamageInfo WeaponDamage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+		TSubclassOf<class ABaseProjectile> Projectile;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+		UTexture2D* CrosshairImg;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+		UParticleSystem* MuzzleFX;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+		USoundCue* FireSound;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+		FRotator DirectionFix;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+		FVector RightHandFix;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+		FVector LeftHandFix;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+		FName HolsterSocket;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+		float FallbackReloadDuration;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+		UAnimMontage* WeaponFireAnim;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+		UAnimMontage* ReloadAnim;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+		UAnimMontage* EquipAnim;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+		UAnimMontage* UnequipAnim;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+		FRecoilInfo RecoilStats;
 };
 
 UCLASS()
@@ -140,7 +281,7 @@ public:
 		bool IsInHolster() const;
 
 	/* Set the weapon's owning pawn */
-	void SetOwningPawn(ATCCharacter* NewOwner);
+	void SetOwningPawn(class ATCCharacter* NewOwner);
 
 	/* Get pawn owner */
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
@@ -172,9 +313,6 @@ public:
 		bool CanFire() const;
 
 	UFUNCTION(BlueprintCallable, Category = "Weapon State")
-		void SwitchToNextFireMode();
-
-	UFUNCTION(BlueprintCallable, Category = "Weapon State")
 		void SetFireMode(EFireModes NewMode);
 
 	UFUNCTION(BlueprintPure, BlueprintCallable, Category = "Weapon State")
@@ -186,6 +324,10 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Recoil")
 		void DecreaseSpread();
 	virtual void DecreaseSpread_Implementation();
+
+	FWeaponData WeaponData;
+
+	FInventoryWeapon StoredWeapon;
 
 protected:
 

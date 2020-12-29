@@ -172,7 +172,7 @@ void ATCBaseCharacter::Tick(float DeltaTime)
 		RagdollUpdate();
 	}
 
-	DrawDebugSpheres();
+	UpdateHeldObjectAnimations();
 }
 
 void ATCBaseCharacter::RagdollStart()
@@ -189,6 +189,8 @@ void ATCBaseCharacter::RagdollStart()
 
 	// Step 3: Stop any active montages.
 	MainAnimInstance->Montage_Stop(0.2f);
+
+	//ClearHeldObject();
 }
 
 void ATCBaseCharacter::RagdollEnd()
@@ -220,6 +222,9 @@ void ATCBaseCharacter::RagdollEnd()
 	GetMesh()->SetCollisionObjectType(ECC_Pawn);
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	GetMesh()->SetAllBodiesSimulatePhysics(false);
+
+
+	//UpdateHeldObject();
 }
 
 void ATCBaseCharacter::RagdollOnDeath(bool Retrigger)
@@ -231,6 +236,48 @@ void ATCBaseCharacter::RagdollOnDeath(bool Retrigger)
 		FTimerHandle TimerHandle;
 		GetWorldTimerManager().SetTimer(TimerHandle, this, &ATCBaseCharacter::DisablePhysicsSim, 1.0f, false);
 	}*/
+}
+
+void ATCBaseCharacter::AttachToHand(UStaticMeshComponent* NewStaticMesh, USkeletalMeshComponent* NewSkeletalMesh, UClass* NewAnimClass, bool bLeftHand, FVector Offset)
+{
+	ClearHeldObject();
+
+	FName AttachBone;
+	if (bLeftHand)
+	{
+		AttachBone = TEXT("VB LHS_ik_hand_gun");
+	}
+	else
+	{
+		AttachBone = TEXT("VB RHS_ik_hand_gun");
+	}
+
+	if (NewStaticMesh)
+	{
+		CurrentHeldObject = NewStaticMesh;
+
+		NewStaticMesh->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, AttachBone);
+		NewStaticMesh->SetHiddenInGame(false);
+		NewStaticMesh->SetRelativeLocation(Offset);
+	}
+	else
+	{
+		CurrentHeldObject = NewSkeletalMesh;
+
+		NewSkeletalMesh->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, AttachBone);
+		NewSkeletalMesh->SetHiddenInGame(false);
+		NewSkeletalMesh->SetRelativeLocation(Offset);
+	}
+}
+
+void ATCBaseCharacter::ClearHeldObject()
+{
+	if (CurrentHeldObject)
+	{
+		CurrentHeldObject->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+		CurrentHeldObject->SetHiddenInGame(true, true);
+		CurrentHeldObject = nullptr;
+	}
 }
 
 void ATCBaseCharacter::DisablePhysicsSim()
@@ -673,6 +720,7 @@ void ATCBaseCharacter::OnViewModeChanged(const EViewMode PreviousViewMode)
 
 void ATCBaseCharacter::OnOverlayStateChanged(const EOverlayState PreviousState)
 {
+	//UpdateHeldObject();
 }
 
 void ATCBaseCharacter::OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust)
@@ -1758,7 +1806,12 @@ void ATCBaseCharacter::StopWeaponFire()
 {
 }
 
-bool ATCBaseCharacter::GetIsArmed() const
+void ATCBaseCharacter::SetIsArmed(bool NewArmed)
+{
+	bIsArmed = NewArmed;
+}
+
+bool ATCBaseCharacter::IsArmed() const
 {
 	return bIsArmed;
 }

@@ -16,7 +16,7 @@ class UCurveVector;
 USTRUCT(BlueprintType)
 struct FBMDynamicMontageParams
 {
-	GENERATED_USTRUCT_BODY()
+	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UAnimSequenceBase* Animation = nullptr;
@@ -37,7 +37,7 @@ struct FBMDynamicMontageParams
 USTRUCT(BlueprintType)
 struct FBMLeanAmount
 {
-	GENERATED_USTRUCT_BODY()
+	GENERATED_BODY()
 
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly)
 	float LR = 0.0f;
@@ -49,7 +49,7 @@ struct FBMLeanAmount
 USTRUCT(BlueprintType)
 struct FBMVelocityBlend
 {
-	GENERATED_USTRUCT_BODY()
+	GENERATED_BODY()
 
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly)
 	float F = 0.0f;
@@ -67,7 +67,7 @@ struct FBMVelocityBlend
 USTRUCT(BlueprintType)
 struct FBMTurnInPlaceAsset
 {
-	GENERATED_USTRUCT_BODY()
+	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	UAnimSequenceBase* Animation = nullptr;

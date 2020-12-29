@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "Character/TCBaseCharacter.h"
-#include "Character/Components/WeaponComponent.h"
 #include "TCCharacter.generated.h"
 
 /**
@@ -20,32 +19,6 @@ class HORIZONSTC_API ATCCharacter : public ATCBaseCharacter
 public:
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
-	/************************************************************************/
-	/*					BEGIN MOVE TO TCBASECHARACTER						*/
-	/************************************************************************/
-
-	/** Implement on BP to update held objects */
-	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HeldObject")
-		void UpdateHeldObject();
-
-	UFUNCTION(BlueprintCallable, Category = "HeldObject")
-		void ClearHeldObject();
-
-	UFUNCTION(BlueprintCallable, Category = "HeldObject")
-		void AttachToHand(UStaticMeshComponent* NewStaticMesh, USkeletalMeshComponent* NewSkeletalMesh,
-						class UClass* NewAnimClass, bool bLeftHand, FVector Offset);
-
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "HeldObject")
-		ABaseFirearm* GetCurrentWeapon() { return CurrentWeapon;  }
-
-	virtual void RagdollStart() override;
-
-	virtual void RagdollEnd() override;
-
-	/************************************************************************/
-	/*					END MOVE TO TCBASECHARACTER							*/
-	/************************************************************************/
-
 	virtual ECollisionChannel GetThirdPersonTraceParams(FVector& TraceOrigin, float& TraceRadius) override;
 
 	virtual FTransform GetThirdPersonPivotTarget() override;
@@ -57,37 +30,16 @@ protected:
 
 	virtual void BeginPlay() override;
 
-	virtual void OnOverlayStateChanged(EOverlayState PreviousState) override;
-
-	/************************************************************************/
-	/*					BEGIN MOVE TO TCBASECHARACTER						*/
-	/************************************************************************/
-
-	virtual void MantleStart(
-		float MantleHeight, const FComponentAndTransform& MantleLedgeWS, EMantleType MantleType) override;
-
-	virtual void MantleEnd() override;
-
-	/** Implement on BP to update animation states of held objects */
-	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Equipment")
-		void UpdateHeldObjectAnimations();
-
 public:
-	UPROPERTY(BlueprintReadWrite, Category = "Equipment")
-		UMeshComponent* CurrentHeldObject;
-
-	/************************************************************************/
-	/*					END MOVE TO TCBASECHARACTER							*/
-	/************************************************************************/
 
 	/************************************************************************/
 	/* Weapon Handling (MOVE MOST TO WEAPONCOMP)							*/
 	/************************************************************************/
 
-	void AddRecoil(float Pitch, float Yaw);
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "HeldObject")
+		ABaseFirearm* GetCurrentWeapon() { return CurrentWeapon; }
 
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Movement)
-		bool IsFiring() const;
+	void AddRecoil(float Pitch, float Yaw);
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Combat)
 		bool CanReload() const;
@@ -134,14 +86,8 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon|Combat")
 		bool bIsFiring;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
-		TSubclassOf<class ABaseFirearm> WeaponClass;
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon")
 		class ABaseFirearm* CurrentWeapon;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
-		bool bSpawnWeapon;
 
 	bool bWantsToFire;
 };
