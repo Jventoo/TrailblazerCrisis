@@ -2,10 +2,12 @@
 
 #include "Character/Components/WeaponComponent.h"
 #include "TCStatics.h"
-#include "Engine/DataTable.h"
 #include "Character/TCCharacter.h"
 #include "Actors/Weapons/BaseFirearm.h"
+
+#include "Engine/DataTable.h"
 #include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetMathLibrary.h"
 
 // Sets default values for this component's properties
 UWeaponComponent::UWeaponComponent()
@@ -123,6 +125,12 @@ void UWeaponComponent::SwitchFireMode()
 
 void UWeaponComponent::EquipWeapon(int32 WeaponIndex)
 {
+	//!Cast<ATCPlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0))->IsInLimitedInputMode()
+}
+
+void UWeaponComponent::EquipWeapon()
+{
+	EquipWeapon(CurrentWeaponIdx);
 }
 
 void UWeaponComponent::UnequipWeapon()
@@ -157,6 +165,47 @@ void UWeaponComponent::AddAmmo(EAmmoType Type, int32 Amt)
 {
 }
 
+void UWeaponComponent::AddRecoil(float Pitch, float Yaw)
+{
+	// Find multiplier (1.0-0.0) based on accuracy stat (range 0-10)
+	float RecoilMultiplier = UKismetMathLibrary::MapRangeClamped(AccuracyMultiplier, 0, 10, 1.0, 0.0);
+
+	Pitch *= RecoilMultiplier;
+	Yaw *= RecoilMultiplier;
+
+	if (OwningCharacter->GetRotationMode() != ERotationMode::Aiming)
+	{
+		Pitch *= CurrentWeapon->HipFirePenalty;
+		Pitch *= CurrentWeapon->HipFirePenalty;
+	}
+
+	OwningCharacter->AddControllerPitchInput(Pitch);
+	OwningCharacter->AddControllerYawInput(Yaw);
+}
+
+bool UWeaponComponent::CanFire() const
+{
+	return !IsFiring() && OwningCharacter->CanPerformAction(true) && HasWeaponEquipped();
+}
+
+bool UWeaponComponent::CanReload() const
+{
+	return OwningCharacter->CanPerformAction() && HasWeaponEquipped() && 
+		CurrentWeapon->GetCurrentAmmoInClip() < CurrentWeapon->GetMaxAmmoPerClip();
+}
+
+bool UWeaponComponent::HasWeaponEquipped() const
+{
+	EOverlayState OverlayState = OwningCharacter->GetOverlayState();
+
+	bool HasWeaponEquipped = OwningCharacter->IsArmed() && 
+		(OverlayState == EOverlayState::Rifle || 
+			OverlayState == EOverlayState::PistolTwoHanded || 
+			OverlayState == EOverlayState::PistolOneHanded);
+
+	return HasWeaponEquipped;
+}
+
 void UWeaponComponent::SetAiming(bool NewAimState)
 {
 }
@@ -172,17 +221,18 @@ bool UWeaponComponent::IsAiming() const
 
 bool UWeaponComponent::IsFiring() const
 {
-	return OwningCharacter->IsArmed() && CurrentWeapon && CurrentWeapon->GetCurrentState() == EWeaponState::Firing;
+	return OwningCharacter->IsArmed() && CurrentWeapon && 
+		CurrentWeapon->GetCurrentState() == EWeaponState::Firing;
 }
 
 ABaseFirearm* UWeaponComponent::GetCurrentWeapon() const
 {
-	return nullptr;
+	return CurrentWeapon;
 }
 
 int32 UWeaponComponent::GetCurrentWeaponIndex() const
 {
-	return int32();
+	return 0;
 }
 
 // Called every frame

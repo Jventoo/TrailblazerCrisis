@@ -127,6 +127,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Character States")
 		void SetSprintDisabled(bool Disabled);
 
+	/** Is the character in the correct state to perform actions like reload, fire, talk? */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Character States")
+		bool CanPerformAction(bool CanPerformInAir = false) const;
 
 	/************************************************************************/
 	/* Input																*/
@@ -448,9 +451,9 @@ protected:
 
 	void SprintReleasedAction();
 
-	void AimPressedAction();
+	virtual void AimPressedAction();
 
-	void AimReleasedAction();
+	virtual void AimReleasedAction();
 
 	void CameraPressedAction();
 
@@ -470,17 +473,13 @@ protected:
 
 	void LookingDirectionPressedAction();
 
-	virtual void StopWeaponFire();
-
 public:
 	UFUNCTION(BlueprintCallable, Category = Combat)
 		void SetIsArmed(bool NewArmed);
 
+	/** Does the character have any weapons in their inventory (equipped or not)? */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Combat)
 		bool IsArmed() const;
-
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Combat)
-		bool HasWeaponEquipped() const;
 
 protected:
 

@@ -30,64 +30,35 @@ protected:
 
 	virtual void BeginPlay() override;
 
+	virtual void AimPressedAction() override;
+
+	virtual void AimReleasedAction() override;
+
 public:
-
-	/************************************************************************/
-	/* Weapon Handling (MOVE MOST TO WEAPONCOMP)							*/
-	/************************************************************************/
-
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "HeldObject")
-		ABaseFirearm* GetCurrentWeapon() { return CurrentWeapon; }
-
-	void AddRecoil(float Pitch, float Yaw);
-
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Combat)
-		bool CanReload() const;
-
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Combat)
-		bool CanFire() const;
-
 	UFUNCTION(BlueprintCallable, Category = Combat)
 		void NextFireMode();
 
 	UFUNCTION(BlueprintCallable, Category = Combat)
 		void ToggleEquip();
 
+	UFUNCTION(BlueprintCallable, Category = Combat)
+		void OnReload();
+
 protected:
-
-	void OnReload();
-
 	UFUNCTION(BlueprintCallable, Category = Combat)
 		void OnStartFire();
 
 	UFUNCTION(BlueprintCallable, Category = Combat)
 		void OnStopFire();
 
-	void StartWeaponFire();
-
-	virtual void StopWeaponFire() override;
+	/** Intermediary handling weapon inventory; communicates with the weapons themselves */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character)
+		class UWeaponComponent* WeaponComponent;
 
 public:
+	/** Returns Mesh subobject **/
+	FORCEINLINE class UWeaponComponent* GetWeaponComp() const { return WeaponComponent; }
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
-		FName WeaponEquipSocket;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
-		FName WeaponUnequipSocket;
-
-protected:
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon|Combat")
-		float AccuracyMultiplier;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon|Combat")
-		float HipFirePenalty;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon|Combat")
-		bool bIsFiring;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon")
-		class ABaseFirearm* CurrentWeapon;
-
-	bool bWantsToFire;
+	/** Name of the WepComp. Use this name to prevent creation of the component (with ObjectInitializer.DoNotCreateDefaultSubobject). */
+	static FName WeaponComponentName;
 };

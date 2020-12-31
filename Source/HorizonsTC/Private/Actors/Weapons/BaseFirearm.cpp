@@ -251,7 +251,9 @@ void ABaseFirearm::OnUnEquip(bool ReturnToHolster)
 
 	// TODO: Cache overlay state on equip and reset back to that desired state here
 	if (Pawn)
+	{
 		Pawn->SetOverlayState(EOverlayState::Default);
+	}
 
 	// TODO: Play unequip animation, call weapon toggle notify
 	DetachMeshFromPawn();
@@ -375,7 +377,9 @@ void ABaseFirearm::HandleFiring()
 	if (CurrentAmmoInClip > 0 && CanFire())
 	{
 		if (CurrentFireMode == EFireModes::Burst)
+		{
 			bBursting = true;
+		}
 
 		SimulateWeaponFire();
 
@@ -520,7 +524,7 @@ void ABaseFirearm::FireWeapon()
 	bool CritHit = CalculateDamage(Bone, DamageToDeal);
 
 
-	// Begin spawning the projectile, initalize it, finish spawning
+	// Begin spawning the projectile, initialize it, finish spawning
 	ProjectileRef = GetWorld()->SpawnActorDeferred<ABaseProjectile>
 		(ProjectileClass, FinalDir, Pawn, Pawn, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
 
@@ -567,7 +571,9 @@ void ABaseFirearm::OnBurstStarted()
 	if (LastFireTime > 0 && TimeBetweenShots > 0.0f &&
 		LastFireTime + TimeBetweenShots > GameTime)
 	{
-		GetWorldTimerManager().SetTimer(TimerHandle_HandleFiring, this, &ABaseFirearm::HandleFiring, LastFireTime + TimeBetweenShots - GameTime, false);
+		GetWorldTimerManager().SetTimer(TimerHandle_HandleFiring, this, 
+			&ABaseFirearm::HandleFiring, LastFireTime + TimeBetweenShots - GameTime, false
+		);
 	}
 	else
 	{

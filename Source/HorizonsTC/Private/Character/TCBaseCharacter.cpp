@@ -376,6 +376,20 @@ void ATCBaseCharacter::SetSprintDisabled(bool Disabled)
 		SetDesiredGait(EGait::Running);
 }
 
+bool ATCBaseCharacter::CanPerformAction(bool CanPerformInAir) const
+{
+	// Not performing any other actions
+	bool CorrectAction = MovementAction == EMovementAction::None;
+
+	// If this action can be performed in air, correct states are Grounded or InAir.
+	// If it cannot be, the only correct state is being Grounded.
+	bool CorrectState = CanPerformInAir ?
+		(MovementState == EMovementState::Grounded || MovementState == EMovementState::InAir) : 
+		(MovementState == EMovementState::Grounded);
+
+	return CorrectAction && CorrectState;
+}
+
 void ATCBaseCharacter::SetActorLocationAndTargetRotation(FVector NewLocation, FRotator NewRotation)
 {
 	SetActorLocationAndRotation(NewLocation, NewRotation);
@@ -1655,16 +1669,11 @@ void ATCBaseCharacter::AimPressedAction()
 	if (MovementState == EMovementState::Grounded)
 	{
 		SetRotationMode(ERotationMode::Aiming);
-
-		if (HasWeaponEquipped())
-			GetPlayerController()->ToggleCrosshair(true);
 	}
 }
 
 void ATCBaseCharacter::AimReleasedAction()
 {
-	GetPlayerController()->ToggleCrosshair(false);
-
 	if (ViewMode == EViewMode::ThirdPerson)
 	{
 		SetRotationMode(DesiredRotationMode);
@@ -1751,7 +1760,8 @@ void ATCBaseCharacter::StancePressedAction()
 
 void ATCBaseCharacter::RollPressedAction()
 {
-	if (MovementAction != EMovementAction::None || Cast<ATCPlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0))->IsInLimitedInputMode())
+	if (MovementAction != EMovementAction::None || MovementState != EMovementState::Grounded
+		|| Cast<ATCPlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0))->IsInLimitedInputMode())
 	{
 		return;
 	}
@@ -1802,9 +1812,9 @@ void ATCBaseCharacter::LookingDirectionPressedAction()
 	SetRotationMode(ERotationMode::LookingDirection);
 }
 
-void ATCBaseCharacter::StopWeaponFire()
-{
-}
+//void ATCBaseCharacter::StopWeaponFire()
+//{
+//}
 
 void ATCBaseCharacter::SetIsArmed(bool NewArmed)
 {
@@ -1814,12 +1824,4 @@ void ATCBaseCharacter::SetIsArmed(bool NewArmed)
 bool ATCBaseCharacter::IsArmed() const
 {
 	return bIsArmed;
-}
-
-bool ATCBaseCharacter::HasWeaponEquipped() const
-{
-	bool HasWeaponEquipped = bIsArmed && (OverlayState == EOverlayState::Rifle
-		|| OverlayState == EOverlayState::PistolTwoHanded || OverlayState == EOverlayState::PistolOneHanded);
-
-	return HasWeaponEquipped;
 }

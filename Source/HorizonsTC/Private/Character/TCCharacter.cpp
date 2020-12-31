@@ -3,16 +3,35 @@
 
 #include "Character/TCCharacter.h"
 #include "Actors/Weapons/BaseFirearm.h"
+#include "Character/Components/WeaponComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/GameplayStatics.h"
 
 ATCCharacter::ATCCharacter()
 {
+	WeaponComponent = CreateOptionalDefaultSubobject<UWeaponComponent>(ATCCharacter::WeaponComponentName);
 }
 
 void ATCCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+}
+
+void ATCCharacter::AimPressedAction()
+{
+	Super::AimPressedAction();
+
+	if (WeaponComponent->HasWeaponEquipped())
+	{
+		GetPlayerController()->ToggleCrosshair(true);
+	}
+}
+
+void ATCCharacter::AimReleasedAction()
+{
+	Super::AimReleasedAction();
+
+	GetPlayerController()->ToggleCrosshair(false);
 }
 
 void ATCCharacter::Tick(float DeltaTime)
@@ -25,139 +44,74 @@ void ATCCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputC
 	// Set up gameplay key bindings
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
+#if WITH_EDITORONLY_DATA
 	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Cyan, FString("Binding PlayerCharInput"));
+#endif
 
 	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &ATCCharacter::OnStartFire);
 	PlayerInputComponent->BindAction("Fire", IE_Released, this, &ATCCharacter::OnStopFire);
 
-	/*PlayerInputComponent->BindAction("Aim", IE_Pressed, this, &ATCCharacter::OnStartAiming);
-	PlayerInputComponent->BindAction("Aim", IE_Released, this, &ATCCharacter::OnStopAiming);*/
-
 	PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &ATCCharacter::OnReload);
-
-	PlayerInputComponent->BindAction("Holster", IE_Pressed, this, &ATCCharacter::ToggleEquip);
 	PlayerInputComponent->BindAction("ChangeFireMode", IE_Pressed, this, &ATCCharacter::NextFireMode);
+	PlayerInputComponent->BindAction("Holster", IE_Pressed, this, &ATCCharacter::ToggleEquip);
 }
-
-
-bool ATCCharacter::CanReload() const
-{
-	bool IsInCorrectState = MovementState == EMovementState::Grounded 
-		&& MovementAction == EMovementAction::None && Gait != EGait::Sprinting;
-		
-	return HasWeaponEquipped() && IsInCorrectState;
-}
-
-
-bool ATCCharacter::CanFire() const
-{
-	bool IsInCorrectState = RotationMode == ERotationMode::Aiming && (MovementState == EMovementState::Grounded || MovementState == EMovementState::InAir)
-		&& MovementAction == EMovementAction::None && Gait != EGait::Sprinting;
-
-	return HasWeaponEquipped() && IsInCorrectState;
-}
-
-
-void ATCCharacter::OnReload()
-{
-	if (CurrentWeapon)
-	{
-		CurrentWeapon->StartReload();
-	}
-}
-
 
 void ATCCharacter::OnStartFire()
 {
-	if (CanFire() && CurrentWeapon)
+	if (WeaponComponent->CanFire())
 	{
 		if (Gait == EGait::Sprinting)
 		{
 			SetDesiredGait(EGait::Running);
 		}
 
-		StartWeaponFire();
+		WeaponComponent->SetFiring(true);
 	}
 }
-
 
 void ATCCharacter::OnStopFire()
 {
-	if (bIsArmed && CurrentWeapon)
+	if (WeaponComponent->HasWeaponEquipped())
 	{
-		StopWeaponFire();
-		CurrentWeapon->DecreaseSpread();
+		WeaponComponent->SetFiring(false);
 	}
 }
 
-
-void ATCCharacter::StartWeaponFire()
+void ATCCharacter::OnReload()
 {
-	if (!bWantsToFire)
+	if (WeaponComponent->CanReload())
 	{
-		bWantsToFire = true;
-		if (CurrentWeapon)
+		if (Gait == EGait::Sprinting)
 		{
-			CurrentWeapon->StartFire();
-			bIsFiring = true;
+			SetDesiredGait(EGait::Running);
 		}
+
+		WeaponComponent->Reload();
 	}
 }
-
-
-void ATCCharacter::StopWeaponFire()
-{
-	if (bWantsToFire)
-	{
-		bWantsToFire = false;
-		if (CurrentWeapon)
-		{
-			CurrentWeapon->StopFire();
-			bIsFiring = false;
-		}
-	}
-}
-
-void ATCCharacter::AddRecoil(float Pitch, float Yaw)
-{
-	// Find multiplier (1.0-0.0) based on accuracy stat (range 0-10)
-	float RecoilMultiplier = UKismetMathLibrary::MapRangeClamped(AccuracyMultiplier, 0, 10, 1.0, 0.0);
-
-	Pitch *= RecoilMultiplier;
-	Yaw *= RecoilMultiplier;
-
-	if (RotationMode != ERotationMode::Aiming)
-	{
-		Pitch *= HipFirePenalty;
-		Pitch *= HipFirePenalty;
-	}
-
-	AddControllerPitchInput(Pitch);
-	AddControllerYawInput(Yaw);
-}
-
 
 void ATCCharacter::NextFireMode()
 {
+	if (WeaponComponent->HasWeaponEquipped())
+	{
+		WeaponComponent->SwitchFireMode();
+	}
 }
 
 void ATCCharacter::ToggleEquip()
 {
-	// If we have a weapon in our inventory and the pointer to it is valid...
-	if (bIsArmed && CurrentWeapon && MovementState == EMovementState::Grounded)
+	// If we have a weapon in our inventory and are ready to perform an action...
+	if (IsArmed() && CanPerformAction())
 	{
-		// ...And we are not in limited input mode, then try to equip/unequip
-		if (!Cast<ATCPlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0))->IsInLimitedInputMode())
+		if (WeaponComponent->HasWeaponEquipped())
 		{
-			if (!CurrentWeapon->IsEquipped())
-			{
-				CurrentWeapon->BeginEquip();
-			}
-			else
-			{
-				CurrentWeapon->BeginUnequip();
-			}
+			WeaponComponent->EquipWeapon();
 		}
+		else
+		{
+			WeaponComponent->UnequipWeapon();
+		}
+
 	}
 }
 

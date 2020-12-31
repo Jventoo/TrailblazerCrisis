@@ -165,6 +165,9 @@ struct FWeaponData
 		float WeaponSpread;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+		float HipAccuracyPenalty;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
 		FFirearmDamageInfo WeaponDamage;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")

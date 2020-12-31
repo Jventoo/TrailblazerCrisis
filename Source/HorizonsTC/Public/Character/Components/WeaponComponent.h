@@ -22,20 +22,24 @@ public:
 	/** Switch to next available fire mode */
 	void SwitchFireMode();
 
-	/** Equip specific weapon */
+	/**
+	 * Equip specific weapon by index
+	 * See overloaded function for re-equipping the default (current) weapon
+	 * @param WeaponIndex - Nonnegative integer specifying weapon to equip
+	 */
 	void EquipWeapon(int32 WeaponIndex);
+
+	/** 
+	 * Equip the default (CurrentWeaponIdx) weapon
+	 * See EquipWeapon(int32) for equipping a different weapon
+	 */
+	void EquipWeapon();
 
 	/** Unequip current weapon */
 	void UnequipWeapon();
 
 	/** Attempt to reload */
 	void Reload();
-
-	/** Attempt to fire */
-	void Fire();
-
-	/** Aim current weapon */
-	void Aim();
 
 	/**
 	 * Cycle one weapon forward or backwards in the inventory.
@@ -59,6 +63,18 @@ public:
 	 * @param Amt - Amount of ammo to add
 	 */
 	void AddAmmo(EAmmoType Type, int32 Amt);
+
+	void AddRecoil(float Pitch, float Yaw);
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "WeaponComp|Checks")
+		bool CanFire() const;
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "WeaponComp|Checks")
+		bool CanReload() const;
+
+	/** Is the character holding a weapon in their hand? (not in holsters or inventory) */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "WeaponComp|Checks")
+		bool HasWeaponEquipped() const;
 
 	UFUNCTION(BlueprintCallable, Category = "WeaponComp|Setters")
 		void SetAiming(bool NewAimState);
@@ -94,8 +110,21 @@ protected:
 	 */
 	void SwitchWeapon(int32 WeaponIndex);
 
+private:
+	/**
+	 * Attempt to fire
+	 * Not to be called directly. Instead, use SetFiring()
+	 */
+	void Fire();
+
+	/**
+	 * Attempt to aim
+	 * Not to be called directly. Instead, use SetAiming()
+	 */
+	void Aim();
+
 public:
-	//UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = WeaponComp)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = WeaponComp)
 		TArray<FInventoryWeapon> InitialInventory;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = WeaponComp)
@@ -103,6 +132,15 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = WeaponComp)
 		TArray<ABaseFirearm*> WeaponInventory;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon|Combat")
+		float AccuracyMultiplier;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
+		TMap<EWeaponType, FName> WeaponEquipSocket;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
+		TArray<FName> WeaponUnequipSocket;
 
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = WeaponComp)
