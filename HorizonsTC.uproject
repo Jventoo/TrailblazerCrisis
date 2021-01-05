@@ -1,6 +1,6 @@
 {
 	"FileVersion": 3,
-	"EngineAssociation": "{4B660706-44E3-4B1B-41FC-428611B92C59}",
+	"EngineAssociation": "{0B319D43-4306-7302-4D7E-C2910811C49E}",
 	"Category": "",
 	"Description": "",
 	"Modules": [
@@ -14,6 +14,5 @@
 			]
 		}
 	],
-	"Plugins": [
-	]
+	"Plugins": []
 }

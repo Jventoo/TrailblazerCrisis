@@ -47,10 +47,18 @@ void UWeaponComponent::UpdateWeaponHUD()
 
 void UWeaponComponent::SwitchWeapon(int32 WeaponIndex)
 {
+	if (WeaponIndex < WeaponInventory.Num())
+	{
+		UnequipWeapon();
+		CurrentWeaponIdx = WeaponIndex;
+		CurrentWeapon = WeaponInventory[WeaponIndex];
+		EquipWeapon();
+	}
 }
 
 void UWeaponComponent::SpawnWeapons()
 {
+	int i = 0;
 	for (const auto& wep : InitialInventory)
 	{
 		// Search WeaponDB for specified weapon
@@ -66,8 +74,8 @@ void UWeaponComponent::SpawnWeapons()
 			// Populate member variables
 			SpawnedWeapon->SetOwner(OwningCharacter);
 			SpawnedWeapon->SetOwningPawn(OwningCharacter);
-			SpawnedWeapon->StoredWeapon = wep;
-			SpawnedWeapon->WeaponData = *WeaponInfo;
+			SpawnedWeapon->SetStoredWeapon(wep);
+			SpawnedWeapon->SetWeaponData(*WeaponInfo);
 
 			// Finish Spawning
 			UGameplayStatics::FinishSpawningActor(SpawnedWeapon, FTransform());
@@ -75,10 +83,11 @@ void UWeaponComponent::SpawnWeapons()
 			WeaponInventory.Add(SpawnedWeapon);
 
 			// Attach to character
-			SpawnedWeapon->AttachMeshToPawn(OwningCharacter->WeaponUnequipSocket);
+			SpawnedWeapon->AttachMeshToPawn(WeaponUnequipSocket[i]);
 			SpawnedWeapon->AddActorLocalRotation(WeaponInfo->DirectionFix);
 			OwningCharacter->SetIsArmed(true);
 		}
+		i++;
 	}
 
 	SwitchWeapon(0);
@@ -89,33 +98,33 @@ void UWeaponComponent::SwitchFireMode()
 	switch (CurrentWeapon->GetFireMode())
 	{
 	case EFireModes::Single:
-		if (CurrentWeapon->WeaponData.BurstShot)
+		if (CurrentWeapon->GetWeaponData().BurstShot)
 		{
 			CurrentWeapon->SetFireMode(EFireModes::Burst);
 		}
-		else if (CurrentWeapon->WeaponData.AutoShot)
+		else if (CurrentWeapon->GetWeaponData().AutoShot)
 		{
 			CurrentWeapon->SetFireMode(EFireModes::Auto);
 		}
 		break;
 
 	case EFireModes::Burst:
-		if (CurrentWeapon->WeaponData.AutoShot)
+		if (CurrentWeapon->GetWeaponData().AutoShot)
 		{
 			CurrentWeapon->SetFireMode(EFireModes::Auto);
 		}
-		else if (CurrentWeapon->WeaponData.SingleShot)
+		else if (CurrentWeapon->GetWeaponData().SingleShot)
 		{
 			CurrentWeapon->SetFireMode(EFireModes::Single);
 		}
 		break;
 
 	case EFireModes::Auto:
-		if (CurrentWeapon->WeaponData.SingleShot)
+		if (CurrentWeapon->GetWeaponData().SingleShot)
 		{
 			CurrentWeapon->SetFireMode(EFireModes::Single);
 		}
-		else if (CurrentWeapon->WeaponData.BurstShot)
+		else if (CurrentWeapon->GetWeaponData().BurstShot)
 		{
 			CurrentWeapon->SetFireMode(EFireModes::Burst);
 		}
@@ -125,7 +134,7 @@ void UWeaponComponent::SwitchFireMode()
 
 void UWeaponComponent::EquipWeapon(int32 WeaponIndex)
 {
-	//!Cast<ATCPlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0))->IsInLimitedInputMode()
+
 }
 
 void UWeaponComponent::EquipWeapon()
@@ -139,18 +148,22 @@ void UWeaponComponent::UnequipWeapon()
 
 void UWeaponComponent::Reload()
 {
-}
-
-void UWeaponComponent::Fire()
-{
-}
-
-void UWeaponComponent::Aim()
-{
+	if (CanReload())
+	{
+		CurrentWeapon->StartReload();
+	}
 }
 
 void UWeaponComponent::CycleWeapon(bool Next)
 {
+	if (Next)
+	{
+		SwitchWeapon(UKismetMathLibrary::Clamp(++CurrentWeaponIdx, 0, WeaponInventory.Num() - 1));
+	}
+	else
+	{
+		SwitchWeapon(UKismetMathLibrary::Clamp(--CurrentWeaponIdx, 0, WeaponInventory.Num() - 1));
+	}
 }
 
 void UWeaponComponent::PickupWeapon(ABaseFirearm* WepRef)
@@ -175,8 +188,9 @@ void UWeaponComponent::AddRecoil(float Pitch, float Yaw)
 
 	if (OwningCharacter->GetRotationMode() != ERotationMode::Aiming)
 	{
-		Pitch *= CurrentWeapon->HipFirePenalty;
-		Pitch *= CurrentWeapon->HipFirePenalty;
+		auto Penalty = CurrentWeapon->GetWeaponData().HipAccuracyPenalty;
+		Pitch *= Penalty;
+		Yaw *= Penalty;
 	}
 
 	OwningCharacter->AddControllerPitchInput(Pitch);
@@ -208,15 +222,24 @@ bool UWeaponComponent::HasWeaponEquipped() const
 
 void UWeaponComponent::SetAiming(bool NewAimState)
 {
+	OwningCharacter->GetPlayerController()->ToggleCrosshair(NewAimState);
 }
 
 void UWeaponComponent::SetFiring(bool NewFireState)
 {
+	if (NewFireState)
+	{
+		CurrentWeapon->StartFire();
+	}
+	else
+	{
+		CurrentWeapon->StopFire();
+	}
 }
 
 bool UWeaponComponent::IsAiming() const
 {
-	return false;
+	return OwningCharacter->GetRotationMode() == ERotationMode::Aiming;
 }
 
 bool UWeaponComponent::IsFiring() const
@@ -232,7 +255,7 @@ ABaseFirearm* UWeaponComponent::GetCurrentWeapon() const
 
 int32 UWeaponComponent::GetCurrentWeaponIndex() const
 {
-	return 0;
+	return CurrentWeaponIdx;
 }
 
 // Called every frame

@@ -128,88 +128,104 @@ struct FWeaponData
 		RecoilStats = FRecoilInfo();
 	}
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
 		FText WeaponName;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
 		EWeaponType WeaponType;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
 		UTexture2D* WeaponImage;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
 		USkeletalMeshComponent* WeaponMesh;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+	/** Shots per minute */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
 		float RateOfFire;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
 		int32 MaxMagAmmo;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
 		int32 MaxReserveAmmo;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
 		int32 RoundsInBurst;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
 		bool SingleShot;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
 		bool BurstShot;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
 		bool AutoShot;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
 		float WeaponSpread;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
 		float HipAccuracyPenalty;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
 		FFirearmDamageInfo WeaponDamage;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
-		TSubclassOf<class ABaseProjectile> Projectile;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
+		TSubclassOf<class ABaseProjectile> ProjectileClass;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
 		UTexture2D* CrosshairImg;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
-		UParticleSystem* MuzzleFX;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
-		USoundCue* FireSound;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
 		FRotator DirectionFix;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
 		FVector RightHandFix;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
 		FVector LeftHandFix;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
 		FName HolsterSocket;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData|Simulation")
+		UParticleSystem* MuzzleFX;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData|Simulation")
+		USoundCue* FireSound;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData|Simulation")
+		USoundCue* EquipSound;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData|Simulation")
+		USoundCue* ReloadSound;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData|Simulation")
+		USoundCue* OutOfAmmoSound;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData|Simulation")
 		float FallbackReloadDuration;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData|Simulation")
+		float FallbackEquipDuration;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData|Simulation")
 		UAnimMontage* WeaponFireAnim;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData|Simulation")
 		UAnimMontage* ReloadAnim;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData|Simulation")
 		UAnimMontage* EquipAnim;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData|Simulation")
 		UAnimMontage* UnequipAnim;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+		FName MuzzleAttachPoint;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
 		FRecoilInfo RecoilStats;
 };
 
@@ -248,11 +264,7 @@ class HORIZONSTC_API ABaseFirearm : public AActor
 	FTimerHandle TimerHandle_FireWeapon;
 	FTimerHandle EquipFinishedTimerHandle;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon Stats")
-		float ShotsPerMinute;
-
 protected:
-
 	ABaseFirearm();
 
 	UPROPERTY(Transient)
@@ -264,7 +276,6 @@ protected:
 	virtual void OnEquipFinished();
 
 public:
-
 	/** get weapon mesh (needs pawn owner to determine variant) */
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 		USkeletalMeshComponent* GetWeaponMesh() const;
@@ -303,8 +314,8 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Weapon State")
 		EWeaponState GetCurrentState() const;
 
-	/* Used for putting the weapon in a character's holster (not their hand; that's in character class) */
-	void AttachMeshToPawn(FName Socket, bool Detach = true);
+	/** Attaches mesh to the specified socket and detaches anything currently in that socket */
+	void AttachMeshToPawn(FName Socket);
 
 	/** Detaches weapon mesh from pawn */
 	void DetachMeshFromPawn();
@@ -328,14 +339,23 @@ public:
 		void DecreaseSpread();
 	virtual void DecreaseSpread_Implementation();
 
-	FWeaponData WeaponData;
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+		void SetWeaponData(const FWeaponData& NewData);
 
-	FInventoryWeapon StoredWeapon;
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Weapon")
+		FWeaponData GetWeaponData() const;
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+		void SetStoredWeapon(const FInventoryWeapon& NewStored);
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Weapon")
+		FInventoryWeapon GetStoredWeapon() const;
 
 protected:
-
+	/** Adjust aim direction based on controller */
 	FVector GetAdjustedAim() const;
 
+	/** Adjust location if player controlled */
 	FVector GetCameraDamageStartLocation(const FVector& AimDir) const;
 
 	virtual void FireWeapon();
@@ -358,6 +378,12 @@ private:
 
 	bool CalculateDamage(const FName& BoneName, float& DamageOut);
 
+	/** Contains PREDETERMINED information/statistics about the weapon. */
+	FWeaponData WeaponData;
+
+	/** Vital runtime information used for spawning the weapon + saving its state. */
+	FInventoryWeapon StoredWeapon;
+
 	bool bWantsToFire;
 
 	EWeaponState CurrentState;
@@ -375,38 +401,8 @@ private:
 	/* Time between shots for repeating fire */
 	float TimeBetweenShots;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon Stats", meta = (AllowPrivateAccess = "true"))
-		int32 ShotsInBurst;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon Stats", meta = (AllowPrivateAccess = "true"))
-		float BulletSpeed;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon Stats", meta = (AllowPrivateAccess = "true"))
-		bool bCanRicochet;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon Stats|Accuracy", meta = (AllowPrivateAccess = "true"))
-		FRecoilInfo RecoilData;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon Stats|Accuracy", meta = (AllowPrivateAccess = "true"))
-		float WeaponSpread;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon Stats|Accuracy", meta = (AllowPrivateAccess = "true"))
-		float FiringSpreadMax;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon Stats|Accuracy", meta = (AllowPrivateAccess = "true"))
-		float FiringSpreadIncrement;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon Stats|Accuracy", meta = (AllowPrivateAccess = "true"))
-		float FiringSpreadHipFirePenalty;
-
 	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 		float CurrentFiringSpread;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon Stats", meta = (AllowPrivateAccess = "true"))
-		FFirearmDamageInfo DamageData;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon", meta = (AllowPrivateAccess = "true"))
-		TSubclassOf<class ABaseProjectile> ProjectileClass;
 
 	ABaseProjectile* ProjectileRef;
 
@@ -415,28 +411,6 @@ private:
 	/************************************************************************/
 
 private:
-
-	UPROPERTY(EditDefaultsOnly, Category = "Effects|Sounds")
-		USoundCue* FireSound;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Effects|Sounds")
-		USoundCue* EquipSound;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Effects|Particles")
-		UParticleSystem* MuzzleFX;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Effects|Animation")
-		UAnimMontage* EquipAnim;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Effects|Animation")
-		UAnimMontage* FireAnim;
-
-	UPROPERTY(Transient)
-		UParticleSystemComponent* MuzzlePSC;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
-		FName MuzzleAttachPoint;
-
 	bool bPlayingFireAnim;
 
 	UPROPERTY(Transient)
@@ -463,49 +437,20 @@ protected:
 	/************************************************************************/
 
 private:
-
-	UPROPERTY(EditDefaultsOnly, Category = "Effects|Sounds")
-		USoundCue* OutOfAmmoSound;
-
 	FTimerHandle TimerHandle_ReloadWeapon;
 	FTimerHandle TimerHandle_StopReload;
 
 protected:
-
-	/* Time to assign on reload when no animation is found */
-	UPROPERTY(EditDefaultsOnly, Category = "Effects|Animation")
-		float NoAnimReloadDuration;
-
-	/* Time to assign on equip when no animation is found */
-	UPROPERTY(EditDefaultsOnly, Category = "Effects|Animation")
-		float NoEquipAnimDuration;
-
 	UPROPERTY(Transient)
 		bool bPendingReload;
 
 	void UseAmmo();
 
 	UPROPERTY(Transient)
-		int32 CurrentAmmo;
+		int32 CurrentReserveAmmo;
 
 	UPROPERTY(Transient)
 		int32 CurrentAmmoInClip;
-
-	/* Weapon ammo on spawn */
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon Stats")
-		int32 StartAmmo;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon Stats")
-		int32 MaxAmmo;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon Stats")
-		int32 MaxAmmoPerClip;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Effects|Sounds")
-		USoundCue* ReloadSound;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Effects|Animation")
-		UAnimMontage* ReloadAnim;
 
 	virtual void ReloadWeapon();
 
@@ -521,15 +466,15 @@ public:
 	/* Set a new total amount of ammo of weapon */
 	void SetAmmoCount(int32 NewTotalAmount);
 
-	UFUNCTION(BlueprintCallable, Category = "Ammo")
-		int32 GetCurrentAmmo() const;
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Ammo")
+		int32 GetCurrentReserveAmmo() const;
 
-	UFUNCTION(BlueprintCallable, Category = "Ammo")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Ammo")
 		int32 GetCurrentAmmoInClip() const;
 
-	UFUNCTION(BlueprintCallable, Category = "Ammo")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Ammo")
 		int32 GetMaxAmmoPerClip() const;
 
-	UFUNCTION(BlueprintCallable, Category = "Ammo")
-		int32 GetMaxAmmo() const;
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Ammo")
+		int32 GetMaxReserveAmmo() const;
 };

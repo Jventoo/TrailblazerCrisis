@@ -272,6 +272,16 @@ void ATCPlayerController::ToggleCrosshair(bool bEnabled)
 	}
 }
 
+bool ATCPlayerController::IsCrosshairDisplayed() const
+{
+	if (HUDRef)
+	{
+		UHUDWidget* HUD = Cast<UHUDWidget>(HUDRef);
+
+		return HUD->CrosshairWidget->GetVisibility() == ESlateVisibility::Visible;
+	}
+}
+
 void ATCPlayerController::OnRestartPawn(APawn* NewPawn)
 {
 	PossessedCharacter = Cast<ATCCharacter>(NewPawn);

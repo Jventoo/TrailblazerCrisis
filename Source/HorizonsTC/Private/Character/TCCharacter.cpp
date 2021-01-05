@@ -23,6 +23,7 @@ void ATCCharacter::AimPressedAction()
 
 	if (WeaponComponent->HasWeaponEquipped())
 	{
+		WeaponComponent->SetAiming(true);
 		GetPlayerController()->ToggleCrosshair(true);
 	}
 }
@@ -30,8 +31,10 @@ void ATCCharacter::AimPressedAction()
 void ATCCharacter::AimReleasedAction()
 {
 	Super::AimReleasedAction();
-
-	GetPlayerController()->ToggleCrosshair(false);
+	if (WeaponComponent->HasWeaponEquipped())
+	{
+		WeaponComponent->SetAiming(false);
+	}
 }
 
 void ATCCharacter::Tick(float DeltaTime)

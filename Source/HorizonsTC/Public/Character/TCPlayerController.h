@@ -90,6 +90,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = UI)
 		void ToggleCrosshair(bool bEnabled);
 
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "UI")
+		bool IsCrosshairDisplayed() const;
+
 	UPROPERTY(BlueprintReadOnly, Category = UI)
 		TArray<UUserWidget*> MenuHistoryStack;
 

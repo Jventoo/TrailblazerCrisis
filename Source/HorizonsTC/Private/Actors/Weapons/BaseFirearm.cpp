@@ -32,22 +32,13 @@ ABaseFirearm::ABaseFirearm()
 	PrimaryActorTick.bCanEverTick = false;
 	PrimaryActorTick.TickGroup = TG_PrePhysics;
 
-	MuzzleAttachPoint = TEXT("Muzzle");
-
-	ShotsPerMinute = 700;
-	StartAmmo = 999;
-	MaxAmmo = 999;
-	MaxAmmoPerClip = 30;
-	NoAnimReloadDuration = 1.5f;
-	NoEquipAnimDuration = 0.5f;
+	WeaponData.MuzzleAttachPoint = TEXT("Muzzle");
 
 	BurstCounter = 0;
 	AmtToBurst = 0;
 
-	ShotsInBurst = 0;
-	BulletSpeed = .0f;
 	CurrentFiringSpread = .0f;
-	bCanRicochet = bBursting = bRefiring = false;
+	bBursting = bRefiring = false;
 	bPlayingFireAnim = false;
 }
 
@@ -57,9 +48,11 @@ void ABaseFirearm::PostInitializeComponents()
 	Super::PostInitializeComponents();
 
 	/* Setup configuration */
-	TimeBetweenShots = 60.0f / ShotsPerMinute;
-	CurrentAmmo = FMath::Min(StartAmmo, MaxAmmo);
-	CurrentAmmoInClip = FMath::Min(MaxAmmoPerClip, StartAmmo);
+	TimeBetweenShots = WeaponData.RateOfFire / 60.0f;
+	CurrentReserveAmmo = StoredWeapon.CurrReserveAmmo;
+	CurrentAmmoInClip = StoredWeapon.CurrMagAmmo;
+	CurrentState = StoredWeapon.CurrWeaponState;
+	CurrentFireMode = StoredWeapon.CurrFireMode;
 }
 
 
@@ -99,7 +92,7 @@ void ABaseFirearm::SetOwningPawn(ATCCharacter* NewOwner)
 }
 
 
-void ABaseFirearm::AttachMeshToPawn(FName Socket, bool Detach)
+void ABaseFirearm::AttachMeshToPawn(FName Socket)
 {
 	if (Pawn)
 	{
@@ -138,7 +131,7 @@ void ABaseFirearm::SetFireMode(EFireModes NewMode)
 
 float ABaseFirearm::GetCurrentSpread() const
 {
-	float Spread = WeaponSpread + CurrentFiringSpread;
+	float Spread = WeaponData.WeaponSpread + CurrentFiringSpread;
 	
 	/*if (Pawn && Pawn->GetRotationMode() != ERotationMode::Aiming)
 	{
@@ -349,7 +342,6 @@ FVector ABaseFirearm::GetAdjustedAim() const
 	{
 		FinalAim = MyInstigator->GetBaseAimRotation().Vector();
 	}
-
 	return FinalAim;
 }
 
@@ -367,7 +359,6 @@ FVector ABaseFirearm::GetCameraDamageStartLocation(const FVector& AimDir) const
 		// Adjust trace so there is nothing blocking the ray between the camera and the pawn, and calculate distance from adjusted start
 		OutStartTrace = OutStartTrace + AimDir * (FVector::DotProduct((GetInstigator()->GetActorLocation() - OutStartTrace), AimDir));
 	}
-
 	return OutStartTrace;
 }
 
@@ -526,7 +517,7 @@ void ABaseFirearm::FireWeapon()
 
 	// Begin spawning the projectile, initialize it, finish spawning
 	ProjectileRef = GetWorld()->SpawnActorDeferred<ABaseProjectile>
-		(ProjectileClass, FinalDir, Pawn, Pawn, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+		(WeaponData.ProjectileClass, FinalDir, Pawn, Pawn, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
 
 	ProjectileRef->InitializeProjectileStats(DamageToDeal, CritHit, BulletSpeed, bCanRicochet);
 
@@ -537,7 +528,7 @@ void ABaseFirearm::FireWeapon()
 	float Pitch = -1.0 * UKismetMathLibrary::RandomFloatInRange(RecoilData.UpMin, RecoilData.UpMax);
 	float Yaw = UKismetMathLibrary::RandomFloatInRange(RecoilData.RightMin, RecoilData.RightMax);
 
-	Pawn->AddRecoil(Pitch, Yaw);
+	Pawn->GetWeaponComp()->AddRecoil(Pitch, Yaw);
 
 	CurrentFiringSpread = FMath::Min(FiringSpreadMax, CurrentFiringSpread + FiringSpreadIncrement);
 }
@@ -564,7 +555,9 @@ void ABaseFirearm::SetWeaponState(EWeaponState NewState)
 void ABaseFirearm::OnBurstStarted()
 {
 	if (CurrentFireMode == EFireModes::Burst)
-		AmtToBurst = UKismetMathLibrary::Min(ShotsInBurst, CurrentAmmoInClip);
+	{
+		AmtToBurst = UKismetMathLibrary::Min(WeaponData.RoundsInBurst, CurrentAmmoInClip);
+	}
 
 	// Start firing, can be delayed to satisfy TimeBetweenShots
 	const float GameTime = GetWorld()->GetTimeSeconds();
@@ -596,9 +589,28 @@ void ABaseFirearm::OnBurstFinished()
 	bBursting = false;
 }
 
-
 void ABaseFirearm::DecreaseSpread_Implementation()
 {
+}
+
+void ABaseFirearm::SetWeaponData(const FWeaponData& NewData)
+{
+	WeaponData = NewData;
+}
+
+FWeaponData ABaseFirearm::GetWeaponData() const
+{
+	return WeaponData;
+}
+
+void ABaseFirearm::SetStoredWeapon(const FInventoryWeapon& NewStored)
+{
+	StoredWeapon = NewStored;
+}
+
+FInventoryWeapon ABaseFirearm::GetStoredWeapon() const
+{
+	return StoredWeapon;
 }
 
 
@@ -659,6 +671,7 @@ FTransform ABaseFirearm::CalculateFinalProjectileDirection(const FTransform& Mai
 
 bool ABaseFirearm::CalculateDamage(const FName& BoneName, float& DamageOut)
 {
+	auto DamageData = WeaponData.WeaponDamage;
 	DamageOut = UKismetMathLibrary::RandomFloatInRange(DamageData.MinDamage, DamageData.MaxDamage);
 	bool IsCrit = BoneName == TEXT("head");
 
@@ -742,7 +755,6 @@ void ABaseFirearm::StopWeaponAnimation(UAnimMontage* Animation)
 void ABaseFirearm::UseAmmo()
 {
 	CurrentAmmoInClip--;
-	CurrentAmmo--;
 }
 
 
@@ -753,9 +765,9 @@ void ABaseFirearm::SetAmmoCount(int32 NewTotalAmount)
 }
 
 
-int32 ABaseFirearm::GetCurrentAmmo() const
+int32 ABaseFirearm::GetCurrentReserveAmmo() const
 {
-	return CurrentAmmo;
+	return CurrentReserveAmmo;
 }
 
 
@@ -767,13 +779,13 @@ int32 ABaseFirearm::GetCurrentAmmoInClip() const
 
 int32 ABaseFirearm::GetMaxAmmoPerClip() const
 {
-	return MaxAmmoPerClip;
+	return WeaponData.MaxMagAmmo;
 }
 
 
-int32 ABaseFirearm::GetMaxAmmo() const
+int32 ABaseFirearm::GetMaxReserveAmmo() const
 {
-	return MaxAmmo;
+	return WeaponData.MaxReserveAmmo;
 }
 
 
@@ -784,10 +796,10 @@ void ABaseFirearm::StartReload()
 		bPendingReload = true;
 		DetermineWeaponState();
 
-		float AnimDuration = PlayWeaponAnimation(ReloadAnim);
+		float AnimDuration = PlayWeaponAnimation(WeaponData.ReloadAnim);
 		if (AnimDuration <= 0.0f)
 		{
-			AnimDuration = NoAnimReloadDuration;
+			AnimDuration = WeaponData.FallbackReloadDuration;
 		}
 
 		GetWorldTimerManager().SetTimer(TimerHandle_StopReload, this, &ABaseFirearm::StopSimulateReload, AnimDuration, false);

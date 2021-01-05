@@ -110,19 +110,6 @@ protected:
 	 */
 	void SwitchWeapon(int32 WeaponIndex);
 
-private:
-	/**
-	 * Attempt to fire
-	 * Not to be called directly. Instead, use SetFiring()
-	 */
-	void Fire();
-
-	/**
-	 * Attempt to aim
-	 * Not to be called directly. Instead, use SetAiming()
-	 */
-	void Aim();
-
 public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = WeaponComp)
 		TArray<FInventoryWeapon> InitialInventory;
