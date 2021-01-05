@@ -16,6 +16,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Actors/Components/ObjectiveComponent.h"
 #include "Actors/Weapons/BaseFirearm.h"
+#include "Character/Components/WeaponComponent.h"
 
 ATCPlayerController::ATCPlayerController()
 {
@@ -280,6 +281,7 @@ bool ATCPlayerController::IsCrosshairDisplayed() const
 
 		return HUD->CrosshairWidget->GetVisibility() == ESlateVisibility::Visible;
 	}
+	return false;
 }
 
 void ATCPlayerController::OnRestartPawn(APawn* NewPawn)
@@ -317,7 +319,7 @@ void ATCPlayerController::SetLimitedInputMode(bool LimitedInput, bool SetFirstPe
 		// Optionally unequip current firearm
 		if (HideWeapon)
 		{
-			auto CurrWep = PlayerChar->GetCurrentWeapon(); 
+			auto CurrWep = PlayerChar->GetWeaponComp()->GetCurrentWeapon(); 
 			
 			if (CurrWep && CurrWep->IsEquipped())
 				PlayerChar->ToggleEquip();

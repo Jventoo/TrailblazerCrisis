@@ -134,7 +134,8 @@ void UWeaponComponent::SwitchFireMode()
 
 void UWeaponComponent::EquipWeapon(int32 WeaponIndex)
 {
-
+	FName EquipSocket = *(WeaponEquipSocket.Find(WeaponInventory[WeaponIndex]->GetWeaponData().WeaponType));
+	CurrentWeapon->AttachMeshToPawn(EquipSocket);
 }
 
 void UWeaponComponent::EquipWeapon()
@@ -144,6 +145,7 @@ void UWeaponComponent::EquipWeapon()
 
 void UWeaponComponent::UnequipWeapon()
 {
+	CurrentWeapon->DetachMeshFromPawn();
 }
 
 void UWeaponComponent::Reload()

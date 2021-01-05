@@ -7,6 +7,8 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/GameplayStatics.h"
 
+FName ATCCharacter::WeaponComponentName(TEXT("WeaponComp"));
+
 ATCCharacter::ATCCharacter()
 {
 	WeaponComponent = CreateOptionalDefaultSubobject<UWeaponComponent>(ATCCharacter::WeaponComponentName);

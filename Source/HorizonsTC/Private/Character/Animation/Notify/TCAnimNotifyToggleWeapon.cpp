@@ -4,6 +4,7 @@
 #include "Character/Animation/Notify/TCAnimNotifyToggleWeapon.h"
 
 #include "Character/TCCharacter.h"
+#include "Character/Components/WeaponComponent.h"
 #include "Actors/Weapons/BaseFirearm.h"
 
 void UTCAnimNotifyToggleWeapon::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation)
@@ -18,7 +19,7 @@ void UTCAnimNotifyToggleWeapon::Notify(USkeletalMeshComponent* MeshComp, UAnimSe
 
 	if (Player)
 	{
-		auto Weapon = Player->GetCurrentWeapon();
+		auto Weapon = Player->GetWeaponComp()->GetCurrentWeapon();
 
 		if (bEquip)
 		{
@@ -36,7 +37,7 @@ void UTCAnimNotifyToggleWeapon::Notify(USkeletalMeshComponent* MeshComp, UAnimSe
 			Weapon->DetachMeshFromPawn();
 
 			// Attach to back
-			Weapon->AttachMeshToPawn(Player->WeaponUnequipSocket);
+			Weapon->AttachMeshToPawn(Weapon->GetWeaponData().HolsterSocket);
 		}
 	}
 }

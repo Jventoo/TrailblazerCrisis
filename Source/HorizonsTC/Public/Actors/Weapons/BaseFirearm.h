@@ -114,6 +114,9 @@ struct FFirearmDamageInfo
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
 		float ProjSpeed;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
+		bool bCanRicochet;
 };
 
 USTRUCT(BlueprintType)
@@ -162,8 +165,14 @@ struct FWeaponData
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
 		bool AutoShot;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData|Spread")
 		float WeaponSpread;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData|Spread")
+		float FiringSpreadMax;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData|Spread")
+		float FiringSpreadIncrement;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
 		float HipAccuracyPenalty;
@@ -211,7 +220,7 @@ struct FWeaponData
 		float FallbackEquipDuration;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData|Simulation")
-		UAnimMontage* WeaponFireAnim;
+		UAnimMontage* FireAnim;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData|Simulation")
 		UAnimMontage* ReloadAnim;

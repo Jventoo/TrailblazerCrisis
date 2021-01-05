@@ -5,6 +5,7 @@
 #include "Character/TCPlayerController.h"
 #include "Actors/Weapons/BaseProjectile.h"
 #include "Character/TCCharacter.h"
+#include "Character/Components/WeaponComponent.h"
 
 #include "Camera/CameraComponent.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -96,9 +97,6 @@ void ABaseFirearm::AttachMeshToPawn(FName Socket)
 {
 	if (Pawn)
 	{
-		if (Detach)
-			DetachMeshFromPawn();
-
 		Mesh->AttachToComponent(Pawn->GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, Socket);
 		Mesh->SetHiddenInGame(false);
 
@@ -150,7 +148,7 @@ float ABaseFirearm::GetCurrentSpreadPercentage() const
 		Spread *= FiringSpreadHipFirePenalty;
 	}*/
 
-	return Spread / FiringSpreadMax;
+	return Spread / WeaponData.FiringSpreadMax;
 }
 
 
@@ -188,11 +186,11 @@ void ABaseFirearm::OnEquip(bool bPlayAnimation)
 	// Play equip animation
 	if (bPlayAnimation)
 	{
-		float Duration = PlayWeaponAnimation(EquipAnim);
+		float Duration = PlayWeaponAnimation(WeaponData.EquipAnim);
 		if (Duration <= 0.0f)
 		{
 			// Failsafe in case animation is missing
-			Duration = NoEquipAnimDuration;
+			Duration = WeaponData.FallbackEquipDuration;
 
 			DetachMeshFromPawn();
 			Pawn->AttachToHand(nullptr, Mesh, nullptr, false, FVector::ZeroVector);
@@ -215,7 +213,7 @@ void ABaseFirearm::OnEquip(bool bPlayAnimation)
 	// Play equip sound (TODO: move to anim notify potentially)
 	if (Pawn)
 	{
-		PlayWeaponSound(EquipSound);
+		PlayWeaponSound(WeaponData.EquipSound);
 	}
 }
 
@@ -228,7 +226,7 @@ void ABaseFirearm::OnUnEquip(bool ReturnToHolster)
 	// Stop playing any weapon animations
 	if (bPendingEquip)
 	{
-		StopWeaponAnimation(EquipAnim);
+		StopWeaponAnimation(WeaponData.EquipAnim);
 		bPendingEquip = false;
 
 		GetWorldTimerManager().ClearTimer(EquipFinishedTimerHandle);
@@ -236,7 +234,7 @@ void ABaseFirearm::OnUnEquip(bool ReturnToHolster)
 
 	if (bPendingReload)
 	{
-		StopWeaponAnimation(ReloadAnim);
+		StopWeaponAnimation(WeaponData.ReloadAnim);
 		bPendingReload = false;
 
 		GetWorldTimerManager().ClearTimer(TimerHandle_ReloadWeapon);
@@ -252,7 +250,9 @@ void ABaseFirearm::OnUnEquip(bool ReturnToHolster)
 	DetachMeshFromPawn();
 
 	if (ReturnToHolster)
-		AttachMeshToPawn(Pawn->WeaponUnequipSocket, false);
+	{
+		AttachMeshToPawn(WeaponData.HolsterSocket);
+	}
 	// End TODO
 
 	// Set our weapon's current state
@@ -312,10 +312,12 @@ void ABaseFirearm::StopFire()
 bool ABaseFirearm::CanFire() const
 {
 	if (bBursting)
+	{
 		return true;
+	}
 	else
 	{
-		bool bPawnCanFire = Pawn && Pawn->CanFire();
+		bool bPawnCanFire = Pawn && Pawn->GetWeaponComp()->CanFire();
 		bool bStateOK = CurrentState == EWeaponState::Idle || CurrentState == EWeaponState::Firing;
 
 		return bPawnCanFire && bStateOK && !bPendingReload;
@@ -389,9 +391,9 @@ void ABaseFirearm::HandleFiring()
 	}
 	else if (Pawn)
 	{
-		if (GetCurrentAmmo() == 0 && !bRefiring)
+		if (GetCurrentReserveAmmo() == 0 && !bRefiring)
 		{
-			PlayWeaponSound(OutOfAmmoSound);
+			PlayWeaponSound(WeaponData.OutOfAmmoSound);
 		}
 
 		/* Reload after firing last round */
@@ -447,18 +449,19 @@ void ABaseFirearm::HandleFiring()
 
 void ABaseFirearm::SimulateWeaponFire()
 {
-	if (MuzzleFX)
+	if (WeaponData.MuzzleFX)
 	{
-		MuzzlePSC = UGameplayStatics::SpawnEmitterAttached(MuzzleFX, Mesh, MuzzleAttachPoint, FVector(0, 0, 0), FRotator(0, 0, 0), EAttachLocation::SnapToTargetIncludingScale);
+		UGameplayStatics::SpawnEmitterAttached(WeaponData.MuzzleFX, Mesh, WeaponData.MuzzleAttachPoint, FVector::ZeroVector, 
+			FRotator::ZeroRotator, EAttachLocation::SnapToTargetIncludingScale);
 	}
 
 	if (!bPlayingFireAnim)
 	{
-		PlayWeaponAnimation(FireAnim);
+		PlayWeaponAnimation(WeaponData.FireAnim);
 		bPlayingFireAnim = true;
 	}
 
-	PlayWeaponSound(FireSound);
+	PlayWeaponSound(WeaponData.FireSound);
 }
 
 
@@ -466,7 +469,7 @@ void ABaseFirearm::StopSimulatingWeaponFire()
 {
 	if (bPlayingFireAnim)
 	{
-		StopWeaponAnimation(FireAnim);
+		StopWeaponAnimation(WeaponData.FireAnim);
 		bPlayingFireAnim = false;
 	}
 }
@@ -474,13 +477,13 @@ void ABaseFirearm::StopSimulatingWeaponFire()
 
 FVector ABaseFirearm::GetMuzzleLocation() const
 {
-	return Mesh->GetSocketLocation(MuzzleAttachPoint);
+	return Mesh->GetSocketLocation(WeaponData.MuzzleAttachPoint);
 }
 
 
 FVector ABaseFirearm::GetMuzzleDirection() const
 {
-	return Mesh->GetSocketRotation(MuzzleAttachPoint).Vector();
+	return Mesh->GetSocketRotation(WeaponData.MuzzleAttachPoint).Vector();
 }
 
 
@@ -519,18 +522,18 @@ void ABaseFirearm::FireWeapon()
 	ProjectileRef = GetWorld()->SpawnActorDeferred<ABaseProjectile>
 		(WeaponData.ProjectileClass, FinalDir, Pawn, Pawn, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
 
-	ProjectileRef->InitializeProjectileStats(DamageToDeal, CritHit, BulletSpeed, bCanRicochet);
+	ProjectileRef->InitializeProjectileStats(DamageToDeal, CritHit, WeaponData.WeaponDamage.ProjSpeed, WeaponData.WeaponDamage.bCanRicochet);
 
 	UGameplayStatics::FinishSpawningActor(Cast<AActor>(ProjectileRef), FinalDir);
 
 
 	// Handle recoil + spread
-	float Pitch = -1.0 * UKismetMathLibrary::RandomFloatInRange(RecoilData.UpMin, RecoilData.UpMax);
-	float Yaw = UKismetMathLibrary::RandomFloatInRange(RecoilData.RightMin, RecoilData.RightMax);
+	float Pitch = -1.0 * UKismetMathLibrary::RandomFloatInRange(WeaponData.RecoilStats.UpMin, WeaponData.RecoilStats.UpMax);
+	float Yaw = UKismetMathLibrary::RandomFloatInRange(WeaponData.RecoilStats.RightMin, WeaponData.RecoilStats.RightMax);
 
 	Pawn->GetWeaponComp()->AddRecoil(Pitch, Yaw);
 
-	CurrentFiringSpread = FMath::Min(FiringSpreadMax, CurrentFiringSpread + FiringSpreadIncrement);
+	CurrentFiringSpread = FMath::Min(WeaponData.FiringSpreadMax, CurrentFiringSpread + WeaponData.FiringSpreadIncrement);
 }
 
 
@@ -760,8 +763,8 @@ void ABaseFirearm::UseAmmo()
 
 void ABaseFirearm::SetAmmoCount(int32 NewTotalAmount)
 {
-	CurrentAmmo = FMath::Min(MaxAmmo, NewTotalAmount);
-	CurrentAmmoInClip = FMath::Min(MaxAmmoPerClip, CurrentAmmo);
+	CurrentReserveAmmo = FMath::Min(WeaponData.MaxReserveAmmo, NewTotalAmount);
+	CurrentAmmoInClip = FMath::Min(WeaponData.MaxMagAmmo, CurrentReserveAmmo);
 }
 
 
@@ -807,7 +810,7 @@ void ABaseFirearm::StartReload()
 
 		if (Pawn)
 		{
-			PlayWeaponSound(ReloadSound);
+			PlayWeaponSound(WeaponData.ReloadSound);
 		}
 	}
 }
@@ -819,14 +822,14 @@ void ABaseFirearm::StopSimulateReload()
 	{
 		bPendingReload = false;
 		DetermineWeaponState();
-		StopWeaponAnimation(ReloadAnim);
+		StopWeaponAnimation(WeaponData.ReloadAnim);
 	}
 }
 
 
 void ABaseFirearm::ReloadWeapon()
 {
-	int32 ClipDelta = FMath::Min(MaxAmmoPerClip - CurrentAmmoInClip, CurrentAmmo - CurrentAmmoInClip);
+	int32 ClipDelta = FMath::Min(WeaponData.MaxMagAmmo - CurrentAmmoInClip, CurrentReserveAmmo - CurrentAmmoInClip);
 
 	if (ClipDelta > 0)
 	{
@@ -837,8 +840,8 @@ void ABaseFirearm::ReloadWeapon()
 
 bool ABaseFirearm::CanReload()
 {
-	bool bCanReload = (!Pawn || Pawn->CanReload());
-	bool bGotAmmo = (CurrentAmmoInClip < MaxAmmoPerClip) && ((CurrentAmmo - CurrentAmmoInClip) > 0);
+	bool bCanReload = (!Pawn || Pawn->GetWeaponComp()->CanReload());
+	bool bGotAmmo = (CurrentAmmoInClip < WeaponData.MaxMagAmmo) && ((CurrentReserveAmmo - CurrentAmmoInClip) > 0);
 	bool bStateOKToReload = ((CurrentState == EWeaponState::Idle) || (CurrentState == EWeaponState::Firing));
 	return (bCanReload && bGotAmmo && bStateOKToReload);
 }
