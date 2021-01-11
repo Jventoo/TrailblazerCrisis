@@ -117,16 +117,16 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = WeaponComp)
 		int32 MaxWeapons;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = WeaponComp)
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = WeaponComp)
 		TArray<ABaseFirearm*> WeaponInventory;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon|Combat")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "WeaponComp|Combat")
 		float AccuracyMultiplier;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "WeaponComp|Sockets")
 		TMap<EWeaponType, FName> WeaponEquipSocket;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "WeaponComp|Sockets")
 		TArray<FName> WeaponUnequipSocket;
 
 protected:
@@ -134,19 +134,19 @@ protected:
 		bool bSpawnWeapons;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = WeaponComp)
-		class UDataTable* WeaponsData;
+		class UDataTable* WeaponsData = nullptr;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = WeaponComp)
 		TSubclassOf<class ABaseFirearm> WeaponClass;
 
 private:
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = WeaponComp, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = WeaponComp, meta = (AllowPrivateAccess = "true"))
 		bool bShowCrosshair = true;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = WeaponComp, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(BlueprintReadOnly, Category = WeaponComp, meta = (AllowPrivateAccess = "true"))
 		int32 CurrentWeaponIdx;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = WeaponComp, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(BlueprintReadOnly, Category = WeaponComp, meta = (AllowPrivateAccess = "true"))
 		ABaseFirearm* CurrentWeapon;
 
 	class ATCCharacter* OwningCharacter;

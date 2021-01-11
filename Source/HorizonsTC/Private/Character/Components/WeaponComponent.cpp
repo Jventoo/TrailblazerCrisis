@@ -18,6 +18,14 @@ UWeaponComponent::UWeaponComponent()
 
 	MaxWeapons = 2;
 	CurrentWeaponIdx = -1;
+
+
+	// Find weapon data table
+	static ConstructorHelpers::FObjectFinder<UDataTable> WeaponsObject(*(UTCStatics::WEAPON_DB_PATH));
+	if (WeaponsObject.Succeeded())
+	{
+		WeaponsData = WeaponsObject.Object;
+	}
 }
 
 // Called when the game starts
@@ -30,11 +38,8 @@ void UWeaponComponent::BeginPlay()
 	if (bSpawnWeapons)
 	{
 		// Find weapon data table
-		static ConstructorHelpers::FObjectFinder<UDataTable> WeaponsObject(*(UTCStatics::WEAPON_DB_PATH));
-		if (WeaponsObject.Succeeded())
+		if (WeaponsData)
 		{
-			WeaponsData = WeaponsObject.Object;
-
 			// Spawn the weapons
 			SpawnWeapons();
 		}

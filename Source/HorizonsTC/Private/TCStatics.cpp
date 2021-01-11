@@ -23,4 +23,4 @@ int32 UTCStatics::DEFAULT_FOOTSTEP_INDEX = 1; // 1 = Concrete
 FName UTCStatics::FOOTSTEPS_CURVE_NAME = TEXT("Mask_FootstepSound");
 
 // Paths
-FString UTCStatics::WEAPON_DB_PATH = TEXT("");
+FString UTCStatics::WEAPON_DB_PATH = TEXT("DataTable'/Game/HorizonsTC/Blueprints/Data/DataTables/DT_WeaponsDB.DT_WeaponsDB'");

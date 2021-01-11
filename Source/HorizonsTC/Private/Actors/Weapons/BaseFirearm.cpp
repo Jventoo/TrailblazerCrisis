@@ -22,6 +22,8 @@ ABaseFirearm::ABaseFirearm()
 	Mesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WeaponMesh"));
 	Mesh->bReceivesDecals = true;
 	Mesh->CastShadow = true;
+	Mesh->SetSkeletalMesh(WeaponData.WeaponMesh);
+	Mesh->SetRelativeScale3D(FVector(0.9f, 0.9f, 0.9f));
 	Mesh->SetCollisionObjectType(ECC_WorldDynamic);
 	Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	Mesh->SetCollisionResponseToAllChannels(ECR_Ignore);

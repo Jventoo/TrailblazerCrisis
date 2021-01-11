@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Sound/SoundCue.h"
+#include "Engine/DataTable.h"
 #include "BaseFirearm.generated.h"
 
 
@@ -120,7 +121,7 @@ struct FFirearmDamageInfo
 };
 
 USTRUCT(BlueprintType)
-struct FWeaponData
+struct FWeaponData : public FTableRowBase
 {
 	GENERATED_BODY()
 
@@ -141,7 +142,7 @@ struct FWeaponData
 		UTexture2D* WeaponImage;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
-		USkeletalMeshComponent* WeaponMesh;
+		USkeletalMesh* WeaponMesh;
 
 	/** Shots per minute */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
@@ -231,7 +232,7 @@ struct FWeaponData
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData|Simulation")
 		UAnimMontage* UnequipAnim;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+	UPROPERTY(EditDefaultsOnly, Category = "WeaponData")
 		FName MuzzleAttachPoint;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
