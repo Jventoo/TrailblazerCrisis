@@ -110,11 +110,11 @@ void ATCCharacter::ToggleEquip()
 	{
 		if (WeaponComponent->HasWeaponEquipped())
 		{
-			WeaponComponent->EquipWeapon();
+			WeaponComponent->UnequipWeapon();
 		}
 		else
 		{
-			WeaponComponent->UnequipWeapon();
+			WeaponComponent->EquipWeapon();
 		}
 
 	}

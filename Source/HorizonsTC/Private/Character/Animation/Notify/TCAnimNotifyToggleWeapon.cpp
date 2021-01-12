@@ -14,30 +14,23 @@ void UTCAnimNotifyToggleWeapon::Notify(USkeletalMeshComponent* MeshComp, UAnimSe
 		return;
 	}
 
-	// Move the gun into our hand from our holster
-	auto Player = Cast<ATCCharacter>(MeshComp->GetOwner());
-
-	if (Player)
+	// Get the character and check validity
+	auto Character = Cast<ATCCharacter>(MeshComp->GetOwner());
+	if (Character)
 	{
-		auto Weapon = Player->GetWeaponComp()->GetCurrentWeapon();
-
-		if (bEquip)
+		// Check that character has a weapon component
+		auto WeaponComp = Character->GetWeaponComp();
+		if (WeaponComp)
 		{
-			// Remove from holster
-			Weapon->DetachMeshFromPawn();
-
-			// Attach to hand
-			Weapon->AttachMeshToPawn(TEXT("RifleSocket"));
-			
-			//Player->AttachToHand(nullptr, Weapon->GetWeaponMesh(), nullptr, false, FVector::ZeroVector);
-		}
-		else
-		{
-			// Remove from hands
-			Weapon->DetachMeshFromPawn();
-
-			// Attach to back
-			Weapon->AttachMeshToPawn(Weapon->GetWeaponData().HolsterSocket);
+			// Either equip or unequip depending on the type animation the notify is in
+			if (bEquip)
+			{
+				WeaponComp->EquipWeapon();
+			}
+			else
+			{
+				WeaponComp->UnequipWeapon();
+			}
 		}
 	}
 }

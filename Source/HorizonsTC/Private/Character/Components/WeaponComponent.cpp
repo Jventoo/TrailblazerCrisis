@@ -19,7 +19,6 @@ UWeaponComponent::UWeaponComponent()
 	MaxWeapons = 2;
 	CurrentWeaponIdx = -1;
 
-
 	// Find weapon data table
 	static ConstructorHelpers::FObjectFinder<UDataTable> WeaponsObject(*(UTCStatics::WEAPON_DB_PATH));
 	if (WeaponsObject.Succeeded())
@@ -35,14 +34,10 @@ void UWeaponComponent::BeginPlay()
 
 	OwningCharacter = Cast<ATCCharacter>(GetOwner());
 
-	if (bSpawnWeapons)
+	if (WeaponsData != nullptr && bSpawnWeapons)
 	{
-		// Find weapon data table
-		if (WeaponsData)
-		{
-			// Spawn the weapons
-			SpawnWeapons();
-		}
+		// Spawn the weapons
+		SpawnWeapons();
 	}
 }
 
@@ -57,7 +52,6 @@ void UWeaponComponent::SwitchWeapon(int32 WeaponIndex)
 		UnequipWeapon();
 		CurrentWeaponIdx = WeaponIndex;
 		CurrentWeapon = WeaponInventory[WeaponIndex];
-		EquipWeapon();
 	}
 }
 
@@ -69,7 +63,7 @@ void UWeaponComponent::SpawnWeapons()
 		// Search WeaponDB for specified weapon
 		static const FString ContextString(TEXT("Weapon Data"));
 		FWeaponData* WeaponInfo = WeaponsData->FindRow<FWeaponData>(wep.WeaponID, ContextString, true);
-		if (WeaponInfo)
+		if (WeaponInfo != nullptr)
 		{
 			// Begin spawning the weapon to fill variables used in construction script
 			ABaseFirearm* SpawnedWeapon = Cast<ABaseFirearm>(UGameplayStatics::BeginDeferredActorSpawnFromClass(
@@ -85,16 +79,20 @@ void UWeaponComponent::SpawnWeapons()
 			// Finish Spawning
 			UGameplayStatics::FinishSpawningActor(SpawnedWeapon, FTransform());
 
+			// Add to inventory
 			WeaponInventory.Add(SpawnedWeapon);
 
-			// Attach to character
-			SpawnedWeapon->AttachMeshToPawn(WeaponUnequipSocket[i]);
-			SpawnedWeapon->AddActorLocalRotation(WeaponInfo->DirectionFix);
+			// Attach to character's holster socket if the component has an unequip socket specified
+			if (WeaponUnequipSockets.IsValidIndex(i)) {
+				SpawnedWeapon->AttachMeshToPawn(WeaponUnequipSockets[i]);
+				SpawnedWeapon->AddActorLocalRotation(WeaponInfo->DirectionFix);
+			}
 			OwningCharacter->SetIsArmed(true);
 		}
 		i++;
 	}
 
+	// Set weapon in first loadout slot as current
 	SwitchWeapon(0);
 }
 
@@ -139,8 +137,45 @@ void UWeaponComponent::SwitchFireMode()
 
 void UWeaponComponent::EquipWeapon(int32 WeaponIndex)
 {
-	FName EquipSocket = *(WeaponEquipSocket.Find(WeaponInventory[WeaponIndex]->GetWeaponData().WeaponType));
-	CurrentWeapon->AttachMeshToPawn(EquipSocket);
+	if (CurrentWeapon) {
+		// Find the correct socket and equip the weapon
+		auto EquipSocket = WeaponEquipSockets.Find(WeaponInventory[WeaponIndex]->GetWeaponData().WeaponType);
+
+		// Check that find succeeded
+		if (EquipSocket != nullptr)
+		{
+			CurrentWeapon->AttachMeshToPawn(*EquipSocket);
+		}
+
+		// Update held object in character
+		OwningCharacter->CurrentHeldObject = CurrentWeapon->GetWeaponMesh();
+
+		// Move character into proper overlay state
+		switch (CurrentWeapon->GetWeaponType()) {
+		case EWeaponType::Rifle:
+			OwningCharacter->SetOverlayState(EOverlayState::Rifle);
+			break;
+
+		case EWeaponType::Pistol:
+			OwningCharacter->SetOverlayState(EOverlayState::PistolTwoHanded);
+			break;
+
+		case EWeaponType::Shotgun:
+			OwningCharacter->SetOverlayState(EOverlayState::Rifle);
+			break;
+
+		case EWeaponType::Sniper:
+			OwningCharacter->SetOverlayState(EOverlayState::Rifle);
+			break;
+
+		case EWeaponType::Special:
+			OwningCharacter->SetOverlayState(EOverlayState::Rifle);
+			break;
+
+		default:
+			OwningCharacter->SetOverlayState(EOverlayState::Rifle);
+		}
+	}
 }
 
 void UWeaponComponent::EquipWeapon()
@@ -148,9 +183,23 @@ void UWeaponComponent::EquipWeapon()
 	EquipWeapon(CurrentWeaponIdx);
 }
 
-void UWeaponComponent::UnequipWeapon()
+void UWeaponComponent::UnequipWeapon(bool ReturnToHolster)
 {
-	CurrentWeapon->DetachMeshFromPawn();
+	if (CurrentWeapon)
+	{
+		CurrentWeapon->DetachMeshFromPawn();
+
+		// If the weapon is kept attached to the character's body on unequip, attach it
+		if (ReturnToHolster) {
+			// Finds unequip socket from position in inventory
+			auto index = WeaponInventory.Find(CurrentWeapon);
+			if (WeaponUnequipSockets.IsValidIndex(index))
+			{
+				CurrentWeapon->AttachMeshToPawn(WeaponUnequipSockets[index]);
+			}
+		}
+		OwningCharacter->SetOverlayState(EOverlayState::Default);
+	}
 }
 
 void UWeaponComponent::Reload()

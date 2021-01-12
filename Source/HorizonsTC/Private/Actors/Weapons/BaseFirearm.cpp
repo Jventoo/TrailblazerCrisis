@@ -22,7 +22,6 @@ ABaseFirearm::ABaseFirearm()
 	Mesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WeaponMesh"));
 	Mesh->bReceivesDecals = true;
 	Mesh->CastShadow = true;
-	Mesh->SetSkeletalMesh(WeaponData.WeaponMesh);
 	Mesh->SetRelativeScale3D(FVector(0.9f, 0.9f, 0.9f));
 	Mesh->SetCollisionObjectType(ECC_WorldDynamic);
 	Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -30,12 +29,8 @@ ABaseFirearm::ABaseFirearm()
 	Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
 	RootComponent = Mesh;
 
-	CurrentState = EWeaponState::Idle;
-
 	PrimaryActorTick.bCanEverTick = false;
 	PrimaryActorTick.TickGroup = TG_PrePhysics;
-
-	WeaponData.MuzzleAttachPoint = TEXT("Muzzle");
 
 	BurstCounter = 0;
 	AmtToBurst = 0;
@@ -49,6 +44,8 @@ ABaseFirearm::ABaseFirearm()
 void ABaseFirearm::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
+
+	Mesh->SetSkeletalMesh(WeaponData.WeaponMesh);
 
 	/* Setup configuration */
 	TimeBetweenShots = WeaponData.RateOfFire / 60.0f;
@@ -175,7 +172,7 @@ void ABaseFirearm::BeginUnequip(bool ReturnToHolster)
 		/*DetachMeshFromPawn();
 
 		if (ReturnToHolster)
-			AttachMeshToPawn(Pawn->WeaponUnequipSocket, false);*/
+			AttachMeshToPawn(Pawn->GetWeaponComp()->WeaponUnequipSockets, false);*/
 	}
 }
 
@@ -253,7 +250,7 @@ void ABaseFirearm::OnUnEquip(bool ReturnToHolster)
 
 	if (ReturnToHolster)
 	{
-		AttachMeshToPawn(WeaponData.HolsterSocket);
+		//AttachMeshToPawn(WeaponData.HolsterSocket);
 	}
 	// End TODO
 
@@ -288,6 +285,11 @@ bool ABaseFirearm::IsEquipped() const
 bool ABaseFirearm::IsInHolster() const
 {
 	return bIsHolstered;
+}
+
+EWeaponType ABaseFirearm::GetWeaponType() const
+{
+	return WeaponData.WeaponType;
 }
 
 

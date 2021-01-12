@@ -19,7 +19,10 @@ public:
 	/** Spawn weapons and populate weapon inventory */
 	void SpawnWeapons();
 
-	/** Switch to next available fire mode */
+	/**
+	 * Switch to next available fire mode (if one exists).
+	 * Checks WeaponData for applicable fire modes before switching.
+	 */
 	void SwitchFireMode();
 
 	/**
@@ -35,8 +38,12 @@ public:
 	 */
 	void EquipWeapon();
 
-	/** Unequip current weapon */
-	void UnequipWeapon();
+	/**
+	 * Unequip the current weapon.
+	 * @param ReturnToHolster - Whether to move the weapon mesh to an unequip socket (true)
+	 *							or simply make it disappear (false)
+	 */
+	void UnequipWeapon(bool ReturnToHolster = true);
 
 	/** Attempt to reload */
 	void Reload();
@@ -44,7 +51,7 @@ public:
 	/**
 	 * Cycle one weapon forward or backwards in the inventory.
 	 * Wrapper for SwitchWeapon().
-	 * @param Next - Whether to move forward (true) or backwards (false)	
+	 * @param Next - Whether to move forward (true) or backwards (false) through the inventory
 	 */
 	void CycleWeapon(bool Next);
 
@@ -64,15 +71,22 @@ public:
 	 */
 	void AddAmmo(EAmmoType Type, int32 Amt);
 
+	/**
+	 * Adds recoil to OwningCharacter. 
+	 * @param Pitch - Amount of vertical recoil to add.
+	 * @param Yaw - Amount of horizontal recoil to add.
+	 */
 	void AddRecoil(float Pitch, float Yaw);
 
+	/** Checks if character is in the correct states to fire (not firing, overlays, movement, etc). */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "WeaponComp|Checks")
 		bool CanFire() const;
 
+	/** Checks if character is in the correct states to reload (not reloading, overlays, movement, etc). */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "WeaponComp|Checks")
 		bool CanReload() const;
 
-	/** Is the character holding a weapon in their hand? (not in holsters or inventory) */
+	/** Is the character holding a weapon in their hand? (i.e. not in holsters or inventory) */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "WeaponComp|Checks")
 		bool HasWeaponEquipped() const;
 
@@ -111,26 +125,32 @@ protected:
 	void SwitchWeapon(int32 WeaponIndex);
 
 public:
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = WeaponComp)
+	/** Weapons the character starts with. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = WeaponComp)
 		TArray<FInventoryWeapon> InitialInventory;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = WeaponComp)
+	/** Maximum amount of weapons the character can have in their loadout. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = WeaponComp)
 		int32 MaxWeapons;
 
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = WeaponComp)
 		TArray<ABaseFirearm*> WeaponInventory;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "WeaponComp|Combat")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponComp|Combat")
 		float AccuracyMultiplier;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "WeaponComp|Sockets")
-		TMap<EWeaponType, FName> WeaponEquipSocket;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "WeaponComp|Sockets")
+		TMap<EWeaponType, FName> WeaponEquipSockets;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "WeaponComp|Sockets")
-		TArray<FName> WeaponUnequipSocket;
+	/**
+	 * List of all available sockets the character can holster weapons to. 
+	 * Indexed by weapon's position in the inventory.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "WeaponComp|Sockets")
+		TArray<FName> WeaponUnequipSockets;
 
 protected:
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = WeaponComp)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = WeaponComp)
 		bool bSpawnWeapons;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = WeaponComp)

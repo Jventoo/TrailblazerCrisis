@@ -6,6 +6,8 @@
 #include "GameFramework/Actor.h"
 #include "Sound/SoundCue.h"
 #include "Engine/DataTable.h"
+
+#include "TCStatics.h"
 #include "BaseFirearm.generated.h"
 
 
@@ -58,6 +60,8 @@ struct FInventoryWeapon
 		CurrMagAmmo = CurrReserveAmmo = 0;
 		CurrFireMode = EFireModes::Single;
 		CurrWeaponState = EWeaponState::Idle;
+
+		AttachedSocket = UTCStatics::EMPTY_SOCKET;
 	}
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
@@ -74,6 +78,10 @@ struct FInventoryWeapon
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
 		EWeaponState CurrWeaponState;
+
+	/** The socket the weapon is occupying while unequipped (can be NONE). */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon")
+		FName AttachedSocket;
 };
 
 USTRUCT(BlueprintType)
@@ -130,6 +138,7 @@ struct FWeaponData : public FTableRowBase
 		WeaponType = EWeaponType::Rifle;
 		WeaponDamage = FFirearmDamageInfo();
 		RecoilStats = FRecoilInfo();
+
 	}
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
@@ -196,9 +205,6 @@ struct FWeaponData : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
 		FVector LeftHandFix;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
-		FName HolsterSocket;
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData|Simulation")
 		UParticleSystem* MuzzleFX;
 
@@ -221,7 +227,7 @@ struct FWeaponData : public FTableRowBase
 		float FallbackEquipDuration;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData|Simulation")
-		UAnimMontage* FireAnim;
+		UAnimMontage* FireAnim; 
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData|Simulation")
 		UAnimMontage* ReloadAnim;
@@ -298,11 +304,14 @@ public:
 
 	void OnEquip(bool bPlayAnimation);
 
-	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Weapon")
 		bool IsEquipped() const;
 
-	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Weapon")
 		bool IsInHolster() const;
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Weapon")
+		EWeaponType GetWeaponType() const;
 
 	/* Set the weapon's owning pawn */
 	void SetOwningPawn(class ATCCharacter* NewOwner);

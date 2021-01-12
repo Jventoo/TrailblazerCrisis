@@ -14,6 +14,7 @@ class HORIZONSTC_API UTCAnimNotifyToggleWeapon : public UAnimNotify
 {
 	GENERATED_BODY()
 
+	/** Depending on bEquip, either equip or unequip the character's current weapon. */
 	void Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation) override;
 
 	FString GetNotifyName_Implementation() const override;

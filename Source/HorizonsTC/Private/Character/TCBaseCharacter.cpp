@@ -379,7 +379,7 @@ void ATCBaseCharacter::SetSprintDisabled(bool Disabled)
 bool ATCBaseCharacter::CanPerformAction(bool CanPerformInAir) const
 {
 	// Not performing any other actions
-	bool CorrectAction = MovementAction == EMovementAction::None;
+	bool CorrectAction = (MovementAction == EMovementAction::None);
 
 	// If this action can be performed in air, correct states are Grounded or InAir.
 	// If it cannot be, the only correct state is being Grounded.

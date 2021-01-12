@@ -233,10 +233,6 @@ public:
 	UPROPERTY(BlueprintReadWrite, Category = "Equipment")
 		UMeshComponent* CurrentHeldObject;
 
-	/** Implement on BP to update held objects */
-	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HeldObject")
-		void UpdateHeldObject();
-
 	UFUNCTION(BlueprintCallable, Category = "HeldObject")
 		void ClearHeldObject();
 
