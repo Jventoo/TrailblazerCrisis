@@ -122,7 +122,7 @@ protected:
 	 * Switch to the specified weapon specified by WeaponIndex.
 	 * Not meant to be called directly. Instead, use Cycle or Equip.
 	 */
-	void SwitchWeapon(int32 WeaponIndex);
+	void SwitchWeapon(int32 WeaponIndex, bool Equip = true);
 
 public:
 	/** Weapons the character starts with. */

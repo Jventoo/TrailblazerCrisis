@@ -99,7 +99,8 @@ void ABaseFirearm::AttachMeshToPawn(FName Socket)
 		Mesh->AttachToComponent(Pawn->GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, Socket);
 		Mesh->SetHiddenInGame(false);
 
-		bIsHolstered = true;
+		bIsHolstered = false;
+		bIsEquipped = true;
 	}
 }
 
@@ -111,7 +112,8 @@ void ABaseFirearm::DetachMeshFromPawn()
 
 	Pawn->ClearHeldObject();
 
-	bIsHolstered = false;
+	bIsHolstered = true;
+	bIsEquipped = false;
 }
 
 
@@ -321,10 +323,9 @@ bool ABaseFirearm::CanFire() const
 	}
 	else
 	{
-		bool bPawnCanFire = Pawn && Pawn->GetWeaponComp()->CanFire();
 		bool bStateOK = CurrentState == EWeaponState::Idle || CurrentState == EWeaponState::Firing;
 
-		return bPawnCanFire && bStateOK && !bPendingReload;
+		return bStateOK && !bPendingReload;
 	}
 }
 
@@ -423,7 +424,9 @@ void ABaseFirearm::HandleFiring()
 			bBursting = BurstCounter < AmtToBurst;
 		}
 		else
+		{
 			bBursting = false;
+		}
 
 		if (bRefiring || bBursting)
 		{
@@ -833,10 +836,11 @@ void ABaseFirearm::StopSimulateReload()
 
 void ABaseFirearm::ReloadWeapon()
 {
-	int32 ClipDelta = FMath::Min(WeaponData.MaxMagAmmo - CurrentAmmoInClip, CurrentReserveAmmo - CurrentAmmoInClip);
+	int32 ClipDelta = FMath::Min(WeaponData.MaxMagAmmo - CurrentAmmoInClip, CurrentReserveAmmo);
 
 	if (ClipDelta > 0)
 	{
+		CurrentReserveAmmo -= ClipDelta;
 		CurrentAmmoInClip += ClipDelta;
 	}
 }
@@ -845,7 +849,7 @@ void ABaseFirearm::ReloadWeapon()
 bool ABaseFirearm::CanReload()
 {
 	bool bCanReload = (!Pawn || Pawn->GetWeaponComp()->CanReload());
-	bool bGotAmmo = (CurrentAmmoInClip < WeaponData.MaxMagAmmo) && ((CurrentReserveAmmo - CurrentAmmoInClip) > 0);
+	bool bGotAmmo = (CurrentAmmoInClip < WeaponData.MaxMagAmmo) && (CurrentReserveAmmo > 0);
 	bool bStateOKToReload = ((CurrentState == EWeaponState::Idle) || (CurrentState == EWeaponState::Firing));
 	return (bCanReload && bGotAmmo && bStateOKToReload);
 }

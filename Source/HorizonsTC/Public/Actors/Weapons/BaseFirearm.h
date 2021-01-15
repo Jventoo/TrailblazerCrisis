@@ -138,7 +138,6 @@ struct FWeaponData : public FTableRowBase
 		WeaponType = EWeaponType::Rifle;
 		WeaponDamage = FFirearmDamageInfo();
 		RecoilStats = FRecoilInfo();
-
 	}
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
@@ -153,96 +152,96 @@ struct FWeaponData : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
 		USkeletalMesh* WeaponMesh;
 
-	/** Shots per minute */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
-		float RateOfFire;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
-		int32 MaxMagAmmo;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
-		int32 MaxReserveAmmo;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
-		int32 RoundsInBurst;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
-		bool SingleShot;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
-		bool BurstShot;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
-		bool AutoShot;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData|Spread")
-		float WeaponSpread;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData|Spread")
-		float FiringSpreadMax;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData|Spread")
-		float FiringSpreadIncrement;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
-		float HipAccuracyPenalty;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
-		FFirearmDamageInfo WeaponDamage;
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
 		TSubclassOf<class ABaseProjectile> ProjectileClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
 		UTexture2D* CrosshairImg;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
-		FRotator DirectionFix;
+	/** Shots per minute */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Statistics")
+		float RateOfFire;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
-		FVector RightHandFix;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Statistics")
+		int32 MaxMagAmmo;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
-		FVector LeftHandFix;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Statistics")
+		int32 MaxReserveAmmo;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData|Simulation")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Statistics")
+		int32 RoundsInBurst;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Statistics")
+		bool SingleShot;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Statistics")
+		bool BurstShot;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Statistics")
+		bool AutoShot;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Statistics")
+		float WeaponSpread;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Statistics")
+		float FiringSpreadMax;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Statistics")
+		float FiringSpreadIncrement;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Statistics")
+		float HipAccuracyPenalty;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Statistics")
+		FFirearmDamageInfo WeaponDamage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Statistics")
+		FRecoilInfo RecoilStats;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulation")
 		UParticleSystem* MuzzleFX;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData|Simulation")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulation")
 		USoundCue* FireSound;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData|Simulation")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulation")
 		USoundCue* EquipSound;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData|Simulation")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulation")
 		USoundCue* ReloadSound;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData|Simulation")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulation")
 		USoundCue* OutOfAmmoSound;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData|Simulation")
-		float FallbackReloadDuration;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData|Simulation")
-		float FallbackEquipDuration;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData|Simulation")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulation")
 		UAnimMontage* FireAnim; 
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData|Simulation")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulation")
 		UAnimMontage* ReloadAnim;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData|Simulation")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulation")
+		float FallbackReloadDuration;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulation")
 		UAnimMontage* EquipAnim;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData|Simulation")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulation")
+		float FallbackEquipDuration;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulation")
 		UAnimMontage* UnequipAnim;
 
-	UPROPERTY(EditDefaultsOnly, Category = "WeaponData")
+	UPROPERTY(EditDefaultsOnly, Category = "Sockets")
 		FName MuzzleAttachPoint;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
-		FRecoilInfo RecoilStats;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sockets")
+		FRotator DirectionFix;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sockets")
+		FVector RightHandFix;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sockets")
+		FVector LeftHandFix;
 };
 
 UCLASS()

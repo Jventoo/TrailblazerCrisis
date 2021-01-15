@@ -45,13 +45,18 @@ void UWeaponComponent::UpdateWeaponHUD()
 {
 }
 
-void UWeaponComponent::SwitchWeapon(int32 WeaponIndex)
+void UWeaponComponent::SwitchWeapon(int32 WeaponIndex, bool Equip)
 {
 	if (WeaponIndex < WeaponInventory.Num())
 	{
 		UnequipWeapon();
 		CurrentWeaponIdx = WeaponIndex;
 		CurrentWeapon = WeaponInventory[WeaponIndex];
+
+		if (Equip)
+		{
+			EquipWeapon();
+		}
 	}
 }
 
@@ -83,7 +88,8 @@ void UWeaponComponent::SpawnWeapons()
 			WeaponInventory.Add(SpawnedWeapon);
 
 			// Attach to character's holster socket if the component has an unequip socket specified
-			if (WeaponUnequipSockets.IsValidIndex(i)) {
+			if (WeaponUnequipSockets.IsValidIndex(i))
+			{
 				SpawnedWeapon->AttachMeshToPawn(WeaponUnequipSockets[i]);
 				SpawnedWeapon->AddActorLocalRotation(WeaponInfo->DirectionFix);
 			}
@@ -93,7 +99,7 @@ void UWeaponComponent::SpawnWeapons()
 	}
 
 	// Set weapon in first loadout slot as current
-	SwitchWeapon(0);
+	SwitchWeapon(0, false);
 }
 
 void UWeaponComponent::SwitchFireMode()
@@ -190,7 +196,8 @@ void UWeaponComponent::UnequipWeapon(bool ReturnToHolster)
 		CurrentWeapon->DetachMeshFromPawn();
 
 		// If the weapon is kept attached to the character's body on unequip, attach it
-		if (ReturnToHolster) {
+		if (ReturnToHolster)
+		{
 			// Finds unequip socket from position in inventory
 			auto index = WeaponInventory.Find(CurrentWeapon);
 			if (WeaponUnequipSockets.IsValidIndex(index))
