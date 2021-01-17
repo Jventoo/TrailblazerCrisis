@@ -48,7 +48,7 @@ void ABaseFirearm::PostInitializeComponents()
 	Mesh->SetSkeletalMesh(WeaponData.WeaponMesh);
 
 	/* Setup configuration */
-	TimeBetweenShots = WeaponData.RateOfFire / 60.0f;
+	TimeBetweenShots = 60.0f / WeaponData.RateOfFire; // ROF is shots per minute
 	CurrentReserveAmmo = StoredWeapon.CurrReserveAmmo;
 	CurrentAmmoInClip = StoredWeapon.CurrMagAmmo;
 	CurrentState = StoredWeapon.CurrWeaponState;
@@ -107,9 +107,6 @@ void ABaseFirearm::AttachMeshToPawn(FName Socket)
 
 void ABaseFirearm::DetachMeshFromPawn()
 {
-	/*Mesh->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
-	Mesh->SetHiddenInGame(true);*/
-
 	Pawn->ClearHeldObject();
 
 	bIsHolstered = true;
@@ -595,6 +592,9 @@ void ABaseFirearm::OnBurstFinished()
 	// Clear firing state
 	GetWorldTimerManager().ClearTimer(TimerHandle_HandleFiring);
 
+	// Decrease spread
+	DecreaseSpread();
+
 	bRefiring = false;
 	bBursting = false;
 }
@@ -681,7 +681,7 @@ FTransform ABaseFirearm::CalculateFinalProjectileDirection(const FTransform& Mai
 
 bool ABaseFirearm::CalculateDamage(const FName& BoneName, float& DamageOut)
 {
-	auto DamageData = WeaponData.WeaponDamage;
+	const auto& DamageData = WeaponData.WeaponDamage;
 	DamageOut = UKismetMathLibrary::RandomFloatInRange(DamageData.MinDamage, DamageData.MaxDamage);
 	bool IsCrit = BoneName == TEXT("head");
 
@@ -768,10 +768,9 @@ void ABaseFirearm::UseAmmo()
 }
 
 
-void ABaseFirearm::SetAmmoCount(int32 NewTotalAmount)
+void ABaseFirearm::SetReserveAmmoCount(int32 NewTotalAmount)
 {
 	CurrentReserveAmmo = FMath::Min(WeaponData.MaxReserveAmmo, NewTotalAmount);
-	CurrentAmmoInClip = FMath::Min(WeaponData.MaxMagAmmo, CurrentReserveAmmo);
 }
 
 

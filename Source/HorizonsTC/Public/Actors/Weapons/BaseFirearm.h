@@ -481,8 +481,8 @@ public:
 
 	virtual void StopSimulateReload();
 
-	/* Set a new total amount of ammo of weapon */
-	void SetAmmoCount(int32 NewTotalAmount);
+	/** Sets the reserve ammo count to NewTotalAmount or MaxReserveAmmo if that is too large. */
+	void SetReserveAmmoCount(int32 NewTotalAmount);
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Ammo")
 		int32 GetCurrentReserveAmmo() const;
